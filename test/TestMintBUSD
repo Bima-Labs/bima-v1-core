@@ -1,0 +1,45 @@
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { fetchGeneralData } from "../scripts/fetchData";
+import {
+  JsonRpcProvider,
+  JsonRpcSigner,
+  formatEther,
+  parseEther,
+} from "ethers";
+import { mintBUSD } from "../scripts/mintBUSD";
+
+const ZERO_ADDRESS = ethers.ZeroAddress;
+
+describe("Ecosystem", function () {
+  describe("Deployments", function () {
+    it("Should deploy BabelCore and PriceFeed", async function () {
+        const [owner, user, user1 ] = await ethers.getSigners();
+    
+      await mintBUSD({
+        ownerSigner: owner,
+    borrowerOperationsAddress: "0x1364D82f5D47c7715eb20Ef1F5505E0ACD7b57d2",
+    troveManagerAddress: "0x43F8267e93B9d898d9ef798Ad1Eec10D570A83aF",
+    signer: user1,
+    amountstBTC: ethers.parseEther("1"),
+    percentage: 200n,
+    oracleAddress: "0xeC45264638883e1a8B92762B384D0Cb3A1eF8999", // Mock Aggregator address
+    collateralAddress: "0x35a5ba4859d28600FaE30EeB0494B3AfdB459f08" //Stake BTC address
+      });
+
+           /**
+      await borrowerOperations.openTrove(
+        troveManagerAddressFromFactory, // This manager is created on factory with deploy new instance
+        owner.address, // receiver address
+        BigInt("10000000000000000"), // Maximum Fee percentage 1%
+        ethers.parseEther("1"), // Transferred amount 1 BTC
+        ethers.parseEther("35000"), // Receive 30000 BUSD
+        ZERO_ADDRESS,
+        ZERO_ADDRESS
+      );
+ */
+    
+     
+  });
+});
+});
