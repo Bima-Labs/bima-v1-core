@@ -10,7 +10,7 @@ contract BabelBase {
     uint256 public constant DECIMAL_PRECISION = 1e18;
 
     // Critical system collateral ratio. If the system's total collateral ratio (TCR) falls below the CCR, Recovery Mode is triggered.
-    uint256 public constant CCR = 250e18; // 250%
+    uint256 public constant CCR = 225e18; // 225%
 
     // Amount of debt to be locked in gas pool on opening troves
     uint256 public immutable DEBT_GAS_COMPENSATION;
