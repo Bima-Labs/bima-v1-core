@@ -302,7 +302,7 @@ async function main() {
       maxBorrowingFee: BigInt("0"),
       interestRateInBps: BigInt("0"),
       maxDebt: ethers.parseEther("1000000"), // 1M USD
-      MCR: ethers.parseUnits("120", 18),
+      MCR: ethers.parseUnits("200", 18),
     }
   );
 
