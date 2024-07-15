@@ -40,7 +40,7 @@ contract Factory is BabelOwnable {
         uint256 maxBorrowingFee; // 1e18 / 100 * 5  (5%)
         uint256 interestRateInBps; // 100 (1%)
         uint256 maxDebt;
-        uint256 MCR; // 12 * 1e17  (120%)
+        uint256 MCR; // 120 * 1e18  (120%)
     }
 
     event NewDeployment(address collateral, address priceFeed, address troveManager, address sortedTroves);

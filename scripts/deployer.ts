@@ -302,10 +302,10 @@ async function main() {
       maxBorrowingFee: BigInt("0"),
       interestRateInBps: BigInt("0"),
       maxDebt: ethers.parseEther("1000000"), // 1M USD
-      MCR: BigInt("120000000000000000000"),
+      MCR: ethers.parseUnits("120", 18),
     }
   );
-  
+
   console.log("Factory deployNewInstance!");
 
   const troveManagerCount = await factory.troveManagerCount();
@@ -326,4 +326,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-
