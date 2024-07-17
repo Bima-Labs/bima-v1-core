@@ -37,8 +37,6 @@ export const mintBUSD = async ({
     signer
   );
 
-  
-
   const troveManagerContract = await TroveManager__factory.connect(
     troveManagerAddress,
     signer
@@ -124,6 +122,7 @@ export const mintBUSD = async ({
       );
     } catch (error) {
       console.log("Error opening trove - " + error);
+      throw error;
     }
   } else {
     const increaseDecrease = amountstBTC - depositedAmount;
@@ -157,7 +156,6 @@ export const mintBUSD = async ({
     );
   }
 };
-
 
 async function main() {
   try {
