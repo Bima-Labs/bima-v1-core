@@ -334,7 +334,7 @@ contract TroveManager is BabelBase, BabelOwnable, SystemStart {
     ) public {
         require(!sunsetting, "Cannot change after sunset");
         console.log("Collateral ratio", _MCR, CCR);
-        require(_MCR <= CCR && _MCR >= 110e18, "MCR cannot be > CCR or < 110%");
+        require(_MCR <= CCR && _MCR >= 1.1e18, "MCR cannot be > CCR or < 110%");
 
         if (minuteDecayFactor != 0) {
             require(msg.sender == owner(), "Only owner");
