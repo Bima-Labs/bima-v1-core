@@ -1,12 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { fetchGeneralData } from "../scripts/fetchData";
-import {
-  
-  JsonRpcSigner,
-  formatEther,
-  parseEther,
-} from "ethers";
+import { formatEther, parseEther } from "ethers";
 import { mintBUSD } from "../scripts/mintBUSD";
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
@@ -16,7 +11,6 @@ describe("Ecosystem", function () {
     it("Should deploy BabelCore and PriceFeed", async function () {
       const [owner, otherAccount] = await ethers.getSigners();
 
-      
       const ERC20Deployer = await ethers.getContractFactory("StakedBTC");
 
       const MockAggregatorDeployer = await ethers.getContractFactory(
@@ -62,13 +56,9 @@ describe("Ecosystem", function () {
         "IncentiveVoting"
       );
 
-      const BabelTokenDeployer = await ethers.getContractFactory(
-        "BabelToken"
-      );
+      const BabelTokenDeployer = await ethers.getContractFactory("BabelToken");
 
-      const BabelVaultDeployer = await ethers.getContractFactory(
-        "BabelVault"
-      );
+      const BabelVaultDeployer = await ethers.getContractFactory("BabelVault");
 
       const stBTC = await ERC20Deployer.deploy();
 
@@ -227,7 +217,7 @@ describe("Ecosystem", function () {
         debtTokenAddress,
         factoryAddress,
         BigInt("1800000000000000000000"), // 1800 BUSD
-        BigInt("200000000000000000000")
+        BigInt("0")
       );
 
       console.log("BorrowerOperations deployed!");
@@ -326,7 +316,7 @@ describe("Ecosystem", function () {
           maxBorrowingFee: BigInt("0"),
           interestRateInBps: BigInt("0"),
           maxDebt: ethers.parseEther("1000000"), // 1M USD
-          MCR: BigInt("1200000000000000000"), // 120%
+          MCR: ethers.parseUnits("2", 18), // 200%
         }
       );
 
@@ -346,6 +336,10 @@ describe("Ecosystem", function () {
         BigInt("50000000000000000000")
       );
 
+      // ? CHANGES:
+      // ? set MCR to 200%
+      // ? set DEBT_GAS_COMPENSATION to 0 when creating BorrowerOperations contract
+      // ? set percentage from 200n to 300n for Total Collateral Ratio to be above CCR
       await mintBUSD({
         amountstBTC: parseEther("1"),
         borrowerOperationsAddress: borrowerOperationsAddress,
@@ -353,7 +347,7 @@ describe("Ecosystem", function () {
         signerAddress: owner.address,
         collateralAddress: stBTCAddress,
         oracleAddress: await mockAaggregator.getAddress(),
-        percentage: 200n,
+        percentage: 300n,
         provider: owner.provider,
         troveManagerAddress: troveManagerAddressFromFactory,
       });
@@ -383,16 +377,16 @@ describe("Ecosystem", function () {
       });
 
       /**
-      await borrowerOperations.openTrove(
-        troveManagerAddressFromFactory, // This manager is created on factory with deploy new instance
-        owner.address, // receiver address
-        BigInt("10000000000000000"), // Maximum Fee percentage 1%
-        ethers.parseEther("1"), // Transferred amount 1 BTC
-        ethers.parseEther("35000"), // Receive 30000 BUSD
-        ZERO_ADDRESS,
-        ZERO_ADDRESS
-      );
- */
+            await borrowerOperations.openTrove(
+              troveManagerAddressFromFactory, // This manager is created on factory with deploy new instance
+              owner.address, // receiver address
+              BigInt("10000000000000000"), // Maximum Fee percentage 1%
+              ethers.parseEther("1"), // Transferred amount 1 BTC
+              ethers.parseEther("35000"), // Receive 30000 BUSD
+              ZERO_ADDRESS,
+              ZERO_ADDRESS
+            );
+       */
       const troveManagerFromFactory = await ethers.getContractAt(
         "TroveManager",
         troveManagerAddressFromFactory
@@ -418,16 +412,16 @@ describe("Ecosystem", function () {
         .approve(borrowerOperationsAddress, ethers.parseEther("1"));
 
       /**
-      await borrowerOperations.connect(otherAccount).openTrove(
-        troveManagerAddressFromFactory, // This manager is created on factory with deploy new instance
-        otherAccount.address, // receiver address
-        ethers.parseEther("0.01"), // Maximum Fee percentage 1%
-        ethers.parseEther("1"), // Transferred amount 1 BTC
-        ethers.parseEther("44600"), // Receive 30000 BUSD
-        ZERO_ADDRESS,
-        ZERO_ADDRESS
-      );
- */
+            await borrowerOperations.connect(otherAccount).openTrove(
+              troveManagerAddressFromFactory, // This manager is created on factory with deploy new instance
+              otherAccount.address, // receiver address
+              ethers.parseEther("0.01"), // Maximum Fee percentage 1%
+              ethers.parseEther("1"), // Transferred amount 1 BTC
+              ethers.parseEther("44600"), // Receive 30000 BUSD
+              ZERO_ADDRESS,
+              ZERO_ADDRESS
+            );
+       */
       const troveStatusOtherAccount =
         await troveManagerFromFactory.getTroveStake(otherAccount.address);
       console.log(
@@ -436,7 +430,7 @@ describe("Ecosystem", function () {
       );
 
       const res = await fetchGeneralData({
-        provider: owner.provider ,
+        provider: owner.provider,
         troveManagerAddress: troveManagerAddressFromFactory,
       });
 
@@ -465,7 +459,7 @@ describe("Ecosystem", function () {
 
       expect(await babelCore.getAddress()).to.equal(babelCoreAddress);
       expect(await priceFeed.getAddress()).to.equal(priceFeedAddress);
-      expect(balance).to.equal(ethers.parseEther("35000"));
+      expect(balance).to.equal(ethers.parseEther("15000"));
     });
   });
 });
