@@ -336,10 +336,6 @@ describe("Ecosystem", function () {
         BigInt("50000000000000000000")
       );
 
-      // ? CHANGES:
-      // ? set MCR to 200%
-      // ? set DEBT_GAS_COMPENSATION to 0 when creating BorrowerOperations contract
-      // ? set percentage from 200n to 300n for Total Collateral Ratio to be above CCR
       await mintBUSD({
         amountstBTC: parseEther("1"),
         borrowerOperationsAddress: borrowerOperationsAddress,
