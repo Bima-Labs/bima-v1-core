@@ -4,6 +4,11 @@ import { ethers } from "hardhat";
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 async function main() {
   const [owner, otherAccount] = await ethers.getSigners();
 
@@ -49,11 +54,11 @@ async function main() {
   const stBTCAddress = await stBTC.getAddress();
 
   console.log("stBTCAddress deployed!: ", stBTCAddress);
-
+  await sleep(10000);
   const mockAaggregator = await MockAggregatorDeployer.deploy();
   const mockAaggregatorAddress = await mockAaggregator.getAddress();
   console.log("MockAggregatorAddress deployed!: ", mockAaggregatorAddress);
-
+  await sleep(10000);
   let deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
   // Disgusting hack to get the addresses of the contracts before deployment
@@ -61,19 +66,22 @@ async function main() {
     from: owner.address,
     nonce: deployerNonce,
   });
+  console.log("BabelCoreAddress deployed!: ", babelCoreAddress);
+  
 
   const priceFeedAddress = ethers.getCreateAddress({
     from: owner.address,
     nonce: deployerNonce + 1,
   });
-
+  console.log("PriceFeedAddress deployed!: ", priceFeedAddress);
+  
   const babelCore = await BabelCoreDeployer.deploy(
     owner.address,
     owner.address,
     priceFeedAddress,
     owner.address
   );
-
+  await sleep(10000);
   console.log("BabelCore deployed!: ", babelCoreAddress);
 
   const priceFeed = await PriceFeedDeployer.deploy(
@@ -83,12 +91,14 @@ async function main() {
 
   console.log("PriceFeed deployed!: ", priceFeedAddress);
 
-  const feeReceiver = await FeeReceiverDeployer.deploy(babelCoreAddress);
 
+  const feeReceiver = await FeeReceiverDeployer.deploy(babelCoreAddress);
+  await sleep(10000);
   console.log("FeeReceiver deployed!: ", await feeReceiver.getAddress());
 
-  const interimAdmin = await InterimAdminDeployer.deploy(babelCoreAddress);
 
+  const interimAdmin = await InterimAdminDeployer.deploy(babelCoreAddress);
+  await sleep(10000);
   console.log("InterimAdmin deployed!: ", await interimAdmin.getAddress());
 
   await babelCore.commitTransferOwnership(await interimAdmin.getAddress());
@@ -99,13 +109,15 @@ async function main() {
 
   const gasPool = await GasPoolDeployer.deploy();
 
+  await sleep(10000);
+
   console.log("Gas Pool deployed!: ", await gasPool.getAddress());
 
   const gasPoolAddress = await gasPool.getAddress();
 
   deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
-  // Disgusting hack to get the addresses of the contracts before deployment
+  // // Disgusting hack to get the addresses of the contracts before deployment
   const factoryAddress = ethers.getCreateAddress({
     from: owner.address,
     nonce: deployerNonce,
@@ -161,7 +173,7 @@ async function main() {
     nonce: deployerNonce + 10,
   });
 
-  // This crates TroveManagers
+  // // This crates TroveManagers
   const factory = await FactoryDeployer.deploy(
     babelCoreAddress,
     debtTokenAddress,
@@ -172,7 +184,7 @@ async function main() {
     liqudiationManagerAddress
   );
   console.log("Factory deployed!: ", factoryAddress);
-
+  await sleep(10000);
   const liqudiationManager = await LiqudiationManagerDeployer.deploy(
     stabilityPoolAddress,
     borrowerOperationsAddress,
@@ -181,7 +193,7 @@ async function main() {
   );
 
   console.log("LiquidationManager deployed!: ", liqudiationManagerAddress);
-
+  await sleep(10000);
   const debtToken = await DebtTokenDeployer.deploy(
     "USDB", //mkUSD or ULTRA name
     "USDB", // symbol
@@ -197,7 +209,7 @@ async function main() {
   );
 
   console.log("DebtToken deployed!: ", debtTokenAddress);
-
+  await sleep(10000);
   const borrowerOperations = await BorrowerOperationsDeployer.deploy(
     babelCoreAddress,
     debtTokenAddress,
@@ -207,7 +219,7 @@ async function main() {
   );
 
   console.log("BorrowerOperations deployed!: ", borrowerOperationsAddress);
-
+  await sleep(10000);
   const stabilityPool = await StabilityPoolDeployer.deploy(
     babelCoreAddress,
     debtTokenAddress,
@@ -217,7 +229,7 @@ async function main() {
   );
 
   console.log("StabilityPool deployed!: ", stabilityPoolAddress);
-
+  await sleep(10000);
   const troveManager = await TroveManagerDeployer.deploy(
     babelCoreAddress,
     gasPoolAddress,
@@ -229,9 +241,9 @@ async function main() {
   );
 
   console.log("TroveManager deployed!: ", troveManagerAddress);
-
+  await sleep(10000);
   const sortedTroves = await SortedTrovesDeployer.deploy();
-
+  await sleep(10000);
   console.log("SortedTroves deployed!: ", sortedTrovesAddress);
 
   const tokenLocker = await TokenLockerDeployer.deploy(
@@ -242,6 +254,7 @@ async function main() {
     BigInt("1000000000000000000") // 1 BABEL
   );
   console.log("TokenLocker deployed!: ", tokenLockerAddress);
+  await sleep(10000);
 
   const incentiveVoting = await IncentiveVotingDeployer.deploy(
     babelCoreAddress,
@@ -249,7 +262,7 @@ async function main() {
     babelVaultAddress
   );
   console.log("IncentiveVoting deployed!: ", incentiveVotingAddress);
-
+  await sleep(10000);
   const babelToken = await BabelTokenDeployer.deploy(
     babelVaultAddress,
     // lzApp endpoint address
@@ -259,7 +272,7 @@ async function main() {
   );
 
   console.log("BabelToken deployed!: ", babelTokenAddress);
-
+  await sleep(10000);
   const babelVault = await BabelVaultDeployer.deploy(
     babelCoreAddress,
     babelTokenAddress,
@@ -270,7 +283,7 @@ async function main() {
   );
 
   console.log("BabelVault deployed!: ", babelVaultAddress);
-
+  await sleep(10000);
   await priceFeed.setOracle(
     stBTCAddress,
     await mockAaggregator.getAddress(),
@@ -288,7 +301,7 @@ async function main() {
     false // Is it equivalent to ETH or default coin of the chain. On polygon if you set this to true it'll work with matic.
   );
   console.log("PriceFeed setOracle!");
-
+  await sleep(10000);
   await factory.deployNewInstance(
     stBTCAddress,
     priceFeedAddress,
@@ -305,18 +318,20 @@ async function main() {
       MCR: ethers.parseUnits("2", 18), // 2e18 = 200%
     }
   );
-
   console.log("Factory deployNewInstance!");
+  await sleep(10000);
 
   const troveManagerCount = await factory.troveManagerCount();
   const troveManagerAddressFromFactory = await factory.troveManagers(
     BigInt("0")
   );
+
   await babelVault.registerReceiver(
     troveManagerAddressFromFactory,
     BigInt("2")
   );
 
+  await sleep(10000);
   console.log("stBTC Trove Manager address: ", troveManagerAddressFromFactory);
 }
 
