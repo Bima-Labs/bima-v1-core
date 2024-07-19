@@ -137,7 +137,7 @@ async function deployCore() {
     stabilityPoolAddress,
     borrowerOperationsAddress,
     factoryAddress,
-    BigInt("200000000000000000000") // gas compensation
+    ethers.parseUnits("200", 18) // BigInt("200000000000000000000") gas compensation
   );
 
   await deployContract(
@@ -153,7 +153,7 @@ async function deployCore() {
     ZERO_ADDRESS,
     factoryAddress,
     gasPoolAddress,
-    BigInt("200000000000000000000") // gas compensation
+    ethers.parseUnits("200", 18) // BigInt("200000000000000000000") // gas compensation
   );
 
   await deployContract(
@@ -162,8 +162,8 @@ async function deployCore() {
     babelCoreAddress,
     debtTokenAddress,
     factoryAddress,
-    BigInt("1800000000000000000000"), // 1800 USDB
-    BigInt("200000000000000000000")
+    ethers.parseUnits("1800", 18), // BigInt("1800 000000000000000000"), // 1800 USDB
+    ethers.parseUnits("200", 18) // BigInt("200000000000000000000")
   );
 
   await deployContract(
@@ -185,7 +185,7 @@ async function deployCore() {
     borrowerOperationsAddress,
     babelVaultAddress,
     liqudiationManagerAddress,
-    BigInt("200000000000000000000")
+    ethers.parseUnits("200", 18) // BigInt("200000000000000000000")
   );
 
   await deployContract(factories.SortedTroves, "SortedTroves");
@@ -197,7 +197,7 @@ async function deployCore() {
     babelTokenAddress,
     incentiveVotingAddress,
     owner.address, // Change this with gnosis safe for real deployment...
-    BigInt("1000000000000000000") // 1 BABEL
+    ethers.parseUnits("1", 18) // BigInt("1000000000000000000") // 1 BABEL
   );
 
   await deployContract(
