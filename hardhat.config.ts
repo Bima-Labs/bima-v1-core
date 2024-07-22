@@ -3,15 +3,14 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@typechain/hardhat";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "dotenv/config";
 
 const config: HardhatUserConfig = {
- // defaultNetwork: "polygon_amoy",
-
-
+  // defaultNetwork: "polygon_amoy",
 
   etherscan: {
     apiKey: {
-      lorenzo_testnet: 'abc'
+      lorenzo_testnet: "abc",
     },
     customChains: [
       {
@@ -28,11 +27,7 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
-      accounts: [
-        "b5b0471933a4f28530ea6347b5219e1379899c476494323c446690c7ae913248",
-        "d33a05f394a86fe0675730dad2f076eec5e6be5301b6af8efbf1b898b891d913",
-        "6939d87023d9bb163492532b7fcbae6a575b7516cd824519327db7c44f089d44",
-      ],
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     polygon_amoy: {
       url: "https://rpc-amoy.polygon.technology",
