@@ -45,7 +45,7 @@ async function deployCore() {
 
   await deployContract(factories.FeeReceiver, "FeeReceiver", babelCoreAddress);
 
-  const [interimAdminAddress] = await deployContract(
+  const [, interimAdminAddress] = await deployContract(
     factories.InterimAdmin,
     "InterimAdmin",
     babelCoreAddress
@@ -56,7 +56,7 @@ async function deployCore() {
       interimAdminAddress
     );
     await tx.wait();
-    console.log("Ownership transferred to interimAdmin!");
+    console.log("-- tx: Ownership transferred to interimAdmin!");
   }
 
   const [, gasPoolAddress] = await deployContract(factories.GasPool, "GasPool");
