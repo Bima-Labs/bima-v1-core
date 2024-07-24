@@ -9,6 +9,8 @@ async function deployCore() {
 
   const factories = await getFactories();
 
+  // await deployContract(factories.MockStakedBTC, "StakedBTC");
+
   const [, mockAaggregatorAddress] = await deployContract(
     factories.MockAggregator,
     "MockAggregator"

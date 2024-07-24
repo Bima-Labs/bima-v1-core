@@ -1,52 +1,41 @@
 import { ethers } from "hardhat";
 
-//npx hardhat run scripts/deployer.ts --network lorenzo_testnet
-
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
+// FILL IN WITH YOUR TARGET ADDRESSES
+const COLLATERAL_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const AGGREGATOR_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+const FACTORY_ADDRESS = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6";
+const PRICEFEED_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+const BABELVAULT_ADDRESS = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed";
+
 async function main() {
-  const [owner, otherAccount] = await ethers.getSigners();
-
-  const collateralAddress = "";
-  const aggregatorAddress = "";
-
-  const priceFeedAddress = "";
-  const priceFeed = await ethers.getContractAt("PriceFeed", priceFeedAddress);
-
-  const factoryAddress = "";
-  const factory = await ethers.getContractAt("Factory", factoryAddress);
-
-  const babelVaultAddress = "";
+  const priceFeed = await ethers.getContractAt("PriceFeed", PRICEFEED_ADDRESS);
+  const factory = await ethers.getContractAt("Factory", FACTORY_ADDRESS);
   const babelVault = await ethers.getContractAt(
     "BabelVault",
-    babelVaultAddress
+    BABELVAULT_ADDRESS
   );
+
+  console.log("troveManagerCount before: ", await factory.troveManagerCount());
 
   {
     const tx = await priceFeed.setOracle(
-      collateralAddress,
-      aggregatorAddress,
-      BigInt("80000"), // seconds
-      // We can add function data to convert prices if needed
-      // The protocol uses this function to calculate wrapped values of tokens
-      // For example if stETH is worth 1.0 ETH and wstETH is worth 0.8 ETH
-      // We can call convert 1 wstETH to stETH function on wstETH contract
-      // With this info we can calculate value of derivatives in different protocols
-      // wstETH is not part of Babel Finance so they use this to get specific prices of other protocols
-      // It only allows bytes4 function signatures
-      // For more info read https://github.com/ethers-io/ethers.js/issues/44
-      "0x00000000", // Read pure data assume stBTC is 1:1 with BTC :)
+      COLLATERAL_ADDRESS,
+      AGGREGATOR_ADDRESS,
+      BigInt("80000"),
+      "0x00000000",
       BigInt("18"),
-      false // Is it equivalent to ETH or default coin of the chain. On polygon if you set this to true it'll work with matic.
+      false
     );
     await tx.wait();
-    console.log("PriceFeed setOracle!");
+    console.log("Oracle is set on PriceFeed contract!");
   }
 
   {
     const tx = await factory.deployNewInstance(
-      collateralAddress,
-      priceFeedAddress,
+      COLLATERAL_ADDRESS,
+      PRICEFEED_ADDRESS,
       ZERO_ADDRESS,
       ZERO_ADDRESS,
       {
@@ -56,15 +45,16 @@ async function main() {
         borrowingFeeFloor: BigInt("0"),
         maxBorrowingFee: BigInt("0"),
         interestRateInBps: BigInt("0"),
-        maxDebt: ethers.parseEther("1000000"), // 1M USD
-        MCR: ethers.parseUnits("2", 18), // 2e18 = 200%
+        maxDebt: ethers.parseEther("1000000"),
+        MCR: ethers.parseUnits("2", 18),
       }
     );
     await tx.wait();
-    console.log("Factory deployNewInstance!");
+    console.log("New Trove Manager is deployed from Factory contract!");
   }
 
   const troveManagerCount = await factory.troveManagerCount();
+  console.log("troveManagerCount after: ", troveManagerCount.toString());
 
   const troveManagerAddressFromFactory = await factory.troveManagers(
     BigInt(String(Number(troveManagerCount) - 1))
@@ -76,6 +66,7 @@ async function main() {
       BigInt("2")
     );
     await tx.wait();
+    console.log("Reciever has been registered!");
   }
 
   console.log("new Trove Manager address: ", troveManagerAddressFromFactory);
