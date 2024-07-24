@@ -32,6 +32,9 @@ async function main() {
     console.log("Oracle is set on PriceFeed contract!");
   }
 
+  // For some reason, if we don't wait for some time, the next transaction will revert
+  await new Promise((res) => setTimeout(res, 10000));
+
   {
     const tx = await factory.deployNewInstance(
       COLLATERAL_ADDRESS,
