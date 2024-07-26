@@ -4,6 +4,7 @@ const ZERO_ADDRESS = ethers.ZeroAddress;
 
 // FILL IN WITH YOUR TARGET ADDRESSES
 const COLLATERAL_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const ORACLE_ADDRESS = "";
 const FACTORY_ADDRESS = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6";
 const PRICEFEED_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
 const BABELVAULT_ADDRESS = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed";
@@ -16,24 +17,26 @@ async function main() {
     BABELVAULT_ADDRESS
   );
 
+  //?  Not necessary if we use a real collateral token
   // const mockedStBtcFactory = await ethers.getContractFactory("StakedBTC");
   // const mockedStBtc = await mockedStBtcFactory.deploy();
   // await mockedStBtc.waitForDeployment();
   // const mockedStBtcAddress = await mockedStBtc.getAddress();
   // console.log("MOCKED stBTC deployed!: ", mockedStBtcAddress);
 
-  const mockOracleFactory = await ethers.getContractFactory("MockOracle");
-  const mockOracle = await mockOracleFactory.deploy();
-  await mockOracle.waitForDeployment();
-  const mockOracleAddress = await mockOracle.getAddress();
-  console.log("MockOracle deployed!: ", mockOracleAddress);
+  //? Not necessary if we use a real oracle from real collateral token
+  // const mockOracleFactory = await ethers.getContractFactory("MockOracle");
+  // const mockOracle = await mockOracleFactory.deploy();
+  // await mockOracle.waitForDeployment();
+  // const mockOracleAddress = await mockOracle.getAddress();
+  // console.log("MockOracle deployed!: ", mockOracleAddress);
 
   console.log("troveManagerCount before: ", await factory.troveManagerCount());
 
   {
     const tx = await priceFeed.setOracle(
       COLLATERAL_ADDRESS,
-      mockOracleAddress,
+      ORACLE_ADDRESS,
       BigInt("80000"),
       "0x00000000",
       BigInt("18"),
