@@ -11,7 +11,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       lorenzo_testnet: "abc",
-      Citrea_Devnet:"def",
+      citrea_devnet:"def",
 
     },
     customChains: [
@@ -25,7 +25,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "Citrea_Devnet",
+        network: "citrea_devnet",
         chainId: 62298,
 
         urls: {
@@ -47,7 +47,7 @@ const config: HardhatUserConfig = {
         "7c5b27c4f043051e405d03469e3f9dfe5b65df74376dcaf70db003d63a976efc",
       ],
     },
-    Citrea_Devnet: {
+    citrea_devnet: {
       url: "https://rpc.devnet.citrea.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
