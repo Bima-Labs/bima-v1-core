@@ -24,6 +24,15 @@ const config: HardhatUserConfig = {
           apiURL: 'https://scan-testnet.lorenzo-protocol.xyz/api/',
         },
       },
+      {
+        network: 'bevm_testnet',
+        chainId: 11503,
+
+        urls: {
+          browserURL: 'https://scan-testnet.bevm.io/',
+          apiURL: 'https://scan-testnet-api.bevm.io/api/v2/',
+        },
+      },
     ],
   },
   networks: {
