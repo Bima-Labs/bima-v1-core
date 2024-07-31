@@ -11,6 +11,8 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       lorenzo_testnet: "abc",
+      citrea_devnet:"def",
+
     },
     customChains: [
       {
@@ -21,6 +23,16 @@ const config: HardhatUserConfig = {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
         },
+      },
+      {
+        network: "citrea_devnet",
+        chainId: 62298,
+
+        urls: {
+          browserURL: "https://explorer.devnet.citrea.xyz/",
+          apiURL: "https://explorer.devnet.citrea.xyz/api/",
+        },
+
       },
     ],
   },
@@ -34,6 +46,10 @@ const config: HardhatUserConfig = {
       accounts: [
         "7c5b27c4f043051e405d03469e3f9dfe5b65df74376dcaf70db003d63a976efc",
       ],
+    },
+    citrea_devnet: {
+      url: "https://rpc.devnet.citrea.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
   solidity: {
