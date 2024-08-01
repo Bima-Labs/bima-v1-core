@@ -166,6 +166,10 @@ const config: HardhatUserConfig = {
       url: "https://testnet-rpc.bitlayer.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     },
+    core_testnet: {
+      url: "https://rpc.test.btcs.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
   },
   solidity: {
     compilers: [
