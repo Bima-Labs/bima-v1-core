@@ -310,3 +310,29 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
+
+## Scroll Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| MockAggregator     | 0xc500905fA9f7f48bCA247696949796c9EeeebA42 |
+| BabelCore          | 0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc |
+| PriceFeed          | 0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476 |
+| FeeReceiver        | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |
+| InterimAdmin       | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
+| GasPool            | 0x585Af209078E0E6966B4767683A047b316592cA9 |
+| Factory            | 0xc2847fF24a5C303B4e2F76D9C2C84da1038bFAE1 |
+| LiquidationManager | 0x983Fb7d0C7CF79189eC5edB01B275572eB429469 |
+| DebtToken          | 0xE34d9e591AfCCd082503E9A4C9a9C3714EA1AC60 |
+| BorrowerOperations | 0xA93a6869D4407aD0dBA90cEd0e875a7E36655229 |
+| StabilityPool      | 0x817c9C880b8627308D8d6c9E66357752DAFDa571 |
+| TroveManager       | 0x17d539F22d1FC114496AC506108d8A6989854c73 |
+| SortedTroves       | 0x6795e3a141b5fAC578C7516aF51cD403991aF8c9 |
+| TokenLocker        | 0xeBD4d5B738dD43d153CaAb5be49a7afC3df4359A |
+| IncentiveVoting    | 0x7274aE5b49df066b1431Ad4A36D1139CF2FB2716 |
+| BabelToken         | 0x47f43CCb49dFe30ac666AfD039dcf2c967AC1eA7 |
+| BabelVault         | 0xC80553648B2a715eA93c0e3C8587ed99BB773cA4 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
