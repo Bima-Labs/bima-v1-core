@@ -17,6 +17,7 @@ const config: HardhatUserConfig = {
       bevm_testnet: "",
       avalanche_testnet: "",
       arbitrum_testnet: "",
+
     },
     customChains: [
       {
@@ -109,7 +110,6 @@ const config: HardhatUserConfig = {
       url: "https://rpc.devnet.citrea.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-
     arbitrum_testnet: {
       url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
