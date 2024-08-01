@@ -1,6 +1,5 @@
-import { Provider, Signer } from 'ethers';
-import { ethers } from 'hardhat';
-
+import { Provider, Signer } from "ethers";
+import { ethers } from "hardhat";
 
 import { MockOracle__factory, PriceFeed__factory, TroveManager__factory } from "../typechain-types/index";
 

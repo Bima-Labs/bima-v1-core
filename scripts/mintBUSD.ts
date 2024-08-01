@@ -1,5 +1,5 @@
-import { Provider, Signer, ZeroAddress, formatEther, parseEther } from 'ethers';
-import { ethers } from 'hardhat';
+import { Provider, Signer, ZeroAddress, formatEther, parseEther } from "ethers";
+import { ethers } from "hardhat";
 
 import {
   BorrowerOperations__factory,
@@ -7,8 +7,8 @@ import {
   Factory__factory,
   BabelVault__factory,
   StakedBTC__factory,
-} from '../typechain-types/index';
-import { fetchPrice } from './fetchData';
+} from "../typechain-types/index";
+import { fetchPrice } from "./fetchData";
 
 export const mintBUSD = async ({
   borrowerOperationsAddress,
@@ -60,9 +60,9 @@ export const mintBUSD = async ({
     signer: signer,
   });
 
-  console.log('Price: ', price);
+  console.log("Price: ", price);
   if (!price) {
-    console.log('Price not available');
+    console.log("Price not available");
     return null;
   }
 
@@ -78,8 +78,7 @@ export const mintBUSD = async ({
   // Prints balance of stBTC
   const balanceOfUser1 = await stBTC.balanceOf(signerAddress);
 
-  console.log('stBTC Balance: ', formatEther(balanceOfUser1));
-
+  console.log("stBTC Balance: ", formatEther(balanceOfUser1));
 
   const result = await stBTC.approve(borrowerOperationsAddress, parseEther("50"));
 
@@ -89,28 +88,27 @@ export const mintBUSD = async ({
 
   const debtAmount = await troveManagerContract.getTroveCollAndDebt(signerAddress);
 
-
-  console.log('Debt Amount: ', formatEther(debtAmount[1]));
+  console.log("Debt Amount: ", formatEther(debtAmount[1]));
 
   if (depositedAmount === 0n) {
-    console.log('AmountsBTC: ', formatEther(amountstBTC));
-    console.log('Frust: ', formatEther(percentageAmount));
+    console.log("AmountsBTC: ", formatEther(amountstBTC));
+    console.log("Frust: ", formatEther(percentageAmount));
 
     console.log(troveManagerAddress);
-    console.log('Signer address: ', signerAddress);
+    console.log("Signer address: ", signerAddress);
 
     try {
       const dataTx = await borrowerOperationsContract.openTrove(
         troveManagerAddress, // troveManagerAddress
         signerAddress,
-        BigInt('1000000000000000000'),
+        BigInt("1000000000000000000"),
         amountstBTC,
         percentageAmount,
         ZeroAddress,
         ZeroAddress
       );
     } catch (error) {
-      console.log('Error opening trove - ' + error);
+      console.log("Error opening trove - " + error);
       throw error;
     }
   } else {
@@ -123,7 +121,7 @@ export const mintBUSD = async ({
     console.log({
       0: troveManagerAddress, // troveManagerAddress
       1: signerAddress, // borrower
-      2: parseEther('0.01'), // maxFeePercentage
+      2: parseEther("0.01"), // maxFeePercentage
       3: increaseDecrease > 0n ? increaseDecrease : 0n, // collDeposit
       4: increaseDecrease < 0n ? -increaseDecrease : 0n, // collWithdrawal
       5: change >= 0n ? change : -change, // debtChange
@@ -135,7 +133,7 @@ export const mintBUSD = async ({
     return await borrowerOperationsContract.adjustTrove(
       troveManagerAddress, // troveManagerAddress
       signerAddress, // borrower
-      parseEther('0.01'), // maxFeePercentage
+      parseEther("0.01"), // maxFeePercentage
       increaseDecrease > 0n ? increaseDecrease : 0n, // collDeposit
       increaseDecrease < 0n ? -increaseDecrease : 0n, // collWithdrawal
       change >= 0n ? change : -change, // debtChange
@@ -152,21 +150,21 @@ async function main() {
 
     const data = {
       ownerSigner: user1,
-      borrowerOperationsAddress: '0x1364D82f5D47c7715eb20Ef1F5505E0ACD7b57d2',
-      troveManagerAddress: '0x43F8267e93B9d898d9ef798Ad1Eec10D570A83aF',
+      borrowerOperationsAddress: "0x1364D82f5D47c7715eb20Ef1F5505E0ACD7b57d2",
+      troveManagerAddress: "0x43F8267e93B9d898d9ef798Ad1Eec10D570A83aF",
       signer: user1,
       signerAddress: await user1.getAddress(),
-      amountstBTC: ethers.parseEther('1'),
+      amountstBTC: ethers.parseEther("1"),
       percentage: 200n,
       provider: user1.provider,
-      oracleAddress: '0xeC45264638883e1a8B92762B384D0Cb3A1eF8999', // Mock Aggregator address
-      collateralAddress: '0x35a5ba4859d28600FaE30EeB0494B3AfdB459f08', //Stake BTC address
+      oracleAddress: "0xeC45264638883e1a8B92762B384D0Cb3A1eF8999", // Mock Aggregator address
+      collateralAddress: "0x35a5ba4859d28600FaE30EeB0494B3AfdB459f08", //Stake BTC address
     };
 
     const tx = await mintBUSD(data);
-    console.log('---', tx);
+    console.log("---", tx);
   } catch (error) {
-    console.log('error:', error);
+    console.log("error:", error);
   }
 }
 /*
