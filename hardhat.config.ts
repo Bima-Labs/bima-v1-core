@@ -6,7 +6,7 @@ import '@nomicfoundation/hardhat-chai-matchers';
 import 'dotenv/config';
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'gate_testnet',
+  // defaultNetwork: 'gate_testnet',
 
   etherscan: {
     apiKey: {
@@ -14,7 +14,8 @@ const config: HardhatUserConfig = {
 
       // gate_testnet:"9063a1a8a3ee226fa440779bc6f7015a",
       // bscTestnet:`CC7GINMBKSKVQZTXC9GD7M852K65CPEVRF`,
-      polygon_amoy: `WIXGNHX39425CPDKS5TFBDJBKMGTDWR7QI,`,
+      // polygon_amoy: `WIXGNHX39425CPDKS5TFBDJBKMGTDWR7QI,`,
+      // scroll_testnet: `a544040d-864b-4968-8829-12e160e66fb8`
     },
   },
   networks: {
@@ -42,6 +43,13 @@ const config: HardhatUserConfig = {
       chainId: 97,
       accounts: [
         'ea5fbf909b888a1e810ef6ca42f06cb7eabc9a04095ec7e11fdeed7bb968ab07',
+      ],
+    },
+    scroll_testnet: {
+      url:'https://scroll-sepolia.drpc.org',
+      chainId:534351,
+      accounts: [
+        'a0b8d309dd0afc95c94fc319f2de434f845a747d662c71ccbc08655c29299519',
       ],
     },
   },
