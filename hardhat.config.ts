@@ -17,6 +17,7 @@ const config: HardhatUserConfig = {
       bevm_testnet: "",
       avalanche_testnet: "",
       arbitrum_testnet: "",
+      movement_testnet:""
 
     },
     customChains: [
@@ -27,6 +28,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "movement_testnet",
+        chainId: 30732,
+
+        urls: {
+          browserURL: "https://testnet.movementlabs.xyz/",
+          apiURL: "https://testnet.movementlabs.xyz/api",
         },
       },
       {
@@ -124,6 +134,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    movement_testnet: {
+      url: "https://mevm.devnet.imola.movementlabs.xyz/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bevm_testnet: {
