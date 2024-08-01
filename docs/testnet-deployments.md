@@ -11,6 +11,7 @@
 - [Bitlayer Testnet](#Bitlayer-testnet)
 - [BEVM Testnet](#BEVM-testnet)
 - [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
+- [Movement Lab Testnet ](#Movement-lab-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -278,6 +279,31 @@
 | IncentiveVoting    | 0x1B26F74ab3601FB0334Db159D95288Ca7cea6b65 |
 | BabelToken         | 0x7Fb37B359969bd3DEBa8e4ABE06e5293f08a7Fd8 |
 | BabelVault         | 0x264Ad6D9338cfDc8cf2B055692535ca071b7fD61 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+## Movement Lab Testnet 
+
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x0C5eFB8ec77E3464AB85C0564371Ec1E067F8546 |
+| PriceFeed          | 0x522255a7691B0FE5af6294B0745dFA513eBc39f3 |
+| FeeReceiver        | 0x68089f91cB17dF1E6F0E6F034742250ecDeAF211 |
+| InterimAdmin       | 0x90865ce4ceAEaE7cB97600B9D96353851A7645B6 |
+| Gas Pool           | 0x4fF0CA9eA032b360C50cD2ab1f8A811f6446c746 |
+| Factory            | 0x3beD0a0A02c1ee681f774FA3Cf94a7C4A0814b82 |
+| LiquidationManager | 0x408af8254927807CA559Fd1e4EE8045697F44e47 |
+| DebtToken          | 0x9080f973Db963b00678e8Ef253250Ede92773b94 |
+| BorrowerOperations | 0x04Ed49100eDE7B5F2D4C77465e2Ad02903f1fab8 |
+| StabilityPool      | 0x4b1c44d4f3e19e3a9F57bEb640B110Fe8B1C8124 |
+| TroveManager       | 0xA7F50556Cf79784e5E194Cffcb1d294359f1cf3d |
+| SortedTroves       | 0x26DE099ea754bb0F65aa69413042be6F7fBB1Aa7 |
+| TokenLocker        | 0x7805Fb36fdA0852caEca541bFcbDA5A35Fb23458 |
+| IncentiveVoting    | 0x3a5b283780AACe06f4e099bBcAc9021F483F9BDd |
+| BabelToken         | 0x0Db7253431be739BDF24BFe528ED0aA2A8668A6B |
+| BabelVault         | 0x64f55f4c6957E88C7453Eb172dC6dB503D71B97d |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
