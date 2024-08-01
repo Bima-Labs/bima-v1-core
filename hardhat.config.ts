@@ -16,6 +16,8 @@ const config: HardhatUserConfig = {
       linea_sepolia_testnet: "",
       bevm_testnet: "",
       avalanche_testnet: "",
+      arbitrum_testnet: "",
+
     },
     customChains: [
       {
@@ -64,6 +66,15 @@ const config: HardhatUserConfig = {
         },
       },
       {
+        network: "arbitrum_testnet",
+        chainId: 421614,
+
+        urls: {
+          browserURL: "https://sepolia.arbiscan.io/",
+          apiURL: "https://api-sepolia.arbiscan.io/api",
+        },
+      },
+      {
         network: "avalanche_testnet",
         chainId: 43113,
 
@@ -72,6 +83,42 @@ const config: HardhatUserConfig = {
           apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
         },
       },
+      {
+      network: "bob_testnet",
+      chainId: 111,
+
+      urls: {
+        browserURL: "https://testnet.rpc.gobob.xyz/",
+        apiURL: "https://testnet.rpc.gobob.xyz/",
+      },
+    },
+    {
+      network: "core_testnet",
+      chainId: 1115,
+
+      urls: {
+        browserURL: "https://rpc.test.btcs.network",
+        apiURL: "https://rpc.test.btcs.network",
+      },
+    },
+    {
+      network: "holesky_testnet",
+      chainId: 17000,
+
+      urls: {
+        browserURL: "https://holesky-eth.w3node.com/f1ef94bb8175b1a8f2357a29663a3b8a5b43906d28879e114b8c225a47811c14/api",
+        apiURL: "https://holesky-eth.w3node.com/f1ef94bb8175b1a8f2357a29663a3b8a5b43906d28879e114b8c225a47811c14/api",
+      }
+    },
+    {
+      network: "bitlayer_testnet",
+      chainId: 200810,
+
+      urls: {
+        browserURL: "https://testnet-rpc.bitlayer.org",
+        apiURL: "https://testnet-rpc.bitlayer.org",
+      },
+    },
     ],
   },
   networks: {
@@ -99,9 +146,29 @@ const config: HardhatUserConfig = {
       url: "https://rpc.devnet.citrea.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+    arbitrum_testnet: {
+      url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
     avalanche_testnet: {
       url: "https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    bob_testnet :{
+      url: "https://testnet.rpc.gobob.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []  
+    },
+    holesky_testnet: {
+      url: "https://holesky-eth.w3node.com/f1ef94bb8175b1a8f2357a29663a3b8a5b43906d28879e114b8c225a47811c14/api",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    bitlayer_testnet: {
+      url: "https://testnet-rpc.bitlayer.org",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    core_testnet: {
+      url: "https://rpc.test.btcs.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     },
   },
   solidity: {
