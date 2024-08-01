@@ -1,5 +1,3 @@
-/** @format */
-
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@typechain/hardhat';
@@ -12,9 +10,9 @@ const config: HardhatUserConfig = {
 
   etherscan: {
     apiKey: {
-      lorenzo_testnet: "abc",
-      citrea_devnet:"def",
-      bevm_testnet:"jkl",
+      lorenzo_testnet: 'abc',
+      citrea_devnet: 'def',
+      bevm_testnet: 'jkl',
     },
     customChains: [
       {
@@ -36,14 +34,13 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "citrea_devnet",
+        network: 'citrea_devnet',
         chainId: 62298,
 
         urls: {
-          browserURL: "https://explorer.devnet.citrea.xyz/",
-          apiURL: "https://explorer.devnet.citrea.xyz/api/",
+          browserURL: 'https://explorer.devnet.citrea.xyz/',
+          apiURL: 'https://explorer.devnet.citrea.xyz/api/',
         },
-
       },
     ],
   },
@@ -63,7 +60,7 @@ const config: HardhatUserConfig = {
       ],
     },
     citrea_devnet: {
-      url: "https://rpc.devnet.citrea.xyz",
+      url: 'https://rpc.devnet.citrea.xyz',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
