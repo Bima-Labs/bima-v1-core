@@ -3,17 +3,16 @@
 - [Arbitrum Sepolia Testnet](#Arbitrum-sepolia-testnet)
 - [Bob Testnet](#Bob-testnet)
 - [Linea Testnet](#Linea-testnet)
-- [Base Chain Testnet](#Base-chain-testnet)
+- [Basechain Testnet](#Basechain-testnet)
 - [Polygon Amoy Testnet](#Polygon-amoy-testnet)
 - [Holesky Testnet](#Holesky-testnet)
 - [Citrea Testnet](#Citrea-testnet)
 - [Lorenzo Testnet](#Lorenzo-testnet)
 - [Bitlayer Testnet](#Bitlayer-testnet)
 - [BEVM Testnet](#BEVM-testnet)
-- [Fuji Testnet](#Avalanche-fuji-testnet)
+- [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
 
-
-## Arbitrum-sepolia-testnet
+## Arbitrum Sepolia Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -38,7 +37,7 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-## Bob-testnet
+## Bob Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -64,7 +63,7 @@
 | tBTC            | 0xF87766ab34F863503D36394B624a436f436DAf87 | 0x5B8501da467A913485822D56632665B3af5228d7 | 0x3991aBC8D4D5Eb48DE4f7d0B36Fb446b73F320E8 |
 | wBTC            | 0x2868d708e442A6a940670d26100036d426F1e16b | 0x3ED469E7e2F4F05878f9A7295c97d1ad3dE4c752 | 0x3991aBC8D4D5Eb48DE4f7d0B36Fb446b73F320E8 |
 
-## Linea-testnet
+## Linea Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -89,8 +88,7 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-
-## Base-chain-testnet
+## Basechain Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -115,9 +113,7 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-
-
-## Polygon-amoy-testnet
+## Polygon Amoy Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -142,9 +138,7 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-
-
-## Holesky-testnet
+## Holesky Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -165,13 +159,11 @@
 | BabelToken         | 0xedf6143DEb57afc90779c39ed8930a1a17aB17Ef |
 | BabelVault         | 0x2C80b4985924803Df71ff81D2159cEF516052669 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
-| --------------- | ------------------ | -------------------- | -------------- |
-| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xDD9AEa4613dee5329033d2F53d146E2fe57A8d0D |0x822265703c1c75da4Ebfc2264036c6137a18C5E1|
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xDD9AEa4613dee5329033d2F53d146E2fe57A8d0D | 0x822265703c1c75da4Ebfc2264036c6137a18C5E1 |
 
-
-
-## Citrea-testnet
+## Citrea Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -192,9 +184,7 @@
 | BabelToken         | 0xf0Da0a25fF7284915f50418Dd0a0d235B82E535c |
 | BabelVault         | 0xb66cE6ca63a4CC098142759BA16037a2be2431fa |
 
-
-
-## Lorenzo-testnet
+## Lorenzo Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -215,16 +205,11 @@
 | BabelToken         | 0x22ad4179B37E48DF838CdD5614863b86200a61b8 |
 | BabelVault         | 0xc2BC9DB5565a31ac98bbBE635E7536Abd0b13Bc1 |
 
-
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
-| --------------- | ------------------ | -------------------- | -------------- |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | stBTC (mocked)  | 0x5a55f4CfFe1747F45c6c567c4c326AF2B1F86dD7 | 0xf5a7a80Bfcd4045aD1D405141DF96633F62FaFaF | 0xB4C55c9dE4A7Dde9D259280DB0af16333E0700Ba |
 
-
-
-
-
-## Bitlayer-testnet
+## Bitlayer Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -244,11 +229,10 @@
 | IncentiveVoting    | 0x9B241c362d41484C16B733352c7C795cC25f150d |
 | BabelToken         | 0xbFEa106Aa5a0D23872ec16D0B24947539480C558 |
 
-
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
-| --------------- | ------------------ | -------------------- | -------------- |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | stBTC (mocked)  | 0x207eC3288AC9422f22905Db4861B1F4f5ebEB278 | 0xEC29712045972E64CFE9be26C192A535E14881Da | 0x7d8F7d705AbBE5a12C26a51C4c69321B08ECFd9B |
-| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xb3Ead2D9Baf95a4499C89dDA4a34a38a3f6B57CB | 0x7d8F7d705AbBE5a12C26a
+| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xb3Ead2D9Baf95a4499C89dDA4a34a38a3f6B57CB | 0x7d8F7d705AbBE5a12C26a                    |
 
 ## BEVM Testnet
 
@@ -274,9 +258,7 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-
-
-## Avalanche-fuji-testnet
+## Avalanche Fuji Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -297,9 +279,6 @@
 | BabelToken         | 0x7Fb37B359969bd3DEBa8e4ABE06e5293f08a7Fd8 |
 | BabelVault         | 0x264Ad6D9338cfDc8cf2B055692535ca071b7fD61 |
 
-
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-
-
