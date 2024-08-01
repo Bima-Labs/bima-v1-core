@@ -1,15 +1,12 @@
-# Deployed Addresses
-
-## Testnet
+# Testnet Smart Contract Addresses
 
 - [Arbitrum Sepolia Testnet](#arbitrum-sepolia-testnet)
 - [Arbitrum Sepolia Testnett](#arbitrum-sepolia-testnett)
 - [Arbitrum Sepolia Testnettt](#arbitrum-sepolia-testnettt)
 
-##### Arbitrum Sepolia Testnet
+## Arbitrum Sepolia Testnet
 
-Core Contracts:
-| Contract | Address |
+| Core Contracts | Address |
 | ------ | ------ |
 | BabelCore | 0x42eb8dd89fa0544E15D2546fbD0B8E5104B35Ce2 |
 | PriceFeed | 0xA818442C2BA1B9Be574a615E305b2Bd533c3a5D2 |
@@ -28,14 +25,12 @@ Core Contracts:
 | BabelToken | 0x7260Fe5F99Cfd8a59D8194BbB1Fc6e06f0188d15 |
 | BabelVault | 0xD67b2CDE8411815fAb757DcC1C50f29D26595bB0 |
 
-Trove Managers:
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | ------ | ------ | ------ | ------ |
 | - | - | - | - |
 
-##### Arbitrum Sepolia Testnett
+## Arbitrum Sepolia Testnett
 
-Core Contracts:
 | Contract | Address |
 | ------ | ------ |
 | BabelCore | 0x42eb8dd89fa0544E15D2546fbD0B8E5104B35Ce2 |
@@ -55,14 +50,12 @@ Core Contracts:
 | BabelToken | 0x7260Fe5F99Cfd8a59D8194BbB1Fc6e06f0188d15 |
 | BabelVault | 0xD67b2CDE8411815fAb757DcC1C50f29D26595bB0 |
 
-Trove Managers:
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | ------ | ------ | ------ | ------ |
 | - | - | - | - |
 
-##### Arbitrum Sepolia Testnettt
+## Arbitrum Sepolia Testnettt
 
-Core Contracts:
 | Contract | Address |
 | ------ | ------ |
 | BabelCore | 0x42eb8dd89fa0544E15D2546fbD0B8E5104B35Ce2 |
@@ -82,7 +75,7 @@ Core Contracts:
 | BabelToken | 0x7260Fe5F99Cfd8a59D8194BbB1Fc6e06f0188d15 |
 | BabelVault | 0xD67b2CDE8411815fAb757DcC1C50f29D26595bB0 |
 
-Trove Managers:
+Vaults:
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | ------ | ------ | ------ | ------ |
 | - | - | - | - |
