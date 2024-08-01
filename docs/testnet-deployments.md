@@ -3,7 +3,7 @@
 - [Arbitrum Sepolia Testnet](#Arbitrum-sepolia-testnet)
 - [Bob Testnet](#Bob-testnet)
 - [Linea Testnet](#Linea-testnet)
-- [Basechain Testnet](#Basechain-testnet)
+- [Base Sepolia Testnet](#Base-sepolia-testnet)
 - [Polygon Amoy Testnet](#Polygon-amoy-testnet)
 - [Holesky Testnet](#Holesky-testnet)
 - [Citrea Testnet](#Citrea-testnet)
@@ -89,7 +89,7 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-## Basechain Testnet
+## Base Sepolia Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -229,11 +229,12 @@
 | TokenLocker        | 0x1f2517C75A13cb9D4Be04ab72d6039aDBF6D8ec7 |
 | IncentiveVoting    | 0x9B241c362d41484C16B733352c7C795cC25f150d |
 | BabelToken         | 0xbFEa106Aa5a0D23872ec16D0B24947539480C558 |
+| BabelVault         | 0x32CC43E221539390bFF539c5093BDB2d8E59096D |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | stBTC (mocked)  | 0x207eC3288AC9422f22905Db4861B1F4f5ebEB278 | 0xEC29712045972E64CFE9be26C192A535E14881Da | 0x7d8F7d705AbBE5a12C26a51C4c69321B08ECFd9B |
-| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xb3Ead2D9Baf95a4499C89dDA4a34a38a3f6B57CB | 0x7d8F7d705AbBE5a12C26a                    |
+| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xb3Ead2D9Baf95a4499C89dDA4a34a38a3f6B57CB | 0x7d8F7d705AbBE5a12C26a51C4c69321B08ECFd9B |
 
 ## BEVM Testnet
 
@@ -254,6 +255,7 @@
 | TokenLocker        | 0x875c318be15abAF16AB95C2a4e69DC3fD63096f6 |
 | IncentiveVoting    | 0x3eCD430cBEd4fb9624B26881BF03eac6590e1eB3 |
 | BabelToken         | 0x16CDd5969328B405Cc2b9899dAe95985e02AfaAf |
+| BabelVault         | 0x34fE8736E88FeB30D78c08C909D7937f66C705EE |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
