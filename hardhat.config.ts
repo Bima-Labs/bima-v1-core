@@ -6,51 +6,169 @@ import '@nomicfoundation/hardhat-chai-matchers';
 import 'dotenv/config';
 
 const config: HardhatUserConfig = {
-  // defaultNetwork: 'gate_testnet',
+  // ? defaultNetwork: "polygon_amoy",
 
   etherscan: {
     apiKey: {
-      // lorenzo_testnet: "abc",
+      lorenzo_testnet: "",
+      citrea_devnet: "",
+      base_sepolia_testnet: "",
+      linea_sepolia_testnet: "",
+      bevm_testnet: "",
+      avalanche_testnet: "",
+      arbitrum_testnet: "",
 
-      // gate_testnet:"9063a1a8a3ee226fa440779bc6f7015a",
-      // bscTestnet:`CC7GINMBKSKVQZTXC9GD7M852K65CPEVRF`,
-      // polygon_amoy: `WIXGNHX39425CPDKS5TFBDJBKMGTDWR7QI,`,
-      // scroll_testnet: `a544040d-864b-4968-8829-12e160e66fb8`
     },
+    customChains: [
+      {
+        network: "lorenzo_testnet",
+        chainId: 83291,
+
+        urls: {
+          browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
+          apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "bevm_testnet",
+        chainId: 11503,
+
+        urls: {
+          browserURL: "https://scan-testnet.bevm.io/",
+          apiURL: "https://scan-testnet-api.bevm.io/api/v2/",
+        },
+      },
+      {
+        network: "linea_sepolia_testnet",
+        chainId: 59141,
+
+        urls: {
+          browserURL: "https://sepolia.lineascan.build/",
+          apiURL: "https://api-sepolia.lineascan.build/api",
+        },
+      },
+      {
+        network: "base_sepolia_testnet",
+        chainId: 84532,
+
+        urls: {
+          browserURL: "https://sepolia.basescan.org/",
+          apiURL: "https://api-sepolia.basescan.org/api",
+        },
+      },
+      {
+        network: "citrea_devnet",
+        chainId: 62298,
+
+        urls: {
+          browserURL: "https://explorer.devnet.citrea.xyz/",
+          apiURL: "https://explorer.devnet.citrea.xyz/api/",
+        },
+      },
+      {
+        network: "arbitrum_testnet",
+        chainId: 421614,
+
+        urls: {
+          browserURL: "https://sepolia.arbiscan.io/",
+          apiURL: "https://api-sepolia.arbiscan.io/api",
+        },
+      },
+      {
+        network: "avalanche_testnet",
+        chainId: 43113,
+
+        urls: {
+          browserURL: "https://43113.testnet.snowtrace.io/",
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
+        },
+      },
+      {
+      network: "bob_testnet",
+      chainId: 111,
+
+      urls: {
+        browserURL: "https://testnet.rpc.gobob.xyz/",
+        apiURL: "https://testnet.rpc.gobob.xyz/",
+      },
+    },
+    {
+      network: "core_testnet",
+      chainId: 1115,
+
+      urls: {
+        browserURL: "https://rpc.test.btcs.network",
+        apiURL: "https://rpc.test.btcs.network",
+      },
+    },
+    {
+      network: "holesky_testnet",
+      chainId: 17000,
+
+      urls: {
+        browserURL: "https://holesky-eth.w3node.com/f1ef94bb8175b1a8f2357a29663a3b8a5b43906d28879e114b8c225a47811c14/api",
+        apiURL: "https://holesky-eth.w3node.com/f1ef94bb8175b1a8f2357a29663a3b8a5b43906d28879e114b8c225a47811c14/api",
+      }
+    },
+    {
+      network: "bitlayer_testnet",
+      chainId: 200810,
+
+      urls: {
+        browserURL: "https://testnet-rpc.bitlayer.org",
+        apiURL: "https://testnet-rpc.bitlayer.org",
+      },
+    },
+    ],
   },
   networks: {
     lorenzo_testnet: {
       url: 'https://rpc-testnet.lorenzo-protocol.xyz',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+    bevm_testnet: {
+      url: "https://testnet.bevm.io",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    linea_sepolia_testnet: {
+      url: "https://linea-sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    base_sepolia_testnet: {
+      url: "https://sepolia.base.org",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
     polygon_amoy: {
-      url: 'https://rpc-amoy.polygon.technology',
-      chainId: 80002,
-      accounts: [
-        'a0b8d309dd0afc95c94fc319f2de434f845a747d662c71ccbc08655c29299519',
-      ],
-      gasPrice: 25000000000, // 25 gwei in wei
+      url: "https://rpc-amoy.polygon.technology",
+      accounts: ["7c5b27c4f043051e405d03469e3f9dfe5b65df74376dcaf70db003d63a976efc"],
     },
-    gate_testnet: {
-      url: 'https://meteora-evm.gatenode.cc',
-      chainId: 85,
-      accounts: [
-        'ea5fbf909b888a1e810ef6ca42f06cb7eabc9a04095ec7e11fdeed7bb968ab07',
-      ],
+    citrea_devnet: {
+      url: "https://rpc.devnet.citrea.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    bsc_testnet: {
-      url: 'https://data-seed-prebsc-2-s3.binance.org:8545/',
-      chainId: 97,
-      accounts: [
-        'ea5fbf909b888a1e810ef6ca42f06cb7eabc9a04095ec7e11fdeed7bb968ab07',
-      ],
+    arbitrum_testnet: {
+      url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    scroll_testnet: {
-      url:'https://scroll-sepolia.drpc.org',
-      chainId:534351,
-      accounts: [
-        'a0b8d309dd0afc95c94fc319f2de434f845a747d662c71ccbc08655c29299519',
-      ],
+    avalanche_testnet: {
+      url: "https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    bob_testnet :{
+      url: "https://testnet.rpc.gobob.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []  
+    },
+    holesky_testnet: {
+      url: "https://holesky-eth.w3node.com/f1ef94bb8175b1a8f2357a29663a3b8a5b43906d28879e114b8c225a47811c14/api",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    bitlayer_testnet: {
+      url: "https://testnet-rpc.bitlayer.org",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    core_testnet: {
+      url: "https://rpc.test.btcs.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     },
   },
   solidity: {

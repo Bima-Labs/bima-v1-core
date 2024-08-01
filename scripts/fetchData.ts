@@ -1,11 +1,8 @@
 import { Provider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
-import {
-  MockOracle__factory,
-  PriceFeed__factory,
-  TroveManager__factory,
-} from '../typechain-types/index';
+import { MockOracle__factory, PriceFeed__factory, TroveManager__factory } from "../typechain-types/index";
+
 
 //import  pLimit from "p-limit";
 
@@ -16,10 +13,7 @@ export const fetchGeneralData = async ({
   troveManagerAddress: string;
   provider: Provider;
 }) => {
-  const troveManagerContract = TroveManager__factory.connect(
-    troveManagerAddress,
-    provider
-  );
+  const troveManagerContract = TroveManager__factory.connect(troveManagerAddress, provider);
 
   try {
     const [

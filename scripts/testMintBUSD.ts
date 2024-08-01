@@ -8,19 +8,11 @@ const ZERO_ADDRESS = ethers.ZeroAddress;
 async function main() {
   const [owner, user0, user1] = await ethers.getSigners();
 
-  const stBTC = await ethers.getContractAt(
-    'StakedBTC',
-    '0x103337452FfA3bA9Ca82df11e0A545AA1a577714'
-  );
+  const stBTC = await ethers.getContractAt("StakedBTC", "0x103337452FfA3bA9Ca82df11e0A545AA1a577714");
 
-  await stBTC.transfer(user1.address, ethers.parseEther('2'));
+  await stBTC.transfer(user1.address, ethers.parseEther("2"));
 
-  await stBTC
-    .connect(user1)
-    .approve(
-      '0x2b1AFd6390034b02EDF826714fCbE96af0911852',
-      ethers.parseEther('1000000')
-    );
+  await stBTC.connect(user1).approve("0x2b1AFd6390034b02EDF826714fCbE96af0911852", ethers.parseEther("1000000"));
 
   await mintBUSD({
     borrowerOperationsAddress: '0x2b1AFd6390034b02EDF826714fCbE96af0911852',
@@ -30,8 +22,8 @@ async function main() {
     amountstBTC: ethers.parseEther('1'),
     percentage: 200n,
     provider: user1.provider,
-    oracleAddress: '0x6398131143791451aDfC74850379abbED284455e', // Mock Aggregator address
-    collateralAddress: '0x103337452FfA3bA9Ca82df11e0A545AA1a577714', //Stake BTC address
+    oracleAddress: "0x6398131143791451aDfC74850379abbED284455e", // Mock Aggregator address
+    collateralAddress: "0x103337452FfA3bA9Ca82df11e0A545AA1a577714", //Stake BTC address
   });
 }
 

@@ -32,15 +32,9 @@ export const mintBUSD = async ({
   collateralAddress: string;
 }) => {
   //const signerAddress = await signer.getAddress();
-  const borrowerOperationsContract = BorrowerOperations__factory.connect(
-    borrowerOperationsAddress,
-    signer
-  );
+  const borrowerOperationsContract = BorrowerOperations__factory.connect(borrowerOperationsAddress, signer);
 
-  const troveManagerContract = await TroveManager__factory.connect(
-    troveManagerAddress,
-    signer
-  );
+  const troveManagerContract = await TroveManager__factory.connect(troveManagerAddress, signer);
 
   /** 
   const factoryContract = await Factory__factory.connect(
@@ -86,18 +80,14 @@ export const mintBUSD = async ({
 
   console.log('stBTC Balance: ', formatEther(balanceOfUser1));
 
-  const result = await stBTC.approve(
-    borrowerOperationsAddress,
-    parseEther('50')
-  );
+
+  const result = await stBTC.approve(borrowerOperationsAddress, parseEther("50"));
 
   console.log(result);
 
-  const depositedAmount =
-    await troveManagerContract.getTroveStake(signerAddress);
+  const depositedAmount = await troveManagerContract.getTroveStake(signerAddress);
 
-  const debtAmount =
-    await troveManagerContract.getTroveCollAndDebt(signerAddress);
+  const debtAmount = await troveManagerContract.getTroveCollAndDebt(signerAddress);
 
   console.log('Debt Amount: ', formatEther(debtAmount[1]));
 

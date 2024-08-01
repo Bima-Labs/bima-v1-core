@@ -18,8 +18,8 @@ async function main() {
   );
 
   const resulty = await factory.deployNewInstance(
-    '0x103337452FfA3bA9Ca82df11e0A545AA1a577714',
-    '0xEC44704E117074722b24733Ca39EA6e032b21b3b',
+    "0x103337452FfA3bA9Ca82df11e0A545AA1a577714",
+    "0xEC44704E117074722b24733Ca39EA6e032b21b3b",
     ZERO_ADDRESS,
     ZERO_ADDRESS,
     {
@@ -34,21 +34,17 @@ async function main() {
     }
   );
 
-  console.log('Factory deployed at: ', resulty);
+  console.log("Factory deployed at: ", resulty);
+
   const troveManagerCount = await factory.troveManagerCount();
 
   console.log('Trove Manager count: ', troveManagerCount.toString());
 
-  const troveManagerAddressFromFactory = await factory.troveManagers(
-    BigInt('0')
-  );
+  const troveManagerAddressFromFactory = await factory.troveManagers(BigInt("0"));
 
   console.log('Trove Manager address: ', troveManagerAddressFromFactory);
 
-  await babelVault.registerReceiver(
-    troveManagerAddressFromFactory,
-    BigInt('2')
-  );
+  await babelVault.registerReceiver(troveManagerAddressFromFactory, BigInt("2"));
 
   console.log('stBTC Trove Manager address: ', troveManagerAddressFromFactory);
 }
