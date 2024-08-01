@@ -1,4 +1,4 @@
-//Scroll Testnet Sepolia
+//Scroll Testnet 
 MockAggregator deployed!:  0xc500905fA9f7f48bCA247696949796c9EeeebA42
 BabelCore deployed!:  0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc
 PriceFeed deployed!:  0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476
