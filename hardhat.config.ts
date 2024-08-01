@@ -6,12 +6,12 @@ import '@nomicfoundation/hardhat-chai-matchers';
 import 'dotenv/config';
 
 const config: HardhatUserConfig = {
-  // defaultNetwork: 'scroll_testnet',
+  // defaultNetwork: 'polygon_testnet',
 
   etherscan: {
     apiKey: {
       // lorenzo_testnet: "abc",
-      scroll_testnet: `a544040d-864b-4968-8829-12e160e66fb8`
+      polygon_testnet: `WIXGNHX39425CPDKS5TFBDJBKMGTDWR7QI,`
     },
   },
   networks: {
@@ -19,12 +19,13 @@ const config: HardhatUserConfig = {
       url: 'https://rpc-testnet.lorenzo-protocol.xyz',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    scroll_testnet: {
-      url:'https://scroll-sepolia.drpc.org',
-      chainId:534351,
+    polygon_testnet: {
+      url: 'https://rpc-amoy.polygon.technology',
+      chainId: 80002,
       accounts: [
         'a0b8d309dd0afc95c94fc319f2de434f845a747d662c71ccbc08655c29299519',
       ],
+      gasPrice: 25000000000, // 25 gwei in wei
     },
   },
   solidity: {
