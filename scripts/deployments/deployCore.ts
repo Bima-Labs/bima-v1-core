@@ -11,10 +11,9 @@ async function deployCore() {
 
   // await deployContract(factories.MockStakedBTC, "StakedBTC");
 
-  const [, mockAaggregatorAddress] = await deployContract(
-    factories.MockAggregator,
-    'MockAggregator'
-  );
+
+  const [, mockAaggregatorAddress] = await deployContract(factories.MockAggregator, "MockAggregator");
+
 
   let deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
@@ -38,25 +37,18 @@ async function deployCore() {
     owner.address
   );
 
-  await deployContract(
-    factories.PriceFeed,
-    'PriceFeed',
-    babelCoreAddress,
-    mockAaggregatorAddress
-  );
+
+  await deployContract(factories.PriceFeed, "PriceFeed", babelCoreAddress, mockAaggregatorAddress);
+
 
   await deployContract(factories.FeeReceiver, 'FeeReceiver', babelCoreAddress);
 
-  const [, interimAdminAddress] = await deployContract(
-    factories.InterimAdmin,
-    'InterimAdmin',
-    babelCoreAddress
-  );
+
+  const [, interimAdminAddress] = await deployContract(factories.InterimAdmin, "InterimAdmin", babelCoreAddress);
+
 
   {
-    const tx = await (babelCore as BabelCore).commitTransferOwnership(
-      interimAdminAddress
-    );
+    const tx = await (babelCore as BabelCore).commitTransferOwnership(interimAdminAddress);
     await tx.wait();
     console.log('-- tx: Ownership transferred to interimAdmin!');
   }
