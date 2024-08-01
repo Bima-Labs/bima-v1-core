@@ -14,6 +14,7 @@ const config: HardhatUserConfig = {
       citrea_devnet: "def",
       base_sepolia_testnet: "ghi",
       linea_sepolia_testnet: "jkl",
+      bevm_testnet: "mno",
     },
     customChains: [
       {
@@ -23,6 +24,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "bevm_testnet",
+        chainId: 11503,
+
+        urls: {
+          browserURL: "https://scan-testnet.bevm.io/",
+          apiURL: "https://scan-testnet-api.bevm.io/api/v2/",
         },
       },
       {
@@ -57,6 +67,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    bevm_testnet: {
+      url: "https://testnet.bevm.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     linea_sepolia_testnet: {
