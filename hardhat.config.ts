@@ -6,7 +6,7 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "dotenv/config";
 
 const config: HardhatUserConfig = {
-  // defaultNetwork: "polygon_amoy",
+  // ? defaultNetwork: "polygon_amoy",
 
   etherscan: {
     apiKey: {
