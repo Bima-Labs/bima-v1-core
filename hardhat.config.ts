@@ -12,7 +12,8 @@ const config: HardhatUserConfig = {
     apiKey: {
       lorenzo_testnet: "abc",
       citrea_devnet:"def",
-      base_sepolia_testnet:"ghi"
+      base_sepolia_testnet:"ghi",
+      linea_sepolia_testnet:"jkl"
     },
     customChains: [
       {
@@ -22,6 +23,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "linea_sepolia_testnet",
+        chainId: 59141,
+
+        urls: {
+          browserURL: "https://sepolia.lineascan.build/",
+          apiURL: "https://api-sepolia.lineascan.build/api",
         },
       },
       {
@@ -48,6 +58,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    linea_sepolia_testnet: {
+      url: "https://linea-sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     base_sepolia_testnet: {
