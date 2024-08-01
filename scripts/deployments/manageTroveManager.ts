@@ -1,11 +1,11 @@
-import { BigNumberish, copyRequest, parseUnits } from "ethers";
-import { ethers } from "hardhat";
-import { BabelBase, TroveManager } from "../../typechain-types";
+import { BigNumberish, copyRequest, parseUnits } from 'ethers';
+import { ethers } from 'hardhat';
+import { BabelBase, TroveManager } from '../../typechain-types';
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
-const TROVEMANAGER_ADDRESS = "0x34fe901e61C87B1B221560BE45F4AB53303Dcc0e";
-const BORROWEROPERATIONS_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
+const TROVEMANAGER_ADDRESS = '0x34fe901e61C87B1B221560BE45F4AB53303Dcc0e';
+const BORROWEROPERATIONS_ADDRESS = '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e';
 
 async function main() {
   const [owner] = await ethers.getSigners();
@@ -18,25 +18,23 @@ async function main() {
     priceFeed,
   } = await getContracts();
 
-  console.log("TroveManager DT: ", await troveManager.debtToken());
+  console.log('TroveManager DT: ', await troveManager.debtToken());
 
-  console.log("LETS START");
+  console.log('LETS START');
 
   const oracleAddress = (
     await priceFeed.oracleRecords(await collateralToken.getAddress())
   ).chainLinkOracle;
   const chainlinkOracle = await ethers.getContractAt(
-    "IAggregatorV3Interface",
+    'IAggregatorV3Interface',
     oracleAddress
   );
 
   console.log(
     await calculateDebtAmount(
-      parseUnits("2", 18), // 2stBTC = 120'000$
-      parseUnits("2", 18), // 200%
-      (
-        await chainlinkOracle.latestRoundData()
-      )[1], // 60'000
+      parseUnits('2', 18), // 2stBTC = 120'000$
+      parseUnits('2', 18), // 200%
+      (await chainlinkOracle.latestRoundData())[1], // 60'000
       troveManager
     )
   );
@@ -123,24 +121,24 @@ main()
 
 const getContracts = async () => {
   const troveManager = await ethers.getContractAt(
-    "TroveManager",
+    'TroveManager',
     TROVEMANAGER_ADDRESS
   );
   const borrowerOperations = await ethers.getContractAt(
-    "BorrowerOperations",
+    'BorrowerOperations',
     BORROWEROPERATIONS_ADDRESS
   );
   const debtToken = await ethers.getContractAt(
-    "DebtToken",
+    'DebtToken',
     await troveManager.debtToken()
   );
   const collateralTokenAddress = await troveManager.collateralToken();
   const collateralToken = await ethers.getContractAt(
-    "StakedBTC",
+    'StakedBTC',
     collateralTokenAddress
   );
   const priceFeed = await ethers.getContractAt(
-    "PriceFeed",
+    'PriceFeed',
     await troveManager.priceFeed()
   );
   return {
