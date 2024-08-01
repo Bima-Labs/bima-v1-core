@@ -1,40 +1,31 @@
-import { BigNumberish, copyRequest, parseUnits } from 'ethers';
-import { ethers } from 'hardhat';
-import { BabelBase, TroveManager } from '../../typechain-types';
+import { BigNumberish, copyRequest, parseUnits } from "ethers";
+import { ethers } from "hardhat";
+import { BabelBase, TroveManager } from "../../typechain-types";
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
-const TROVEMANAGER_ADDRESS = '0x34fe901e61C87B1B221560BE45F4AB53303Dcc0e';
-const BORROWEROPERATIONS_ADDRESS = '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e';
+const TROVEMANAGER_ADDRESS = "0x34fe901e61C87B1B221560BE45F4AB53303Dcc0e";
+const BORROWEROPERATIONS_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
 
 async function main() {
   const [owner] = await ethers.getSigners();
 
-  const {
-    troveManager,
-    borrowerOperations,
-    debtToken,
-    collateralToken,
-    priceFeed,
-  } = await getContracts();
+  const { troveManager, borrowerOperations, debtToken, collateralToken, priceFeed } = await getContracts();
 
-  console.log('TroveManager DT: ', await troveManager.debtToken());
+  console.log("TroveManager DT: ", await troveManager.debtToken());
 
-  console.log('LETS START');
+  console.log("LETS START");
 
-  const oracleAddress = (
-    await priceFeed.oracleRecords(await collateralToken.getAddress())
-  ).chainLinkOracle;
-  const chainlinkOracle = await ethers.getContractAt(
-    'IAggregatorV3Interface',
-    oracleAddress
-  );
+  const oracleAddress = (await priceFeed.oracleRecords(await collateralToken.getAddress())).chainLinkOracle;
+  const chainlinkOracle = await ethers.getContractAt("IAggregatorV3Interface", oracleAddress);
 
   console.log(
     await calculateDebtAmount(
-      parseUnits('2', 18), // 2stBTC = 120'000$
-      parseUnits('2', 18), // 200%
-      (await chainlinkOracle.latestRoundData())[1], // 60'000
+      parseUnits("2", 18), // 2stBTC = 120'000$
+      parseUnits("2", 18), // 200%
+      (
+        await chainlinkOracle.latestRoundData()
+      )[1], // 60'000
       troveManager
     )
   );
@@ -120,27 +111,12 @@ main()
   });
 
 const getContracts = async () => {
-  const troveManager = await ethers.getContractAt(
-    'TroveManager',
-    TROVEMANAGER_ADDRESS
-  );
-  const borrowerOperations = await ethers.getContractAt(
-    'BorrowerOperations',
-    BORROWEROPERATIONS_ADDRESS
-  );
-  const debtToken = await ethers.getContractAt(
-    'DebtToken',
-    await troveManager.debtToken()
-  );
+  const troveManager = await ethers.getContractAt("TroveManager", TROVEMANAGER_ADDRESS);
+  const borrowerOperations = await ethers.getContractAt("BorrowerOperations", BORROWEROPERATIONS_ADDRESS);
+  const debtToken = await ethers.getContractAt("DebtToken", await troveManager.debtToken());
   const collateralTokenAddress = await troveManager.collateralToken();
-  const collateralToken = await ethers.getContractAt(
-    'StakedBTC',
-    collateralTokenAddress
-  );
-  const priceFeed = await ethers.getContractAt(
-    'PriceFeed',
-    await troveManager.priceFeed()
-  );
+  const collateralToken = await ethers.getContractAt("StakedBTC", collateralTokenAddress);
+  const priceFeed = await ethers.getContractAt("PriceFeed", await troveManager.priceFeed());
   return {
     troveManager,
     borrowerOperations,
@@ -156,27 +132,17 @@ const calculateDebtAmount = async (
   price: BigNumberish,
   troveManager: TroveManager
 ) => {
-  const collateralAmountFormatted = Number(
-    ethers.formatUnits(collateralAmount, 18)
-  );
+  const collateralAmountFormatted = Number(ethers.formatUnits(collateralAmount, 18));
   const collateralPriceFormatted = Number(ethers.formatUnits(price, 8));
-  const collateralRatioFormatted = Number(
-    ethers.formatUnits(collateralRatio, 18)
-  );
-  const debtGasCompensationFormatted = Number(
-    ethers.formatUnits(await troveManager.DEBT_GAS_COMPENSATION(), 18)
-  );
+  const collateralRatioFormatted = Number(ethers.formatUnits(collateralRatio, 18));
+  const debtGasCompensationFormatted = Number(ethers.formatUnits(await troveManager.DEBT_GAS_COMPENSATION(), 18));
   const borrowingRateWithDecayFormatted = Number(
     ethers.formatUnits(await troveManager.getBorrowingRateWithDecay(), 18)
   );
-  const decimalPrecisionFormatted = Number(
-    ethers.formatUnits(await troveManager.DECIMAL_PRECISION(), 18)
-  );
+  const decimalPrecisionFormatted = Number(ethers.formatUnits(await troveManager.DECIMAL_PRECISION(), 18));
 
   return (
-    (collateralAmountFormatted * collateralPriceFormatted -
-      collateralRatioFormatted * debtGasCompensationFormatted) /
-    (collateralRatioFormatted *
-      (1 + borrowingRateWithDecayFormatted / decimalPrecisionFormatted))
+    (collateralAmountFormatted * collateralPriceFormatted - collateralRatioFormatted * debtGasCompensationFormatted) /
+    (collateralRatioFormatted * (1 + borrowingRateWithDecayFormatted / decimalPrecisionFormatted))
   );
 };

@@ -1,54 +1,44 @@
-import { expect } from 'chai';
-import { ethers } from 'hardhat';
-import { fetchGeneralData } from '../scripts/fetchData';
-import { formatEther, parseEther } from 'ethers';
-import { mintBUSD } from '../scripts/mintBUSD';
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { fetchGeneralData } from "../scripts/fetchData";
+import { formatEther, parseEther } from "ethers";
+import { mintBUSD } from "../scripts/mintBUSD";
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
-describe('Ecosystem', function () {
-  describe('Deployments', function () {
-    it('Should deploy BabelCore and PriceFeed', async function () {
+describe("Ecosystem", function () {
+  describe("Deployments", function () {
+    it("Should deploy BabelCore and PriceFeed", async function () {
       const [owner, otherAccount] = await ethers.getSigners();
 
-      const ERC20Deployer = await ethers.getContractFactory('StakedBTC');
+      const ERC20Deployer = await ethers.getContractFactory("StakedBTC");
 
-      const MockAggregatorDeployer =
-        await ethers.getContractFactory('MockOracle');
-      const BabelCoreDeployer = await ethers.getContractFactory('BabelCore');
+      const MockAggregatorDeployer = await ethers.getContractFactory("MockOracle");
+      const BabelCoreDeployer = await ethers.getContractFactory("BabelCore");
 
-      const PriceFeedDeployer = await ethers.getContractFactory('PriceFeed');
-      const FeeReceiverDeployer =
-        await ethers.getContractFactory('FeeReceiver');
-      const InterimAdminDeployer =
-        await ethers.getContractFactory('InterimAdmin');
+      const PriceFeedDeployer = await ethers.getContractFactory("PriceFeed");
+      const FeeReceiverDeployer = await ethers.getContractFactory("FeeReceiver");
+      const InterimAdminDeployer = await ethers.getContractFactory("InterimAdmin");
 
-      const GasPoolDeployer = await ethers.getContractFactory('GasPool');
-      const FactoryDeployer = await ethers.getContractFactory('Factory');
+      const GasPoolDeployer = await ethers.getContractFactory("GasPool");
+      const FactoryDeployer = await ethers.getContractFactory("Factory");
 
-      const LiqudiationManagerDeployer =
-        await ethers.getContractFactory('LiquidationManager');
-      const BorrowerOperationsDeployer =
-        await ethers.getContractFactory('BorrowerOperations');
-      const DebtTokenDeployer = await ethers.getContractFactory('DebtToken');
+      const LiqudiationManagerDeployer = await ethers.getContractFactory("LiquidationManager");
+      const BorrowerOperationsDeployer = await ethers.getContractFactory("BorrowerOperations");
+      const DebtTokenDeployer = await ethers.getContractFactory("DebtToken");
 
-      const StabilityPoolDeployer =
-        await ethers.getContractFactory('StabilityPool');
-      const TroveManagerDeployer =
-        await ethers.getContractFactory('TroveManager');
+      const StabilityPoolDeployer = await ethers.getContractFactory("StabilityPool");
+      const TroveManagerDeployer = await ethers.getContractFactory("TroveManager");
 
-      const SortedTrovesDeployer =
-        await ethers.getContractFactory('SortedTroves');
+      const SortedTrovesDeployer = await ethers.getContractFactory("SortedTroves");
 
-      const TokenLockerDeployer =
-        await ethers.getContractFactory('TokenLocker');
+      const TokenLockerDeployer = await ethers.getContractFactory("TokenLocker");
 
-      const IncentiveVotingDeployer =
-        await ethers.getContractFactory('IncentiveVoting');
+      const IncentiveVotingDeployer = await ethers.getContractFactory("IncentiveVoting");
 
-      const BabelTokenDeployer = await ethers.getContractFactory('BabelToken');
+      const BabelTokenDeployer = await ethers.getContractFactory("BabelToken");
 
-      const BabelVaultDeployer = await ethers.getContractFactory('BabelVault');
+      const BabelVaultDeployer = await ethers.getContractFactory("BabelVault");
 
       const stBTC = await ERC20Deployer.deploy();
 
@@ -56,9 +46,7 @@ describe('Ecosystem', function () {
 
       const mockAaggregator = await MockAggregatorDeployer.deploy();
 
-      let deployerNonce = await ethers.provider.getTransactionCount(
-        owner.address
-      );
+      let deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
       // Disgusting hack to get the addresses of the contracts before deployment
       const babelCoreAddress = ethers.getCreateAddress({
@@ -71,39 +59,31 @@ describe('Ecosystem', function () {
         nonce: deployerNonce + 1,
       });
 
-      const babelCore = await BabelCoreDeployer.deploy(
-        owner.address,
-        owner.address,
-        priceFeedAddress,
-        owner.address
-      );
+      const babelCore = await BabelCoreDeployer.deploy(owner.address, owner.address, priceFeedAddress, owner.address);
 
-      console.log('BabelCore deployed!');
+      console.log("BabelCore deployed!");
 
-      const priceFeed = await PriceFeedDeployer.deploy(
-        babelCoreAddress,
-        await mockAaggregator.getAddress()
-      );
+      const priceFeed = await PriceFeedDeployer.deploy(babelCoreAddress, await mockAaggregator.getAddress());
 
-      console.log('PriceFeed deployed!');
+      console.log("PriceFeed deployed!");
 
       const feeReceiver = await FeeReceiverDeployer.deploy(babelCoreAddress);
 
-      console.log('FeeReceiver deployed!');
+      console.log("FeeReceiver deployed!");
 
       const interimAdmin = await InterimAdminDeployer.deploy(babelCoreAddress);
 
-      console.log('InterimAdmin deployed!');
+      console.log("InterimAdmin deployed!");
 
       await babelCore.commitTransferOwnership(await interimAdmin.getAddress());
 
-      console.log('Ownership transferred to interimAdmin!');
+      console.log("Ownership transferred to interimAdmin!");
 
       await babelCore.commitTransferOwnership(await interimAdmin.getAddress());
 
       const gasPool = await GasPoolDeployer.deploy();
 
-      console.log('Gas Pool deployed! ');
+      console.log("Gas Pool deployed! ");
 
       const gasPoolAddress = await gasPool.getAddress();
 
@@ -175,20 +155,20 @@ describe('Ecosystem', function () {
         troveManagerAddress,
         liqudiationManagerAddress
       );
-      console.log('Factory deployed!');
+      console.log("Factory deployed!");
 
       const liqudiationManager = await LiqudiationManagerDeployer.deploy(
         stabilityPoolAddress,
         borrowerOperationsAddress,
         factoryAddress,
-        BigInt('200000000000000000000') // gas compensation
+        BigInt("200000000000000000000") // gas compensation
       );
 
-      console.log('LiquidationManager deployed!');
+      console.log("LiquidationManager deployed!");
 
       const debtToken = await DebtTokenDeployer.deploy(
-        'BUSD', //mkUSD or ULTRA name
-        'BUSD', // symbol
+        "BUSD", //mkUSD or ULTRA name
+        "BUSD", // symbol
         stabilityPoolAddress,
         borrowerOperationsAddress,
         babelCoreAddress,
@@ -197,20 +177,20 @@ describe('Ecosystem', function () {
         ZERO_ADDRESS,
         factoryAddress,
         gasPoolAddress,
-        BigInt('200000000000000000000') // gas compensation
+        BigInt("200000000000000000000") // gas compensation
       );
 
-      console.log('DebtToken deployed!');
+      console.log("DebtToken deployed!");
 
       const borrowerOperations = await BorrowerOperationsDeployer.deploy(
         babelCoreAddress,
         debtTokenAddress,
         factoryAddress,
-        BigInt('1800000000000000000000'), // 1800 BUSD
-        BigInt('0')
+        BigInt("1800000000000000000000"), // 1800 BUSD
+        BigInt("0")
       );
 
-      console.log('BorrowerOperations deployed!');
+      console.log("BorrowerOperations deployed!");
 
       const stabilityPool = await StabilityPoolDeployer.deploy(
         babelCoreAddress,
@@ -220,7 +200,7 @@ describe('Ecosystem', function () {
         liqudiationManagerAddress
       );
 
-      console.log('StabilityPool deployed!');
+      console.log("StabilityPool deployed!");
 
       const troveManager = await TroveManagerDeployer.deploy(
         babelCoreAddress,
@@ -229,30 +209,30 @@ describe('Ecosystem', function () {
         borrowerOperationsAddress,
         babelVaultAddress,
         liqudiationManagerAddress,
-        BigInt('200000000000000000000')
+        BigInt("200000000000000000000")
       );
 
-      console.log('TroveManager deployed!');
+      console.log("TroveManager deployed!");
 
       const sortedTroves = await SortedTrovesDeployer.deploy();
 
-      console.log('SortedTroves deployed!');
+      console.log("SortedTroves deployed!");
 
       const tokenLocker = await TokenLockerDeployer.deploy(
         babelCoreAddress,
         babelTokenAddress,
         incentiveVotingAddress,
         owner.address, // Change this with gnosis safe for real deployment...
-        BigInt('1000000000000000000') // 1 BABEL
+        BigInt("1000000000000000000") // 1 BABEL
       );
-      console.log('TokenLocker deployed!');
+      console.log("TokenLocker deployed!");
 
       const incentiveVoting = await IncentiveVotingDeployer.deploy(
         babelCoreAddress,
         tokenLockerAddress,
         babelVaultAddress
       );
-      console.log('IncentiveVoting deployed!');
+      console.log("IncentiveVoting deployed!");
 
       const babelToken = await BabelTokenDeployer.deploy(
         babelVaultAddress,
@@ -262,7 +242,7 @@ describe('Ecosystem', function () {
         tokenLockerAddress
       );
 
-      console.log('BabelToken deployed!');
+      console.log("BabelToken deployed!");
 
       const babelVault = await BabelVaultDeployer.deploy(
         babelCoreAddress,
@@ -273,12 +253,12 @@ describe('Ecosystem', function () {
         liqudiationManagerAddress
       );
 
-      console.log('BabelVault deployed!');
+      console.log("BabelVault deployed!");
 
       await priceFeed.setOracle(
         stBTCAddress,
         await mockAaggregator.getAddress(),
-        BigInt('80000'), // seconds
+        BigInt("80000"), // seconds
         // We can add function data to convert prices if needed
         // The protocol uses this function to calculate wrapped values of tokens
         // For example if stETH is worth 1.0 ETH and wstETH is worth 0.8 ETH
@@ -287,47 +267,33 @@ describe('Ecosystem', function () {
         // wstETH is not part of Babel Finance so they use this to get specific prices of other protocols
         // It only allows bytes4 function signatures
         // For more info read https://github.com/ethers-io/ethers.js/issues/44
-        '0x00000000', // Read pure data assume stBTC is 1:1 with BTC :)
-        BigInt('18'),
+        "0x00000000", // Read pure data assume stBTC is 1:1 with BTC :)
+        BigInt("18"),
         false // Is it equivalent to ETH or default coin of the chain. On polygon if you set this to true it'll work with matic.
       );
-      console.log('PriceFeed setOracle!');
+      console.log("PriceFeed setOracle!");
 
-      await factory.deployNewInstance(
-        stBTCAddress,
-        priceFeedAddress,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        {
-          minuteDecayFactor: BigInt('999037758833783000'),
-          redemptionFeeFloor: BigInt('5000000000000000'),
-          maxRedemptionFee: BigInt('1000000000000000000'),
-          borrowingFeeFloor: BigInt('0'),
-          maxBorrowingFee: BigInt('0'),
-          interestRateInBps: BigInt('0'),
-          maxDebt: ethers.parseEther('1000000'), // 1M USD
-          MCR: ethers.parseUnits('2', 18), // 200%
-        }
-      );
+      await factory.deployNewInstance(stBTCAddress, priceFeedAddress, ZERO_ADDRESS, ZERO_ADDRESS, {
+        minuteDecayFactor: BigInt("999037758833783000"),
+        redemptionFeeFloor: BigInt("5000000000000000"),
+        maxRedemptionFee: BigInt("1000000000000000000"),
+        borrowingFeeFloor: BigInt("0"),
+        maxBorrowingFee: BigInt("0"),
+        interestRateInBps: BigInt("0"),
+        maxDebt: ethers.parseEther("1000000"), // 1M USD
+        MCR: ethers.parseUnits("2", 18), // 200%
+      });
 
-      console.log('Factory deployNewInstance!');
+      console.log("Factory deployNewInstance!");
 
       const troveManagerCount = await factory.troveManagerCount();
-      const troveManagerAddressFromFactory = await factory.troveManagers(
-        BigInt('0')
-      );
-      await babelVault.registerReceiver(
-        troveManagerAddressFromFactory,
-        BigInt('2')
-      );
+      const troveManagerAddressFromFactory = await factory.troveManagers(BigInt("0"));
+      await babelVault.registerReceiver(troveManagerAddressFromFactory, BigInt("2"));
 
-      await stBTC.approve(
-        borrowerOperationsAddress,
-        BigInt('50000000000000000000')
-      );
+      await stBTC.approve(borrowerOperationsAddress, BigInt("50000000000000000000"));
 
       await mintBUSD({
-        amountstBTC: parseEther('1'),
+        amountstBTC: parseEther("1"),
         borrowerOperationsAddress: borrowerOperationsAddress,
         signer: owner,
         signerAddress: owner.address,
@@ -339,7 +305,7 @@ describe('Ecosystem', function () {
       });
 
       await mintBUSD({
-        amountstBTC: parseEther('2'),
+        amountstBTC: parseEther("2"),
         borrowerOperationsAddress: borrowerOperationsAddress,
         signer: owner,
         signerAddress: owner.address,
@@ -351,7 +317,7 @@ describe('Ecosystem', function () {
       });
 
       await mintBUSD({
-        amountstBTC: parseEther('1'),
+        amountstBTC: parseEther("1"),
         borrowerOperationsAddress: borrowerOperationsAddress,
         signer: owner,
         signerAddress: owner.address,
@@ -373,29 +339,21 @@ describe('Ecosystem', function () {
               ZERO_ADDRESS
             );
        */
-      const troveManagerFromFactory = await ethers.getContractAt(
-        'TroveManager',
-        troveManagerAddressFromFactory
-      );
+      const troveManagerFromFactory = await ethers.getContractAt("TroveManager", troveManagerAddressFromFactory);
 
       const count = await troveManagerFromFactory.getTroveOwnersCount();
 
-      console.log('Count: ', count);
+      console.log("Count: ", count);
 
-      const troveOwner =
-        await troveManagerFromFactory.getTroveFromTroveOwnersArray(0);
+      const troveOwner = await troveManagerFromFactory.getTroveFromTroveOwnersArray(0);
 
-      console.log('Trove Owner: ', troveOwner);
+      console.log("Trove Owner: ", troveOwner);
 
-      const troveStatus = await troveManagerFromFactory.getTroveStake(
-        otherAccount.address
-      );
-      console.log('Trove status: ', formatEther(troveStatus));
-      await stBTC.transfer(otherAccount, ethers.parseEther('1'));
+      const troveStatus = await troveManagerFromFactory.getTroveStake(otherAccount.address);
+      console.log("Trove status: ", formatEther(troveStatus));
+      await stBTC.transfer(otherAccount, ethers.parseEther("1"));
 
-      await stBTC
-        .connect(otherAccount)
-        .approve(borrowerOperationsAddress, ethers.parseEther('1'));
+      await stBTC.connect(otherAccount).approve(borrowerOperationsAddress, ethers.parseEther("1"));
 
       /**
             await borrowerOperations.connect(otherAccount).openTrove(
@@ -408,12 +366,8 @@ describe('Ecosystem', function () {
               ZERO_ADDRESS
             );
        */
-      const troveStatusOtherAccount =
-        await troveManagerFromFactory.getTroveStake(otherAccount.address);
-      console.log(
-        'Trove status other account: ',
-        formatEther(troveStatusOtherAccount)
-      );
+      const troveStatusOtherAccount = await troveManagerFromFactory.getTroveStake(otherAccount.address);
+      console.log("Trove status other account: ", formatEther(troveStatusOtherAccount));
 
       const res = await fetchGeneralData({
         provider: owner.provider,
@@ -421,7 +375,7 @@ describe('Ecosystem', function () {
       });
 
       if (!res) {
-        throw new Error('Failed to fetch general data');
+        throw new Error("Failed to fetch general data");
       }
 
       const prettierRes = {
@@ -445,7 +399,7 @@ describe('Ecosystem', function () {
 
       expect(await babelCore.getAddress()).to.equal(babelCoreAddress);
       expect(await priceFeed.getAddress()).to.equal(priceFeedAddress);
-      expect(balance).to.equal(ethers.parseEther('15000'));
+      expect(balance).to.equal(ethers.parseEther("15000"));
     });
   });
 });
