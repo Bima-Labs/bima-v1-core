@@ -16,6 +16,8 @@ const config: HardhatUserConfig = {
       linea_sepolia_testnet: "",
       bevm_testnet: "",
       avalanche_testnet: "",
+      arbitrum_testnet: "",
+
     },
     customChains: [
       {
@@ -64,6 +66,15 @@ const config: HardhatUserConfig = {
         },
       },
       {
+        network: "arbitrum_testnet",
+        chainId: 421614,
+
+        urls: {
+          browserURL: "https://sepolia.arbiscan.io/",
+          apiURL: "https://api-sepolia.arbiscan.io/api",
+        },
+      },
+      {
         network: "avalanche_testnet",
         chainId: 43113,
 
@@ -97,6 +108,10 @@ const config: HardhatUserConfig = {
     },
     citrea_devnet: {
       url: "https://rpc.devnet.citrea.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    arbitrum_testnet: {
+      url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     avalanche_testnet: {
