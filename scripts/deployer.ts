@@ -17,22 +17,14 @@ async function main() {
   const InterimAdminDeployer = await ethers.getContractFactory("InterimAdmin");
   const GasPoolDeployer = await ethers.getContractFactory("GasPool");
   const FactoryDeployer = await ethers.getContractFactory("Factory");
-  const LiqudiationManagerDeployer = await ethers.getContractFactory(
-    "LiquidationManager"
-  );
-  const BorrowerOperationsDeployer = await ethers.getContractFactory(
-    "BorrowerOperations"
-  );
+  const LiqudiationManagerDeployer = await ethers.getContractFactory("LiquidationManager");
+  const BorrowerOperationsDeployer = await ethers.getContractFactory("BorrowerOperations");
   const DebtTokenDeployer = await ethers.getContractFactory("DebtToken");
-  const StabilityPoolDeployer = await ethers.getContractFactory(
-    "StabilityPool"
-  );
+  const StabilityPoolDeployer = await ethers.getContractFactory("StabilityPool");
   const TroveManagerDeployer = await ethers.getContractFactory("TroveManager");
   const SortedTrovesDeployer = await ethers.getContractFactory("SortedTroves");
   const TokenLockerDeployer = await ethers.getContractFactory("TokenLocker");
-  const IncentiveVotingDeployer = await ethers.getContractFactory(
-    "IncentiveVoting"
-  );
+  const IncentiveVotingDeployer = await ethers.getContractFactory("IncentiveVoting");
   const BabelTokenDeployer = await ethers.getContractFactory("BabelToken");
   const BabelVaultDeployer = await ethers.getContractFactory("BabelVault");
 
@@ -61,19 +53,11 @@ async function main() {
     nonce: deployerNonce + 1,
   });
 
-  const babelCore = await BabelCoreDeployer.deploy(
-    owner.address,
-    owner.address,
-    priceFeedAddress,
-    owner.address
-  );
+  const babelCore = await BabelCoreDeployer.deploy(owner.address, owner.address, priceFeedAddress, owner.address);
   await babelCore.waitForDeployment();
   console.log("BabelCore deployed!: ", babelCoreAddress);
 
-  const priceFeed = await PriceFeedDeployer.deploy(
-    babelCoreAddress,
-    mockAaggregatorAddress
-  );
+  const priceFeed = await PriceFeedDeployer.deploy(babelCoreAddress, mockAaggregatorAddress);
   await priceFeed.waitForDeployment();
   console.log("PriceFeed deployed!: ", priceFeedAddress);
 
@@ -239,11 +223,7 @@ async function main() {
   await tokenLocker.waitForDeployment();
   console.log("TokenLocker deployed!: ", tokenLockerAddress);
 
-  const incentiveVoting = await IncentiveVotingDeployer.deploy(
-    babelCoreAddress,
-    tokenLockerAddress,
-    babelVaultAddress
-  );
+  const incentiveVoting = await IncentiveVotingDeployer.deploy(babelCoreAddress, tokenLockerAddress, babelVaultAddress);
   await incentiveVoting.waitForDeployment();
   console.log("IncentiveVoting deployed!: ", incentiveVotingAddress);
 
@@ -290,37 +270,26 @@ async function main() {
   }
 
   {
-    const tx = await factory.deployNewInstance(
-      stBTCAddress,
-      priceFeedAddress,
-      ZERO_ADDRESS,
-      ZERO_ADDRESS,
-      {
-        minuteDecayFactor: BigInt("999037758833783000"),
-        redemptionFeeFloor: BigInt("5000000000000000"),
-        maxRedemptionFee: BigInt("1000000000000000000"),
-        borrowingFeeFloor: BigInt("0"),
-        maxBorrowingFee: BigInt("0"),
-        interestRateInBps: BigInt("0"),
-        maxDebt: ethers.parseEther("1000000"), // 1M USD
-        MCR: ethers.parseUnits("2", 18), // 2e18 = 200%
-      }
-    );
+    const tx = await factory.deployNewInstance(stBTCAddress, priceFeedAddress, ZERO_ADDRESS, ZERO_ADDRESS, {
+      minuteDecayFactor: BigInt("999037758833783000"),
+      redemptionFeeFloor: BigInt("5000000000000000"),
+      maxRedemptionFee: BigInt("1000000000000000000"),
+      borrowingFeeFloor: BigInt("0"),
+      maxBorrowingFee: BigInt("0"),
+      interestRateInBps: BigInt("0"),
+      maxDebt: ethers.parseEther("1000000"), // 1M USD
+      MCR: ethers.parseUnits("2", 18), // 2e18 = 200%
+    });
     await tx.wait();
     console.log("Factory deployNewInstance!");
   }
 
   // const troveManagerCount = await factory.troveManagerCount();
 
-  const troveManagerAddressFromFactory = await factory.troveManagers(
-    BigInt("0")
-  );
+  const troveManagerAddressFromFactory = await factory.troveManagers(BigInt("0"));
 
   {
-    const tx = await babelVault.registerReceiver(
-      troveManagerAddressFromFactory,
-      BigInt("2")
-    );
+    const tx = await babelVault.registerReceiver(troveManagerAddressFromFactory, BigInt("2"));
     await tx.wait();
   }
 

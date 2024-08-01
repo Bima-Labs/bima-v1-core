@@ -1,11 +1,7 @@
 import { Provider, Signer } from "ethers";
 import { ethers } from "hardhat";
 
-import {
-  MockOracle__factory,
-  PriceFeed__factory,
-  TroveManager__factory,
-} from "../typechain-types/index";
+import { MockOracle__factory, PriceFeed__factory, TroveManager__factory } from "../typechain-types/index";
 
 //import  pLimit from "p-limit";
 
@@ -16,10 +12,7 @@ export const fetchGeneralData = async ({
   troveManagerAddress: string;
   provider: Provider;
 }) => {
-  const troveManagerContract = TroveManager__factory.connect(
-    troveManagerAddress,
-    provider
-  );
+  const troveManagerContract = TroveManager__factory.connect(troveManagerAddress, provider);
 
   try {
     const [
@@ -37,19 +30,19 @@ export const fetchGeneralData = async ({
       //currentPrice,
       maxSystemDebt,
     ] = await Promise.all([
-       troveManagerContract.getEntireSystemColl(),
-       troveManagerContract.getEntireSystemDebt(),
-       troveManagerContract.MCR(),
-       troveManagerContract.redemptionFeeFloor(),
-       troveManagerContract.interestRate(),
-       troveManagerContract.getRedemptionRate(),
-       troveManagerContract.totalStakes(),
-       troveManagerContract.rewardRate(),
-       troveManagerContract.rewardIntegral(),
-       troveManagerContract.getTotalActiveDebt(),
-       troveManagerContract.getTotalActiveCollateral(),
+      troveManagerContract.getEntireSystemColl(),
+      troveManagerContract.getEntireSystemDebt(),
+      troveManagerContract.MCR(),
+      troveManagerContract.redemptionFeeFloor(),
+      troveManagerContract.interestRate(),
+      troveManagerContract.getRedemptionRate(),
+      troveManagerContract.totalStakes(),
+      troveManagerContract.rewardRate(),
+      troveManagerContract.rewardIntegral(),
+      troveManagerContract.getTotalActiveDebt(),
+      troveManagerContract.getTotalActiveCollateral(),
       //troveManagerContract.fetchPrice(),
-       troveManagerContract.maxSystemDebt(),
+      troveManagerContract.maxSystemDebt(),
     ]);
 
     return {
@@ -92,8 +85,6 @@ export const fetchPrice = async ({
     return null;
   }
 };
-
-
 
 /** 
 async function main() {
