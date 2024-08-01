@@ -10,11 +10,12 @@ const config: HardhatUserConfig = {
 
   etherscan: {
     apiKey: {
-      lorenzo_testnet: "abc",
-      citrea_devnet: "def",
-      base_sepolia_testnet: "ghi",
-      linea_sepolia_testnet: "jkl",
-      bevm_testnet: "mno",
+      lorenzo_testnet: "",
+      citrea_devnet: "",
+      base_sepolia_testnet: "",
+      linea_sepolia_testnet: "",
+      bevm_testnet: "",
+      avalanche_testnet: "",
     },
     customChains: [
       {
@@ -62,6 +63,15 @@ const config: HardhatUserConfig = {
           apiURL: "https://explorer.devnet.citrea.xyz/api/",
         },
       },
+      {
+        network: "avalanche_testnet",
+        chainId: 43113,
+
+        urls: {
+          browserURL: "https://43113.testnet.snowtrace.io/",
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
+        },
+      },
     ],
   },
   networks: {
@@ -87,6 +97,10 @@ const config: HardhatUserConfig = {
     },
     citrea_devnet: {
       url: "https://rpc.devnet.citrea.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    avalanche_testnet: {
+      url: "https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
