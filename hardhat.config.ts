@@ -6,15 +6,17 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "dotenv/config";
 
 const config: HardhatUserConfig = {
-  // defaultNetwork: "polygon_amoy",
+  // ? defaultNetwork: "polygon_amoy",
 
   etherscan: {
     apiKey: {
-      lorenzo_testnet: "abc",
-      citrea_devnet: "def",
-      base_sepolia_testnet: "ghi",
-      linea_sepolia_testnet: "jkl",
-      arbitrum_testnet: "mno",
+      lorenzo_testnet: "",
+      citrea_devnet: "",
+      base_sepolia_testnet: "",
+      linea_sepolia_testnet: "",
+      bevm_testnet: "",
+      avalanche_testnet: "",
+      arbitrum_testnet: "",
     },
     customChains: [
       {
@@ -24,6 +26,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "bevm_testnet",
+        chainId: 11503,
+
+        urls: {
+          browserURL: "https://scan-testnet.bevm.io/",
+          apiURL: "https://scan-testnet-api.bevm.io/api/v2/",
         },
       },
       {
@@ -62,11 +73,24 @@ const config: HardhatUserConfig = {
           apiURL: "https://api-sepolia.arbiscan.io/api",
         },
       },
+      {
+        network: "avalanche_testnet",
+        chainId: 43113,
+
+        urls: {
+          browserURL: "https://43113.testnet.snowtrace.io/",
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
+        },
+      },
     ],
   },
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    bevm_testnet: {
+      url: "https://testnet.bevm.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     linea_sepolia_testnet: {
@@ -85,8 +109,13 @@ const config: HardhatUserConfig = {
       url: "https://rpc.devnet.citrea.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+
     arbitrum_testnet: {
       url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    avalanche_testnet: {
+      url: "https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
