@@ -19,7 +19,8 @@ const config: HardhatUserConfig = {
       arbitrum_testnet: "",
       movement_testnet: "",
       scroll_testnet: "",
-      polygon_testnet: ""
+      blast_testnet: "",
+      polygon_testnet: "",
     },
     customChains: [
       {
@@ -29,6 +30,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "blast_testnet",
+        chainId: 168587773,
+
+        urls: {
+          browserURL: "https://testnet.blastscan.io/",
+          apiURL: "https://api-sepolia.blastscan.io/api",
         },
       },
       {
@@ -145,6 +155,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    blast_testnet: {
+      url: "https://sepolia.blast.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     movement_testnet: {
