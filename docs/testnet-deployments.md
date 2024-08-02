@@ -11,7 +11,8 @@
 - [Bitlayer Testnet](#Bitlayer-testnet)
 - [BEVM Testnet](#BEVM-testnet)
 - [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
-- [Movement Lab Testnet ](#Movement-lab-testnet)
+- [Movement Lab Testnet](#Movement-lab-testnet)
+- [Berachain Testnet](#Berachain-testnet)
 - [Blast Testnet](#Blast-Testnet)
 
 ## Arbitrum Sepolia Testnet
@@ -312,11 +313,10 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
-## BERACHAIN TESTNET
+## Berachain Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| MockAggregator     | 0x3a85D97eBF8b4410cAaF35C9Bb0313B322a1C131 |
 | BabelCore          | 0x2F8B7139B7D83C466B4900e73629531C5168bDFA |
 | PriceFeed          | 0x13FBe5aBf94E72cAd64152BA8bF6D7632B1f0995 |
 | FeeReceiver        | 0x3a4048efA6de3E87e698976f2A317616b87c3442 |
