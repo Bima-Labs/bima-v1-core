@@ -12,6 +12,7 @@
 - [BEVM Testnet](#BEVM-testnet)
 - [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
 - [Movement Lab Testnet ](#Movement-lab-testnet)
+- [Blast Testnet](#Blast-Testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -285,8 +286,8 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-## Movement Lab Testnet 
 
+## Movement Lab Testnet 
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -310,3 +311,29 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
+
+## Blast Testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0xafFeF770dD339633755e8C9A4f77322e00C7ed4C |
+| PriceFeed          | 0xfa0F2ddce34e5c2292390F00fB18512ec5E8c8E6 |
+| FeeReceiver        | 0x333A349a29702B4c6497c7fb6c3ca40aa97B52b4 |
+| InterimAdmin       | 0xB60b49199f26b912Bb458FCb77019DdE3F63709e |
+| Gas Pool           | 0x5046562E002FB05731BEc7574652867c0CE44014 |
+| Factory            | 0x20143e46c8FAa6c755f200FF3347eA2E9499f90A |
+| LiquidationManager | 0xe9f509380620A1Bb59D6a93E90079A71B7E4ce3b |
+| DebtToken          | 0xEC01b2115eaBC61ae0A179C833be75B4A1244479 |
+| BorrowerOperations | 0x439c6C24062bdB65Abd1F2b71a6fB43d0aEBbD0A |
+| StabilityPool      | 0xE052612Cac3C5BF7Cd3dE6DE009DbD58E43A11e4 |
+| TroveManager       | 0x25DE184c54cAeEed44cfEE1e9B8eD1a5dc38d2c9 |
+| SortedTroves       | 0x184Bc03D76a9351f3A2A775944D9242fddf51135 |
+| TokenLocker        | 0xDFa6f9ea4238f57f88D23e5af2B040de014e8064 |
+| IncentiveVoting    | 0x427c9501e1733c4E0509e3d1239238617E931C0B |
+| BabelToken         | 0x5cCefD3DEF2E1d997Ce5Ea10f56B79F83080ab33 |
+| BabelVault         | 0x1798E78Efd0B9E2053583eBC02C10557690987e6 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
