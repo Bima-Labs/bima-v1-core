@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
       avalanche_testnet: "",
       arbitrum_testnet: "",
       movement_testnet: "",
+      berachain_testnet: "",
       scroll_testnet: "",
       blast_testnet: "",
       polygon_testnet: "",
@@ -142,6 +143,15 @@ const config: HardhatUserConfig = {
         },
       },
       {
+        network: "berachain_testnet",
+        chainId: 80084,
+
+        urls: {
+          browserURL: "https://bartio.rpc.berachain.com",
+          apiURL: "https://bartio.rpc.berachain.com",
+        },
+      },
+      {
         network: "polygon_testnet",
         chainId: 80002,
 
@@ -155,10 +165,6 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    },
-    blast_testnet: {
-      url: "https://sepolia.blast.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     movement_testnet: {
@@ -207,6 +213,14 @@ const config: HardhatUserConfig = {
     },
     core_testnet: {
       url: "https://rpc.test.btcs.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    berachain_testnet: {
+      url: "https://bartio.rpc.berachain.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    blast_testnet: {
+      url: "https://sepolia.blast.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     scroll_testnet: {
