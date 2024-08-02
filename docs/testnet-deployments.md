@@ -467,4 +467,4 @@
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
-| tBTC            | 0x65a45c57636f9BcCeD4fe193A602008578BcA90b | 0xa5C772d2D6dADc023E86e4f303fd5B50606723Ee | 0x23E3A5114a30F5Cb23F2E32B5fdb6a9550Fc206e |
+| -               | -                  | -                    | -              |
