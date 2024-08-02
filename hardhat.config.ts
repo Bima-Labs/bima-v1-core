@@ -143,6 +143,15 @@ const config: HardhatUserConfig = {
         },
       },
       {
+        network: "scroll_testnet",
+        chainId: 534351,
+
+        urls: {
+          browserURL: "https://scroll-sepolia.drpc.org",
+          apiURL: "https://scroll-sepolia.drpc.org",
+        },
+      },
+      {
         network: "berachain_testnet",
         chainId: 80084,
 

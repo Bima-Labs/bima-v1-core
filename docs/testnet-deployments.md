@@ -13,7 +13,8 @@
 - [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
 - [Movement Lab Testnet](#Movement-lab-testnet)
 - [Berachain Testnet](#Berachain-testnet)
-- [Blast Testnet](#Blast-Testnet)
+- [Blast Testnet](#Blast-testnet)
+- [Scroll Testnet](#Scroll-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -340,22 +341,49 @@
 
 ## Blast Testnet
 
-| BabelCore | 0xafFeF770dD339633755e8C9A4f77322e00C7ed4C |
-| PriceFeed | 0xfa0F2ddce34e5c2292390F00fB18512ec5E8c8E6 |
-| FeeReceiver | 0x333A349a29702B4c6497c7fb6c3ca40aa97B52b4 |
-| InterimAdmin | 0xB60b49199f26b912Bb458FCb77019DdE3F63709e |
-| Gas Pool | 0x5046562E002FB05731BEc7574652867c0CE44014 |
-| Factory | 0x20143e46c8FAa6c755f200FF3347eA2E9499f90A |
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0xafFeF770dD339633755e8C9A4f77322e00C7ed4C |
+| PriceFeed          | 0xfa0F2ddce34e5c2292390F00fB18512ec5E8c8E6 |
+| FeeReceiver        | 0x333A349a29702B4c6497c7fb6c3ca40aa97B52b4 |
+| InterimAdmin       | 0xB60b49199f26b912Bb458FCb77019DdE3F63709e |
+| Gas Pool           | 0x5046562E002FB05731BEc7574652867c0CE44014 |
+| Factory            | 0x20143e46c8FAa6c755f200FF3347eA2E9499f90A |
 | LiquidationManager | 0xe9f509380620A1Bb59D6a93E90079A71B7E4ce3b |
-| DebtToken | 0xEC01b2115eaBC61ae0A179C833be75B4A1244479 |
+| DebtToken          | 0xEC01b2115eaBC61ae0A179C833be75B4A1244479 |
 | BorrowerOperations | 0x439c6C24062bdB65Abd1F2b71a6fB43d0aEBbD0A |
-| StabilityPool | 0xE052612Cac3C5BF7Cd3dE6DE009DbD58E43A11e4 |
-| TroveManager | 0x25DE184c54cAeEed44cfEE1e9B8eD1a5dc38d2c9 |
-| SortedTroves | 0x184Bc03D76a9351f3A2A775944D9242fddf51135 |
-| TokenLocker | 0xDFa6f9ea4238f57f88D23e5af2B040de014e8064 |
-| IncentiveVoting | 0x427c9501e1733c4E0509e3d1239238617E931C0B |
-| BabelToken | 0x5cCefD3DEF2E1d997Ce5Ea10f56B79F83080ab33 |
-| BabelVault | 0x1798E78Efd0B9E2053583eBC02C10557690987e6 |
+| StabilityPool      | 0xE052612Cac3C5BF7Cd3dE6DE009DbD58E43A11e4 |
+| TroveManager       | 0x25DE184c54cAeEed44cfEE1e9B8eD1a5dc38d2c9 |
+| SortedTroves       | 0x184Bc03D76a9351f3A2A775944D9242fddf51135 |
+| TokenLocker        | 0xDFa6f9ea4238f57f88D23e5af2B040de014e8064 |
+| IncentiveVoting    | 0x427c9501e1733c4E0509e3d1239238617E931C0B |
+| BabelToken         | 0x5cCefD3DEF2E1d997Ce5Ea10f56B79F83080ab33 |
+| BabelVault         | 0x1798E78Efd0B9E2053583eBC02C10557690987e6 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
+## Scroll Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc |
+| PriceFeed          | 0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476 |
+| FeeReceiver        | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |
+| InterimAdmin       | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
+| GasPool            | 0x585Af209078E0E6966B4767683A047b316592cA9 |
+| Factory            | 0xc2847fF24a5C303B4e2F76D9C2C84da1038bFAE1 |
+| LiquidationManager | 0x983Fb7d0C7CF79189eC5edB01B275572eB429469 |
+| DebtToken          | 0xE34d9e591AfCCd082503E9A4C9a9C3714EA1AC60 |
+| BorrowerOperations | 0xA93a6869D4407aD0dBA90cEd0e875a7E36655229 |
+| StabilityPool      | 0x817c9C880b8627308D8d6c9E66357752DAFDa571 |
+| TroveManager       | 0x17d539F22d1FC114496AC506108d8A6989854c73 |
+| SortedTroves       | 0x6795e3a141b5fAC578C7516aF51cD403991aF8c9 |
+| TokenLocker        | 0xeBD4d5B738dD43d153CaAb5be49a7afC3df4359A |
+| IncentiveVoting    | 0x7274aE5b49df066b1431Ad4A36D1139CF2FB2716 |
+| BabelToken         | 0x47f43CCb49dFe30ac666AfD039dcf2c967AC1eA7 |
+| BabelVault         | 0xC80553648B2a715eA93c0e3C8587ed99BB773cA4 |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
