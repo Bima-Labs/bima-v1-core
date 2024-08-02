@@ -16,6 +16,7 @@
 - [Blast Testnet](#Blast-testnet)
 - [Scroll Testnet](#Scroll-testnet)
 - [Fluent Testnet](#Fluent-Testnet)
+- [Core chain Testnet](#Core-chain-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -385,6 +386,32 @@
 | IncentiveVoting    | 0x7274aE5b49df066b1431Ad4A36D1139CF2FB2716 |
 | BabelToken         | 0x47f43CCb49dFe30ac666AfD039dcf2c967AC1eA7 |
 | BabelVault         | 0xC80553648B2a715eA93c0e3C8587ed99BB773cA4 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
+## Core chain Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x8d2Cd423C184292D66a16eb4B9F8fA50a6e4c365 |
+| PriceFeed          | 0x875fa15bc45Cf252AF97B2820323ec157753eaA6 |
+| FeeReceiver        | 0x9668cb6B7c9eaD4fa95E901E5B6869d71287Ecb2 |
+| InterimAdmin       | 0x46507E8929Fe9C20c8914fc9036829F6e7740D9D |
+| Gas Pool           | 0x2e2C128B256884cc2C10D88214FEC53a33a0db49 |
+| Factory            | 0x7363a69249710548c670Dac0505c9C8710c9Fb50 |
+| LiquidationManager | 0x7b71439efb506d7E8fcEe921471CAfb6F471B46c |
+| DebtToken          | 0xd7Fe90F0FcA236e256a0EB67E5A74c08DA3c31f8 |
+| BorrowerOperations | 0xbC96B129Dd7005fAE917fF68F6D9a1FE86C2e857 |
+| StabilityPool      | 0x839D1424D64ad061e9f612a5f9A438fe9619D5B6 |
+| TroveManager       | 0xC1819d63807e34bb4a120abF1eF58a6D140964Ec |
+| SortedTroves       | 0xA4a148e7Ea761fb24a6EB3FA29c18290F994f739 |
+| TokenLocker        | 0x237Dc9142F8cD1B9E8A5d5f6AbA580e725899c97 |
+| IncentiveVoting    | 0x3a40f647a61e91CC8DC3Ea3f4c47b8E4b92d35c2 |
+| BabelToken         | 0x479641cb71FC11646e551e1F578707a7bBA673a8 |
+| BabelVault         | 0xf8d238C6E93aC0f6551388B24d7457C3d10C0C63 |
+
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
