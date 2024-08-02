@@ -22,6 +22,7 @@ const config: HardhatUserConfig = {
       scroll_testnet: "",
       blast_testnet: "",
       polygon_testnet: "",
+      fluent_testnet:""
     },
     customChains: [
       {
@@ -31,6 +32,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "fluent_testnet",
+        chainId: 20993,
+
+        urls: {
+          browserURL: "https://blockscout.dev.thefluent.xyz/",
+          apiURL: "https://blockscout.dev.thefluent.xyz/api",
         },
       },
       {
@@ -174,6 +184,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    fluent_testnet: {
+      url: "https://rpc.dev.thefluent.xyz/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     movement_testnet: {
