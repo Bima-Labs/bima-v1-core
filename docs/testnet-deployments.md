@@ -11,7 +11,10 @@
 - [Bitlayer Testnet](#Bitlayer-testnet)
 - [BEVM Testnet](#BEVM-testnet)
 - [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
-- [Movement Lab Testnet ](#Movement-lab-testnet)
+- [Movement Lab Testnet](#Movement-lab-testnet)
+- [Berachain Testnet](#Berachain-testnet)
+- [Blast Testnet](#Blast-testnet)
+- [Scroll Testnet](#Scroll-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -285,8 +288,8 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-## Movement Lab Testnet 
 
+## Movement Lab Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
@@ -311,11 +314,60 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
+## Berachain Testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x2F8B7139B7D83C466B4900e73629531C5168bDFA |
+| PriceFeed          | 0x13FBe5aBf94E72cAd64152BA8bF6D7632B1f0995 |
+| FeeReceiver        | 0x3a4048efA6de3E87e698976f2A317616b87c3442 |
+| InterimAdmin       | 0x2c1E00715CB98a9e234DbfFb76b3cC6213B08A2B |
+| GasPool            | 0x0Ab9591219D56be0F11A878593F846b75293b6FA |
+| Factory            | 0x3Ca5b9e3677ba3e98f164173F89A39E64A57778d |
+| LiquidationManager | 0x5a5C0986Ae6AD6F3997489dADf213b3a4508b1C6 |
+| DebtToken          | 0x7c260AB5A478E30100Db35659326B8B30388D344 |
+| BorrowerOperations | 0xC2fb75C45D2B28Cb817e109d81F35872D5bA270A |
+| StabilityPool      | 0x17C039B55a32E98CCAfD39a5356F3e3305672159 |
+| TroveManager       | 0xc500905fA9f7f48bCA247696949796c9EeeebA42 |
+| SortedTroves       | 0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc |
+| TokenLocker        | 0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476 |
+| IncentiveVoting    | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |
+| BabelToken         | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
+| BabelVault         | 0x1cf11b3e7Af70341fCd21D5e17c6a5024D1e158d |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
+## Blast Testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0xafFeF770dD339633755e8C9A4f77322e00C7ed4C |
+| PriceFeed          | 0xfa0F2ddce34e5c2292390F00fB18512ec5E8c8E6 |
+| FeeReceiver        | 0x333A349a29702B4c6497c7fb6c3ca40aa97B52b4 |
+| InterimAdmin       | 0xB60b49199f26b912Bb458FCb77019DdE3F63709e |
+| Gas Pool           | 0x5046562E002FB05731BEc7574652867c0CE44014 |
+| Factory            | 0x20143e46c8FAa6c755f200FF3347eA2E9499f90A |
+| LiquidationManager | 0xe9f509380620A1Bb59D6a93E90079A71B7E4ce3b |
+| DebtToken          | 0xEC01b2115eaBC61ae0A179C833be75B4A1244479 |
+| BorrowerOperations | 0x439c6C24062bdB65Abd1F2b71a6fB43d0aEBbD0A |
+| StabilityPool      | 0xE052612Cac3C5BF7Cd3dE6DE009DbD58E43A11e4 |
+| TroveManager       | 0x25DE184c54cAeEed44cfEE1e9B8eD1a5dc38d2c9 |
+| SortedTroves       | 0x184Bc03D76a9351f3A2A775944D9242fddf51135 |
+| TokenLocker        | 0xDFa6f9ea4238f57f88D23e5af2B040de014e8064 |
+| IncentiveVoting    | 0x427c9501e1733c4E0509e3d1239238617E931C0B |
+| BabelToken         | 0x5cCefD3DEF2E1d997Ce5Ea10f56B79F83080ab33 |
+| BabelVault         | 0x1798E78Efd0B9E2053583eBC02C10557690987e6 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
 ## Scroll Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| MockAggregator     | 0xc500905fA9f7f48bCA247696949796c9EeeebA42 |
 | BabelCore          | 0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc |
 | PriceFeed          | 0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476 |
 | FeeReceiver        | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |

@@ -18,7 +18,10 @@ const config: HardhatUserConfig = {
       avalanche_testnet: "",
       arbitrum_testnet: "",
       movement_testnet: "",
+      berachain_testnet: "",
       scroll_testnet: "",
+      blast_testnet: "",
+      polygon_testnet: "",
     },
     customChains: [
       {
@@ -28,6 +31,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "blast_testnet",
+        chainId: 168587773,
+
+        urls: {
+          browserURL: "https://testnet.blastscan.io/",
+          apiURL: "https://api-sepolia.blastscan.io/api",
         },
       },
       {
@@ -139,6 +151,24 @@ const config: HardhatUserConfig = {
           apiURL: "https://scroll-sepolia.drpc.org",
         },
       },
+      {
+        network: "berachain_testnet",
+        chainId: 80084,
+
+        urls: {
+          browserURL: "https://bartio.rpc.berachain.com",
+          apiURL: "https://bartio.rpc.berachain.com",
+        },
+      },
+      {
+        network: "polygon_testnet",
+        chainId: 80002,
+
+        urls: {
+          browserURL: "https://rpc-amoy.polygon.technology",
+          apiURL: "https://rpc-amoy.polygon.technology",
+        },
+      },
     ],
   },
   networks: {
@@ -162,9 +192,9 @@ const config: HardhatUserConfig = {
       url: "https://sepolia.base.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    polygon_amoy: {
+    polygon_testnet: {
       url: "https://rpc-amoy.polygon.technology",
-      accounts: ["7c5b27c4f043051e405d03469e3f9dfe5b65df74376dcaf70db003d63a976efc"],
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     citrea_devnet: {
       url: "https://rpc.devnet.citrea.xyz",
@@ -192,6 +222,14 @@ const config: HardhatUserConfig = {
     },
     core_testnet: {
       url: "https://rpc.test.btcs.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    berachain_testnet: {
+      url: "https://bartio.rpc.berachain.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    blast_testnet: {
+      url: "https://sepolia.blast.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     scroll_testnet: {
