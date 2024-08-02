@@ -6,12 +6,13 @@ import '@nomicfoundation/hardhat-chai-matchers';
 import 'dotenv/config';
 
 const config: HardhatUserConfig = {
-  // defaultNetwork: 'scroll_testnet',
+  // defaultNetwork: 'berachain_testnet',
 
   etherscan: {
     apiKey: {
       // lorenzo_testnet: "abc",
-      scroll_testnet: `a544040d-864b-4968-8829-12e160e66fb8`
+      berachain_testnet:"abc"
+
     },
   },
   networks: {
@@ -19,9 +20,9 @@ const config: HardhatUserConfig = {
       url: 'https://rpc-testnet.lorenzo-protocol.xyz',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    scroll_testnet: {
-      url:'https://scroll-sepolia.drpc.org',
-      chainId:534351,
+    berachain_testnet: {
+      url:'https://bartio.rpc.berachain.com',
+      chainId:80084,
       accounts: [
         'a0b8d309dd0afc95c94fc319f2de434f845a747d662c71ccbc08655c29299519',
       ],
