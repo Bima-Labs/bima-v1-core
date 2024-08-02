@@ -23,7 +23,8 @@ const config: HardhatUserConfig = {
       scroll_testnet: "",
       blast_testnet: "",
       polygon_testnet: "",
-      fluent_testnet:""
+      fluent_testnet:"",
+      filecoin_testnet:"",
     },
     customChains: [
       {
@@ -33,6 +34,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "filecoin_testnet",
+        chainId: 314159,
+
+        urls: {
+          browserURL: "https://calibration.filscan.io/en/",
+          apiURL: "https://calibration.filscan.io/en/api",
         },
       },
       {
@@ -194,6 +204,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    filecoin_testnet: {
+      url: "https://filecoin-calibration.chainup.net/rpc/v1",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     fluent_testnet: {
