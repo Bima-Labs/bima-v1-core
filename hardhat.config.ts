@@ -16,6 +16,7 @@ const config: HardhatUserConfig = {
       linea_sepolia_testnet: "",
       bevm_testnet: "",
       avalanche_testnet: "",
+      zeta_testnet: "",
       arbitrum_testnet: "",
       movement_testnet: "",
       berachain_testnet: "",
@@ -113,6 +114,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://43113.testnet.snowtrace.io/",
           apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
+        },
+      },
+      {
+        network: "zeta_testnet",
+        chainId: 7001,
+
+        urls: {
+          browserURL: "https://athens.explorer.zetachain.com/",
+          apiURL: "https://athens.explorer.zetachain.com/",
         },
       },
       {
@@ -220,6 +230,10 @@ const config: HardhatUserConfig = {
     },
     avalanche_testnet: {
       url: "https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    zeta_testnet: {
+      url: "https://zeta-chain-testnet.drpc.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bob_testnet: {
