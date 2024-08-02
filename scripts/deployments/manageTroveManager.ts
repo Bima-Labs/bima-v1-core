@@ -23,9 +23,7 @@ async function main() {
     await calculateDebtAmount(
       parseUnits("2", 18), // 2stBTC = 120'000$
       parseUnits("2", 18), // 200%
-      (
-        await chainlinkOracle.latestRoundData()
-      )[1], // 60'000
+      (await chainlinkOracle.latestRoundData())[1], // 60'000
       troveManager
     )
   );
