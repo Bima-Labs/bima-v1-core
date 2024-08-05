@@ -170,7 +170,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "OP_Sepolia_Testnet",
+        network: "optimism_sepolia_testnet",
         chainId: 11155420,
 
         urls: {
@@ -245,7 +245,7 @@ const config: HardhatUserConfig = {
       url: "https://scroll-sepolia.drpc.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    OP_Sepolia_Testnet:{
+    optimism_sepolia_testnet:{
       url: "https://11155420.rpc.thirdweb.com/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
