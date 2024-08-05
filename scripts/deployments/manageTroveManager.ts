@@ -4,8 +4,8 @@ import { BabelBase, TroveManager } from "../../typechain-types";
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
-const TROVEMANAGER_ADDRESS = "0x34fe901e61C87B1B221560BE45F4AB53303Dcc0e";
-const BORROWEROPERATIONS_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
+const TROVEMANAGER_ADDRESS = "";
+const BORROWEROPERATIONS_ADDRESS = "";
 
 async function main() {
   const [owner] = await ethers.getSigners();
@@ -23,7 +23,9 @@ async function main() {
     await calculateDebtAmount(
       parseUnits("2", 18), // 2stBTC = 120'000$
       parseUnits("2", 18), // 200%
-      (await chainlinkOracle.latestRoundData())[1], // 60'000
+      (
+        await chainlinkOracle.latestRoundData()
+      )[1], // 60'000
       troveManager
     )
   );
