@@ -388,3 +388,28 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
+
+## Optimum Sepolia Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x2F8B7139B7D83C466B4900e73629531C5168bDFA |
+| PriceFeed          | 0x13FBe5aBf94E72cAd64152BA8bF6D7632B1f0995 |
+| FeeReceiver        | 0x3a4048efA6de3E87e698976f2A317616b87c3442 |
+| InterimAdmin       | 0x2c1E00715CB98a9e234DbfFb76b3cC6213B08A2B |
+| GasPool            | 0x0Ab9591219D56be0F11A878593F846b75293b6FA |
+| Factory            | 0x3Ca5b9e3677ba3e98f164173F89A39E64A57778d |
+| LiquidationManager | 0x5a5C0986Ae6AD6F3997489dADf213b3a4508b1C6 |
+| DebtToken          | 0x7c260AB5A478E30100Db35659326B8B30388D344 |
+| BorrowerOperations | 0xC2fb75C45D2B28Cb817e109d81F35872D5bA270A |
+| StabilityPool      | 0x17C039B55a32E98CCAfD39a5356F3e3305672159 |
+| TroveManager       | 0xc500905fA9f7f48bCA247696949796c9EeeebA42 |
+| SortedTroves       | 0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc |
+| TokenLocker        | 0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476 |
+| IncentiveVoting    | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |
+| BabelToken         | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
+| BabelVault         | 0x1cf11b3e7Af70341fCd21D5e17c6a5024D1e158d |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
