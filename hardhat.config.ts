@@ -16,12 +16,15 @@ const config: HardhatUserConfig = {
       linea_sepolia_testnet: "",
       bevm_testnet: "",
       avalanche_testnet: "",
+      zeta_testnet: "",
       arbitrum_testnet: "",
       movement_testnet: "",
       berachain_testnet: "",
       scroll_testnet: "",
       blast_testnet: "",
       polygon_testnet: "",
+      fluent_testnet:"",
+      filecoin_testnet:"",
     },
     customChains: [
       {
@@ -31,6 +34,24 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "filecoin_testnet",
+        chainId: 314159,
+
+        urls: {
+          browserURL: "https://calibration.filscan.io/en/",
+          apiURL: "https://calibration.filscan.io/en/api",
+        },
+      },
+      {
+        network: "fluent_testnet",
+        chainId: 20993,
+
+        urls: {
+          browserURL: "https://blockscout.dev.thefluent.xyz/",
+          apiURL: "https://blockscout.dev.thefluent.xyz/api",
         },
       },
       {
@@ -103,6 +124,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://43113.testnet.snowtrace.io/",
           apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api",
+        },
+      },
+      {
+        network: "zeta_testnet",
+        chainId: 7001,
+
+        urls: {
+          browserURL: "https://athens.explorer.zetachain.com/",
+          apiURL: "https://athens.explorer.zetachain.com/",
         },
       },
       {
@@ -185,6 +215,14 @@ const config: HardhatUserConfig = {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+    filecoin_testnet: {
+      url: "https://filecoin-calibration.chainup.net/rpc/v1",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    fluent_testnet: {
+      url: "https://rpc.dev.thefluent.xyz/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
     movement_testnet: {
       url: "https://mevm.devnet.imola.movementlabs.xyz/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
@@ -215,6 +253,10 @@ const config: HardhatUserConfig = {
     },
     avalanche_testnet: {
       url: "https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    zeta_testnet: {
+      url: "https://zeta-chain-testnet.drpc.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bob_testnet: {
