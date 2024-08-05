@@ -199,6 +199,15 @@ const config: HardhatUserConfig = {
           apiURL: "https://rpc-amoy.polygon.technology",
         },
       },
+      {
+        network: "optimism_sepolia_testnet",
+        chainId: 11155420,
+
+        urls: {
+          browserURL: "https://11155420.rpc.thirdweb.com/",
+          apiURL: "https://11155420.rpc.thirdweb.com/api",
+        },
+      },
     ],
   },
   networks: {
@@ -278,6 +287,10 @@ const config: HardhatUserConfig = {
       url: "https://scroll-sepolia.drpc.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+    optimism_sepolia_testnet: {
+      url: "https://11155420.rpc.thirdweb.com/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    }
   },
   solidity: {
     compilers: [
