@@ -19,6 +19,8 @@
 - [Core chain Testnet](#Core-chain-testnet)
 - [Zetachain Testnet](#Zetachain-Testnet)
 - [Filecoin Testnet](#Filecoin-Testnet)
+- [Optimism Sepolia Testnet](#Optimism-Sepolia-Testnet)
+
 
 ## Arbitrum Sepolia Testnet
 
