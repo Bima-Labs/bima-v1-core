@@ -287,7 +287,7 @@ const config: HardhatUserConfig = {
       url: "https://scroll-sepolia.drpc.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
-    optimism_sepolia_testnet:{
+    optimism_sepolia_testnet: {
       url: "https://11155420.rpc.thirdweb.com/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
