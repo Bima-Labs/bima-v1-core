@@ -208,6 +208,14 @@ const config: HardhatUserConfig = {
           apiURL: "https://11155420.rpc.thirdweb.com/api",
         },
       },
+      {
+        network: "x_layer_testnet",
+        chainId: 195,
+        urls: {
+          browserURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
+          apiURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
+        }
+      }
     ],
   },
   networks: {
@@ -289,6 +297,10 @@ const config: HardhatUserConfig = {
     },
     optimism_sepolia_testnet: {
       url: "https://11155420.rpc.thirdweb.com/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    x_layer_testnet: {
+      url:"https://endpoints.omniatech.io/v1/xlayer/testnet/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
