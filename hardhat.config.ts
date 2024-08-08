@@ -215,6 +215,14 @@ const config: HardhatUserConfig = {
           browserURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
           apiURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
         }
+      },
+      {
+        network: "okx_testnet",
+        chainId: 65,
+        urls: {
+          browserURL:"https://exchaintestrpc.okex.org",
+          apiURL:"https://exchaintestrpc.okex.org",
+        }
       }
     ],
   },
@@ -301,6 +309,10 @@ const config: HardhatUserConfig = {
     },
     x_layer_testnet: {
       url:"https://endpoints.omniatech.io/v1/xlayer/testnet/public",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    okx_testnet: {
+      url:"https://exchaintestrpc.okex.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
