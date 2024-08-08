@@ -215,6 +215,14 @@ const config: HardhatUserConfig = {
           browserURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
           apiURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
         }
+      },
+      {
+        network: "moonbase_alpha_testnet",
+        chainId: 10200,
+        urls: {
+          browserURL: "https://1287.rpc.thirdweb.com/${THIRDWEB_API_KEY}",
+          apiURL: "https://1287.rpc.thirdweb.com/${THIRDWEB_API_KEY}",
+        }
       }
     ],
   },
@@ -301,6 +309,10 @@ const config: HardhatUserConfig = {
     },
     x_layer_testnet: {
       url:"https://endpoints.omniatech.io/v1/xlayer/testnet/public",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    moonbase_alpha_testnet: {
+      url: "https://1287.rpc.thirdweb.com", 
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
