@@ -20,6 +20,7 @@
 - [Zetachain Testnet](#Zetachain-Testnet)
 - [Filecoin Testnet](#Filecoin-Testnet)
 - [Optimism Sepolia Testnet](#Optimism-Sepolia-Testnet)
+- [X Layer Testnet](#X-Layer-Testnet)
 
 
 ## Arbitrum Sepolia Testnet
@@ -518,6 +519,31 @@
 | IncentiveVoting    | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |
 | BabelToken         | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
 | BabelVault         | 0x1cf11b3e7Af70341fCd21D5e17c6a5024D1e158d |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
+## X Layer Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
+| PriceFeed          | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
+| FeeReceiver        | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
+| InterimAdmin       | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| GasPool            | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
+| Factory            | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
+| LiquidationManager | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 |
+| DebtToken          | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
+| BorrowerOperations | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
+| StabilityPool      | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
+| TroveManager       | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
+| SortedTroves       | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
+| TokenLocker        | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
+| IncentiveVoting    | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
+| BabelToken         | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
+| BabelVault         | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
