@@ -21,7 +21,8 @@
 - [Filecoin Testnet](#Filecoin-Testnet)
 - [Optimism Sepolia Testnet](#Optimism-Sepolia-Testnet)
 - [X Layer Testnet](#X-Layer-Testnet)
-
+- [OKX Testnet](#OkX-Testnet)
+- [Moonbase Alpha Testnet](#moonbase-alpha-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -544,6 +545,31 @@
 | IncentiveVoting    | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 | BabelToken         | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
 | BabelVault         | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
+## Okx Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0xed0ac2eea2cec5c27e509e29814574603587f682 |
+| PriceFeed          | 0xe66e60c64d7295e5cb5d1c00a3531ff33e8b09ce |
+| FeeReceiver        | 0x6ee35974e29f9f53e051b00eacc153552fc87dbb |
+| InterimAdmin       | 0x5f94baa95341cfcae98cfc5480bca38fcb132740 |
+| GasPool            | 0x1f21e97cb89b03c414846ebffb482076753399c3 |
+| Factory            | 0x21531c13e104b7b074bee2bf56fd3a68b37b24a7 |
+| LiquidationManager | 0xe8ce5a9a4b8f64e7e91a1d640e2661c5897492d6 |
+| DebtToken          | 0x6b7bfc6880f3ca892e0f1800bf1f5bc58cd560b1 |
+| BorrowerOperations | 0xe10e3b519e0222a0c973b062a1760f8fb67676e0 |
+| StabilityPool      | 0x911450a656185b2f3cac631c7a0e9b653dfe335f |
+| TroveManager       | 0x05b5044984747e8fb4d1b4837ad4bd4fd8b78428 |
+| SortedTroves       | 0x5b6785476bc7834bfed85e74a79ac3a144affb31 |
+| TokenLocker        | 0x80e4c64de6733daa9784b4667ca471a8e9aa2fdd |
+| IncentiveVoting    | 0xc3b8593869be9f8c4154015af1cdb69f0b6f0949 |
+| BabelToken         | 0xac392ef4106ebe101d5baee573a8ff0471c5cd37 |
+| BabelVault         | 0x678ed24ec99e569b502b1d34001852f0595bd2df |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
