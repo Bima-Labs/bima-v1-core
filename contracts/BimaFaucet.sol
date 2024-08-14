@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -9,8 +9,6 @@ contract BimaFaucet is Ownable {
   uint256 public constant INTERVAL = 1 days;
 
   mapping(address => mapping(address => uint256)) public tokensRecievedAt; // account => token => timestamp
-
-  constructor() Ownable(msg.sender) {}
 
   function getTokens(address _tokenAddress) external {
     require(tokensRecievedAt[msg.sender][_tokenAddress] + INTERVAL < block.timestamp);
@@ -24,12 +22,8 @@ contract BimaFaucet is Ownable {
     IERC20(_tokenAddress).transfer(msg.sender, IERC20(_tokenAddress).balanceOf(address(this)));
   }
 
-  function redeemAllTokens(address _tokenAddress) external onlyOwner {
-    uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
-    IERC20(_tokenAddress).transfer(msg.sender, balance);
-  }
-
-  function updateTokenAmount(uint256 _newAmount) external onlyOwner {
-    tokenAmount = _newAmount;
+  function updateTokenAmount(uint256 _newTokenAmount) external onlyOwner {
+    require(_newTokenAmount > 0);
+    tokenAmount = _newTokenAmount;
   }
 }
