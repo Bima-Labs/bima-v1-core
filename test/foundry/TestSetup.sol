@@ -10,7 +10,6 @@ import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
 import {IStabilityPool} from "../../contracts/interfaces/IStabilityPool.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ILiquidationManager} from "../../contracts/interfaces/ILiquidationManager.sol";
-import {IBabelCore} from "../../contracts/interfaces/IBabelCore.sol";
 import {IBabelVault} from "../../contracts/interfaces/IVault.sol";
 import {IBabelToken} from "../../contracts/interfaces/IBabelToken.sol";
 import {IIncentiveVoting} from "../../contracts/interfaces/IIncentiveVoting.sol";
@@ -180,7 +179,7 @@ contract TestSetup is Test {
         debtToken = new DebtToken("BUSD", "BUSD",
                                   addresses.stabilityPool,
                                   addresses.borrowerOps,
-                                  IBabelCore(addresses.core),
+                                  babelCore,
                                   ZERO_ADDRESS, // LayerZero endpoint
                                   addresses.factory,
                                   users.gasPool,
