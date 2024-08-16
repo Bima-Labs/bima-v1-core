@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {ITroveManager} from "../interfaces/ITroveManager.sol";
@@ -87,7 +88,7 @@ contract Factory is IFactory, BabelOwnable {
         stabilityPool.enableCollateral(collateral);
         liquidationManager.enableTroveManager(troveManager);
         debtToken.enableTroveManager(troveManager);
-        borrowerOperations.configureCollateral(troveManager, collateral);
+        borrowerOperations.configureCollateral(ITroveManager(troveManager), IERC20(collateral));
 
         ITroveManager(troveManager).setParameters(
             params.minuteDecayFactor,
