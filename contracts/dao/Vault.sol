@@ -37,7 +37,7 @@ contract BabelVault is BabelOwnable, SystemStart {
     ITokenLocker public immutable locker;
     IIncentiveVoting public immutable voter;
     address public immutable deploymentManager;
-    uint256 immutable lockToTokenRatio;
+    uint256 public immutable lockToTokenRatio;
 
     IEmissionSchedule public emissionSchedule;
     IBoostCalculator public boostCalculator;
