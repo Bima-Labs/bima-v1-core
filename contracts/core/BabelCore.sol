@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
+
 /**
     @title Babel Core
     @notice Single source of truth for system-wide values and contract ownership.
@@ -9,7 +11,7 @@ pragma solidity 0.8.19;
             Other ownable Babel contracts inherit their ownership from this contract
             using `BabelOwnable`.
  */
-contract BabelCore {
+contract BabelCore is IBabelCore {
     address public feeReceiver;
     address public priceFeed;
 
@@ -30,22 +32,6 @@ contract BabelCore {
     // System-wide start time, rounded down the nearest epoch week.
     // Other contracts that require access to this should inherit `SystemStart`.
     uint256 public immutable startTime;
-
-    event NewOwnerCommitted(address owner, address pendingOwner, uint256 deadline);
-
-    event NewOwnerAccepted(address oldOwner, address owner);
-
-    event NewOwnerRevoked(address owner, address revokedOwner);
-
-    event FeeReceiverSet(address feeReceiver);
-
-    event PriceFeedSet(address priceFeed);
-
-    event GuardianSet(address guardian);
-
-    event Paused();
-
-    event Unpaused();
 
     constructor(address _owner, address _guardian, address _priceFeed, address _feeReceiver) {
         owner = _owner;
