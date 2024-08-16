@@ -64,7 +64,7 @@ contract VaultTest is TestSetup {
         BabelVault.InitialAllowance[] memory initialAllowances;
 
         vm.prank(users.owner);
-        babelVault.setInitialParameters(IEmissionSchedule(address(emissionSchedule)),
+        babelVault.setInitialParameters(emissionSchedule,
                                         IBoostCalculator(address(boostCalc)),
                                         INIT_BAB_TKN_TOTAL_SUPPLY,
                                         INIT_VLT_LOCK_WEEKS,

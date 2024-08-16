@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IIncentiveVoting} from "../interfaces/IIncentiveVoting.sol";
-import {IBabelVault} from "../interfaces/IVault.sol";
+import {IEmissionSchedule, IIncentiveVoting, IBabelVault} from "../interfaces/IEmissionSchedule.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 
@@ -13,10 +12,7 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
             reward rate will decay to dust as it approaches the maximum supply,
             but should not reach zero for a Very Long Time.
  */
-contract EmissionSchedule is BabelOwnable, SystemStart {
-    event WeeklyPctScheduleSet(uint64[2][] schedule);
-    event LockParametersSet(uint256 lockWeeks, uint256 lockDecayWeeks);
-
+contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
     // number representing 100% in `weeklyPct`
     uint256 constant MAX_PCT = 10000;
     uint256 public constant MAX_LOCK_WEEKS = 52;

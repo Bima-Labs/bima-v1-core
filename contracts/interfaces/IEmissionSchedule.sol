@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IEmissionSchedule {
+import {IBabelCore} from "./IBabelCore.sol";
+import {IIncentiveVoting} from "./IIncentiveVoting.sol";
+import {IBabelVault} from "./IVault.sol";
+import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {ISystemStart} from "./ISystemStart.sol";
+
+interface IEmissionSchedule is IBabelOwnable, ISystemStart {
     event LockParametersSet(uint256 lockWeeks, uint256 lockDecayWeeks);
     event WeeklyPctScheduleSet(uint64[2][] schedule);
 
@@ -22,23 +28,15 @@ interface IEmissionSchedule {
 
     function MAX_LOCK_WEEKS() external view returns (uint256);
 
-    function BABEL_CORE() external view returns (address);
-
-    function getWeek() external view returns (uint256 week);
-
     function getWeeklyPctSchedule() external view returns (uint64[2][] memory);
-
-    function guardian() external view returns (address);
 
     function lockDecayWeeks() external view returns (uint64);
 
     function lockWeeks() external view returns (uint64);
 
-    function owner() external view returns (address);
+    function vault() external view returns (IBabelVault);
 
-    function vault() external view returns (address);
-
-    function voter() external view returns (address);
+    function voter() external view returns (IIncentiveVoting);
 
     function weeklyPct() external view returns (uint64);
 }
