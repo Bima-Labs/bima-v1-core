@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IFactory {
+import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IDebtToken} from "./IDebtToken.sol";
+import {ILiquidationManager} from "./ILiquidationManager.sol";
+import {IBorrowerOperations} from "./IBorrowerOperations.sol";
+import {IStabilityPool} from "./IStabilityPool.sol";
+
+interface IFactory is IBabelOwnable {
     // commented values are suggested default parameters
     struct DeploymentParams {
         uint256 minuteDecayFactor; // 999037758833783000  (half life of 12 hours)
@@ -26,21 +32,15 @@ interface IFactory {
 
     function setImplementations(address _troveManagerImpl, address _sortedTrovesImpl) external;
 
-    function BABEL_CORE() external view returns (address);
+    function borrowerOperations() external view returns (IBorrowerOperations);
 
-    function borrowerOperations() external view returns (address);
+    function debtToken() external view returns (IDebtToken);
 
-    function debtToken() external view returns (address);
-
-    function guardian() external view returns (address);
-
-    function liquidationManager() external view returns (address);
-
-    function owner() external view returns (address);
+    function liquidationManager() external view returns (ILiquidationManager);
 
     function sortedTrovesImpl() external view returns (address);
 
-    function stabilityPool() external view returns (address);
+    function stabilityPool() external view returns (IStabilityPool);
 
     function troveManagerCount() external view returns (uint256);
 

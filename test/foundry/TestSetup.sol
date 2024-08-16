@@ -18,7 +18,7 @@ import {ITokenLocker} from "../../contracts/interfaces/ITokenLocker.sol";
 // core
 import {BabelCore} from "../../contracts/core/BabelCore.sol";
 import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
-import {Factory} from "../../contracts/core/Factory.sol";
+import {Factory, IFactory} from "../../contracts/core/Factory.sol";
 import {LiquidationManager} from "../../contracts/core/LiquidationManager.sol";
 import {DebtToken} from "../../contracts/core/DebtToken.sol";
 import {BorrowerOperations} from "../../contracts/core/BorrowerOperations.sol";
@@ -243,7 +243,7 @@ contract TestSetup is Test {
 
         // use Factory to deploy new instances of `TroveManager` and `SortedTroves`
         // to add StakedBTC as valid collateral in the protocol
-        Factory.DeploymentParams memory params = Factory.DeploymentParams({
+        IFactory.DeploymentParams memory params = IFactory.DeploymentParams({
             minuteDecayFactor : 999037758833783000,
             redemptionFeeFloor: 5e15,
             maxRedemptionFee: 1e18,

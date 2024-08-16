@@ -4,18 +4,15 @@ pragma solidity 0.8.19;
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {ITroveManager} from "../interfaces/ITroveManager.sol";
-import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
-import {IDebtToken} from "../interfaces/IDebtToken.sol";
 import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
-import {IStabilityPool} from "../interfaces/IStabilityPool.sol";
-import {ILiquidationManager} from "../interfaces/ILiquidationManager.sol";
+import {IFactory, IDebtToken, ILiquidationManager, IBorrowerOperations, IStabilityPool} from "../interfaces/IFactory.sol";
 
 /**
     @title Babel Trove Factory
     @notice Deploys cloned pairs of `TroveManager` and `SortedTroves` in order to
             add new collateral types within the system.
  */
-contract Factory is BabelOwnable {
+contract Factory is IFactory, BabelOwnable {
     using Clones for address;
 
     // fixed single-deployment contracts
@@ -29,20 +26,6 @@ contract Factory is BabelOwnable {
     address public troveManagerImpl;
 
     address[] public troveManagers;
-
-    // commented values are suggested default parameters
-    struct DeploymentParams {
-        uint256 minuteDecayFactor; // 999037758833783000  (half life of 12 hours)
-        uint256 redemptionFeeFloor; // 1e18 / 1000 * 5  (0.5%)
-        uint256 maxRedemptionFee; // 1e18  (100%)
-        uint256 borrowingFeeFloor; // 1e18 / 1000 * 5  (0.5%)
-        uint256 maxBorrowingFee; // 1e18 / 100 * 5  (5%)
-        uint256 interestRateInBps; // 100 (1%)
-        uint256 maxDebt;
-        uint256 MCR; // 2e18  (200%)
-    }
-
-    event NewDeployment(address collateral, address priceFeed, address troveManager, address sortedTroves);
 
     constructor(
         address _babelCore,
