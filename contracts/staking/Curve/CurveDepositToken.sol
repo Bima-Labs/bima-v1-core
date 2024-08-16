@@ -149,7 +149,7 @@ contract CurveDepositToken {
         uint256 supply = totalSupply;
         uint256[2] memory amounts;
 
-        for (uint256 i = 0; i < 2; i++) {
+        for (uint256 i; i < 2; i++) {
             uint256 integral = rewardIntegral[i];
             if (supply > 0) {
                 integral += (duration * rewardRate[i] * 1e18) / supply;
@@ -200,7 +200,7 @@ contract CurveDepositToken {
         uint256 duration = updated - lastUpdate;
         if (duration > 0) lastUpdate = uint32(updated);
 
-        for (uint256 i = 0; i < 2; i++) {
+        for (uint256 i; i < 2; i++) {
             uint256 integral = rewardIntegral[i];
             if (duration > 0 && supply > 0) {
                 integral += (duration * rewardRate[i] * 1e18) / supply;

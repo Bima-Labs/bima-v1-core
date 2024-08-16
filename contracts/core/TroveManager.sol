@@ -967,7 +967,7 @@ contract TroveManager is BabelBase, BabelOwnable, SystemStart {
         uint256 reward = dailyMintReward[previousWeek];
         if (reward > 0) {
             uint32[7] memory totals = totalMints[previousWeek];
-            for (uint256 i = 0; i < 7; i++) {
+            for (uint256 i; i < 7; i++) {
                 if (totals[i] == 0) {
                     amount += reward;
                 }

@@ -186,7 +186,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
             })
         );
 
-        for (uint256 i = 0; i < payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             proposalPayloads[idx].push(payload[i]);
         }
         latestProposalTimestamp[account] = block.timestamp;
@@ -270,7 +270,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         Action[] storage payload = proposalPayloads[id];
         uint256 payloadLength = payload.length;
 
-        for (uint256 i = 0; i < payloadLength; i++) {
+        for (uint256 i; i < payloadLength; i++) {
             payload[i].target.functionCall(payload[i].data);
         }
         emit ProposalExecuted(id);

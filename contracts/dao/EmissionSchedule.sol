@@ -129,7 +129,7 @@ contract EmissionSchedule is BabelOwnable, SystemStart {
         if (length > 0) {
             uint256 week = _scheduledWeeklyPct[0][0];
             uint256 currentWeek = getWeek();
-            for (uint256 i = 0; i < length; i++) {
+            for (uint256 i; i < length; i++) {
                 if (i > 0) {
                     require(_scheduledWeeklyPct[i][0] < week, "Must sort by week descending");
                     week = _scheduledWeeklyPct[i][0];

@@ -136,7 +136,7 @@ contract BabelVault is BabelOwnable, SystemStart {
         uint256 totalAllocated;
         uint256 length = _fixedInitialAmounts.length;
         uint256 offset = getWeek() + 1;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint128 amount = _fixedInitialAmounts[i];
             weeklyEmissions[i + offset] = amount;
             totalAllocated += amount;
@@ -144,7 +144,7 @@ contract BabelVault is BabelOwnable, SystemStart {
 
         // set initial transfer allowances for airdrops, vests, bribes
         length = initialAllowances.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 amount = initialAllowances[i].amount;
             address receiver = initialAllowances[i].receiver;
             totalAllocated += amount;
@@ -171,7 +171,7 @@ contract BabelVault is BabelOwnable, SystemStart {
     function registerReceiver(address receiver, uint256 count) external onlyOwner returns (bool) {
         uint256[] memory assignedIds = new uint256[](count);
         uint16 week = uint16(getWeek());
-        for (uint256 i = 0; i < count; i++) {
+        for (uint256 i; i < count; i++) {
             uint256 id = voter.registerNewReceiver();
             assignedIds[i] = id;
             receiverUpdatedWeek[id] = week;
@@ -356,7 +356,7 @@ contract BabelVault is BabelOwnable, SystemStart {
 
         uint256 total;
         uint256 length = rewardContracts.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 amount = rewardContracts[i].vaultClaimReward(msg.sender, receiver);
             allocated[address(rewardContracts[i])] -= amount;
             total += amount;

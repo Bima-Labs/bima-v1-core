@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MITIBabelVault
 pragma solidity 0.8.19;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -152,7 +152,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         require(msg.sender == factory, "Not factory");
         uint256 length = collateralTokens.length;
         bool collateralEnabled;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             if (collateralTokens[i] == _collateral) {
                 collateralEnabled = true;
                 break;
@@ -524,7 +524,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         uint256[256] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
         uint256[256] storage depSums = depositSums[_depositor];
 
-        for (uint256 i = 0; i < collateralGains.length; i++) {
+        for (uint256 i; i < collateralGains.length; i++) {
             collateralGains[i] = depositorGains[i];
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
@@ -551,7 +551,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         uint256[256] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
         uint256[256] storage depSums = depositSums[_depositor];
 
-        for (uint256 i = 0; i < collaterals; i++) {
+        for (uint256 i; i < collaterals; i++) {
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             hasGains = true;
             uint256 firstPortion = sums[i] - depSums[i];
@@ -726,7 +726,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
             delete depositSnapshots[_depositor];
 
             length = collateralTokens.length;
-            for (uint256 i = 0; i < length; i++) {
+            for (uint256 i; i < length; i++) {
                 depositSums[_depositor][i] = 0;
             }
             emit DepositSnapshotUpdated(_depositor, 0, 0);
@@ -747,7 +747,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         depositSnapshots[_depositor].epoch = currentEpochCached;
 
         length = collateralTokens.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             depositSums[_depositor][i] = currentS[i];
         }
 

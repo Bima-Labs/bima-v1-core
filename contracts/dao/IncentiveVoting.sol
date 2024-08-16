@@ -97,7 +97,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
         votes = new Vote[](accountLockData[account].voteLength);
         uint16[2][MAX_POINTS] storage storedVotes = accountLockData[account].activeVotes;
         uint256 length = votes.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             votes[i] = Vote({ id: storedVotes[i][0], points: storedVotes[i][1] });
         }
         return votes;
@@ -441,7 +441,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
             frozen *= MAX_LOCK_WEEKS;
             accountData.frozenWeight = uint40(frozen);
         } else if (length > 0) {
-            for (uint256 i = 0; i < length; i++) {
+            for (uint256 i; i < length; i++) {
                 uint256 amount = lockData[i].amount;
                 uint256 weeksToUnlock = lockData[i].weeksToUnlock;
                 accountData.lockedAmounts[i] = uint32(amount);
@@ -468,7 +468,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
     ) internal {
         uint16[2][MAX_POINTS] storage storedVotes = accountData.activeVotes;
         uint256 length = votes.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             storedVotes[offset + i] = [uint16(votes[i].id), uint16(votes[i].points)];
             points += votes[i].points;
         }
@@ -519,13 +519,13 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
         uint256 totalDecay;
         uint256 systemWeek = getWeek();
         uint256[MAX_LOCK_WEEKS + 1] memory weeklyUnlocks;
-        for (uint256 i = 0; i < votes.length; i++) {
+        for (uint256 i; i < votes.length; i++) {
             uint256 id = votes[i].id;
             uint256 points = votes[i].points;
 
-            uint256 weight = 0;
-            uint256 decayRate = 0;
-            for (uint256 x = 0; x < lockLength; x++) {
+            uint256 weight;
+            uint256 decayRate;
+            for (uint256 x; x < lockLength; x++) {
                 uint256 weeksToUnlock = lockData[x].weeksToUnlock;
                 uint256 amount = (lockData[x].amount * points) / MAX_POINTS;
                 receiverWeeklyUnlocks[id][systemWeek + weeksToUnlock] += uint32(amount);
@@ -541,7 +541,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
             totalDecay += decayRate;
         }
 
-        for (uint256 i = 0; i < lockLength; i++) {
+        for (uint256 i; i < lockLength; i++) {
             uint256 weeksToUnlock = lockData[i].weeksToUnlock;
             totalWeeklyUnlocks[systemWeek + weeksToUnlock] += uint32(weeklyUnlocks[weeksToUnlock]);
         }
@@ -554,7 +554,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
         uint256 systemWeek = getWeek();
         uint256 totalWeight;
         uint256 length = votes.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 id = votes[i].id;
             uint256 points = votes[i].points;
 
@@ -577,12 +577,12 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
         uint256 systemWeek = getWeek();
         uint256[MAX_LOCK_WEEKS + 1] memory weeklyUnlocks;
 
-        for (uint256 i = 0; i < votes.length; i++) {
+        for (uint256 i; i < votes.length; i++) {
             (uint256 id, uint256 points) = (votes[i].id, votes[i].points);
 
-            uint256 weight = 0;
-            uint256 decayRate = 0;
-            for (uint256 x = 0; x < lockLength; x++) {
+            uint256 weight;
+            uint256 decayRate;
+            for (uint256 x; x < lockLength; x++) {
                 uint256 weeksToUnlock = lockData[x].weeksToUnlock;
                 uint256 amount = (lockData[x].amount * points) / MAX_POINTS;
                 receiverWeeklyUnlocks[id][systemWeek + weeksToUnlock] -= uint32(amount);
@@ -598,7 +598,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
             totalDecay += decayRate;
         }
 
-        for (uint256 i = 0; i < lockLength; i++) {
+        for (uint256 i; i < lockLength; i++) {
             uint256 weeksToUnlock = lockData[i].weeksToUnlock;
             totalWeeklyUnlocks[systemWeek + weeksToUnlock] -= uint32(weeklyUnlocks[weeksToUnlock]);
         }
@@ -612,7 +612,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
 
         uint256 totalWeight;
         uint256 length = votes.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             (uint256 id, uint256 points) = (votes[i].id, votes[i].points);
 
             uint256 weight = (frozenWeight * points) / MAX_POINTS;

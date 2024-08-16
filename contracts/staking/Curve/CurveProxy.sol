@@ -124,7 +124,7 @@ contract CurveProxy is BabelOwnable {
         bool permitted
     ) external onlyOwner returns (bool) {
         mapping(bytes4 => bool) storage _executePermission = executePermissions[caller][target];
-        for (uint256 i = 0; i < selectors.length; i++) {
+        for (uint256 i; i < selectors.length; i++) {
             _executePermission[selectors[i]] = permitted;
         }
         return true;
@@ -219,7 +219,7 @@ contract CurveProxy is BabelOwnable {
         @notice Submit one or more gauge weight votes
      */
     function voteForGaugeWeights(GaugeWeightVote[] calldata votes) external ownerOrVoteManager returns (bool) {
-        for (uint256 i = 0; i < votes.length; i++) {
+        for (uint256 i; i < votes.length; i++) {
             gaugeController.vote_for_gauge_weights(votes[i].gauge, votes[i].weight);
         }
 
@@ -283,7 +283,7 @@ contract CurveProxy is BabelOwnable {
         address receiver,
         TokenBalance[] calldata balances
     ) external onlyDepositManager returns (bool) {
-        for (uint256 i = 0; i < balances.length; i++) {
+        for (uint256 i; i < balances.length; i++) {
             balances[i].token.safeTransfer(receiver, balances[i].amount);
         }
 
