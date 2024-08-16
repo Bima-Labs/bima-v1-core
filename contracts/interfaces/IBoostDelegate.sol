@@ -23,9 +23,9 @@ interface IBoostDelegate {
     function getFeePct(
         address claimant,
         address receiver,
-        uint amount,
-        uint previousAmount,
-        uint totalWeeklyEmissions
+        uint256 amount,
+        uint256 previousAmount,
+        uint256 totalWeeklyEmissions
     ) external view returns (uint256 feePct);
 
     /**
@@ -42,10 +42,10 @@ interface IBoostDelegate {
     function delegatedBoostCallback(
         address claimant,
         address receiver,
-        uint amount,
-        uint adjustedAmount,
-        uint fee,
-        uint previousAmount,
-        uint totalWeeklyEmissions
+        uint256 amount,
+        uint256 adjustedAmount,
+        uint256 fee,
+        uint256 previousAmount,
+        uint256 totalWeeklyEmissions
     ) external returns (bool success);
 }

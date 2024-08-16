@@ -87,7 +87,7 @@ contract InterimAdmin is Ownable {
         uint256 day = block.timestamp / 1 days;
         uint256 currentDailyCount = dailyProposalsCount[day];
         require(currentDailyCount < MAX_DAILY_PROPOSALS, "MAX_DAILY_PROPOSALS");
-        uint loopEnd = payload.length;
+        uint256 loopEnd = payload.length;
         for (uint256 i; i < loopEnd; i++) {
             require(!_isSetGuardianPayload(payload[i]), "Cannot change guardian");
         }

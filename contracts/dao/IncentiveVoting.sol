@@ -374,7 +374,7 @@ contract IncentiveVoting is DelegatedOps, SystemStart {
             accountData.week = uint16(week);
             accountData.frozenWeight = 0;
 
-            uint amount = frozenWeight / MAX_LOCK_WEEKS;
+            uint256 amount = frozenWeight / MAX_LOCK_WEEKS;
             accountData.lockedAmounts[0] = uint32(amount);
             accountData.weeksToUnlock[0] = uint8(MAX_LOCK_WEEKS);
             accountData.lockLength = 1;
