@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../interfaces/ITokenLocker.sol";
-import "../dependencies/SystemStart.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
 
 /**
     @title Babel Boost Calculator

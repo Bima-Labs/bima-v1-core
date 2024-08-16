@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
-import "../dependencies/BabelMath.sol";
-import "../interfaces/IDebtToken.sol";
-import "../interfaces/IVault.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {IDebtToken} from "../interfaces/IDebtToken.sol";
+import {IBabelVault} from "../interfaces/IVault.sol";
 
 /**
     @title Babel Stability Pool

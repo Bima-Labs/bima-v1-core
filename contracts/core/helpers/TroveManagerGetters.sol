@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../../interfaces/ITroveManager.sol";
-import "../../interfaces/IFactory.sol";
+import {ITroveManager} from "../../interfaces/ITroveManager.sol";
+import {IFactory} from "../../interfaces/IFactory.sol";
 
 /*  Helper contract for grabbing Trove data for the front end. Not part of the core Babel system. */
 contract TroveManagerGetters {

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/IBabelCore.sol";
-import "../interfaces/IIncentiveVoting.sol";
-import "../interfaces/IBabelToken.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {IIncentiveVoting} from "../interfaces/IIncentiveVoting.sol";
+import {IBabelToken} from "../interfaces/IBabelToken.sol";
 
 /**
     @title Babel Token Locker

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../interfaces/IIncentiveVoting.sol";
-import "../interfaces/IVault.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
+import {IIncentiveVoting} from "../interfaces/IIncentiveVoting.sol";
+import {IBabelVault} from "../interfaces/IVault.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
 
 /**
     @title Babel Emission Schedule

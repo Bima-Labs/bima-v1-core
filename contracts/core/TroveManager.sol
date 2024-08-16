@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../interfaces/IBorrowerOperations.sol";
-import "../interfaces/IDebtToken.sol";
-import "../interfaces/ISortedTroves.sol";
-import "../interfaces/IVault.sol";
-import "../interfaces/IPriceFeed.sol";
-import "../dependencies/SystemStart.sol";
-import "../dependencies/BabelBase.sol";
-import "../dependencies/BabelMath.sol";
-import "../dependencies/BabelOwnable.sol";
-import "hardhat/console.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
+import {IDebtToken} from "../interfaces/IDebtToken.sol";
+import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
+import {IBabelVault} from "../interfaces/IVault.sol";
+import {IPriceFeed} from "../interfaces/IPriceFeed.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BabelBase} from "../dependencies/BabelBase.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {console} from "hardhat/console.sol";
 /**
     @title Babel Trove Manager
     @notice Based on Liquity's `TroveManager`

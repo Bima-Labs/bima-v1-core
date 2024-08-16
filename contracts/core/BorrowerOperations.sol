@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/ITroveManager.sol";
-import "../interfaces/IDebtToken.sol";
-import "../dependencies/BabelBase.sol";
-import "../dependencies/BabelMath.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/DelegatedOps.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ITroveManager} from "../interfaces/ITroveManager.sol";
+import {IDebtToken} from "../interfaces/IDebtToken.sol";
+import {BabelBase} from "../dependencies/BabelBase.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 
 /**
     @title Babel Borrower Operations

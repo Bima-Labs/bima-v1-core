@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IStabilityPool.sol";
-import "../interfaces/ISortedTroves.sol";
-import "../interfaces/IBorrowerOperations.sol";
-import "../interfaces/ITroveManager.sol";
-import "../dependencies/BabelMath.sol";
-import "../dependencies/BabelBase.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IStabilityPool} from "../interfaces/IStabilityPool.sol";
+import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
+import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
+import {ITroveManager} from "../interfaces/ITroveManager.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BabelBase} from "../dependencies/BabelBase.sol";
 
 /**
     @title Babel Liquidation Manager

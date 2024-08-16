@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../interfaces/ITroveManager.sol";
-import "../interfaces/IBorrowerOperations.sol";
-import "../interfaces/IDebtToken.sol";
-import "../interfaces/ISortedTroves.sol";
-import "../interfaces/IStabilityPool.sol";
-import "../interfaces/ILiquidationManager.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {ITroveManager} from "../interfaces/ITroveManager.sol";
+import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
+import {IDebtToken} from "../interfaces/IDebtToken.sol";
+import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
+import {IStabilityPool} from "../interfaces/IStabilityPool.sol";
+import {ILiquidationManager} from "../interfaces/ILiquidationManager.sol";
 
 /**
     @title Babel Trove Factory

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "../dependencies/DelegatedOps.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/ITokenLocker.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
 /**
     @title Babel DAO Admin Voter

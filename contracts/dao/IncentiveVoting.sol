@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../dependencies/DelegatedOps.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/ITokenLocker.sol";
+import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
 
 /**
     @title Babel Incentive Voting

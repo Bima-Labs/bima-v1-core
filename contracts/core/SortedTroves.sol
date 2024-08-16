@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../interfaces/ITroveManager.sol";
+import {ITroveManager} from "../interfaces/ITroveManager.sol";
 
 /**
     @title Babel Sorted Troves

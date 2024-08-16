@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-import "./interfaces/IAggregatorV3Interface.sol";
-
 pragma solidity 0.8.19;
+
+import "./interfaces/IAggregatorV3Interface.sol";
 
 contract MockOracle is IAggregatorV3Interface {
     function decimals() external view returns (uint8) {

@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/IBabelToken.sol";
-import "../interfaces/IEmissionSchedule.sol";
-import "../interfaces/IIncentiveVoting.sol";
-import "../interfaces/ITokenLocker.sol";
-import "../interfaces/IBoostDelegate.sol";
-import "../interfaces/IBoostCalculator.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {IBabelToken} from "../interfaces/IBabelToken.sol";
+import {IEmissionSchedule} from "../interfaces/IEmissionSchedule.sol";
+import {IIncentiveVoting} from "../interfaces/IIncentiveVoting.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
+import {IBoostDelegate} from "../interfaces/IBoostDelegate.sol";
+import {IBoostCalculator} from "../interfaces/IBoostCalculator.sol";
 
 interface IEmissionReceiver {
     function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool);
