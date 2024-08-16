@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IBoostCalculator {
+import {ISystemStart} from "./ISystemStart.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
+
+interface IBoostCalculator is ISystemStart {
     function getBoostedAmountWrite(
         address account,
         uint256 amount,
@@ -24,7 +27,5 @@ interface IBoostCalculator {
         uint256 totalWeeklyEmissions
     ) external view returns (uint256 maxBoosted, uint256 boosted);
 
-    function getWeek() external view returns (uint256 week);
-
-    function locker() external view returns (address);
+    function locker() external view returns (ITokenLocker);
 }

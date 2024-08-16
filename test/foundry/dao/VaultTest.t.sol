@@ -65,7 +65,7 @@ contract VaultTest is TestSetup {
 
         vm.prank(users.owner);
         babelVault.setInitialParameters(emissionSchedule,
-                                        IBoostCalculator(address(boostCalc)),
+                                        boostCalc,
                                         INIT_BAB_TKN_TOTAL_SUPPLY,
                                         INIT_VLT_LOCK_WEEKS,
                                         _fixedInitialAmounts,

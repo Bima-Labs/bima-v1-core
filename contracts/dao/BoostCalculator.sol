@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
+import {IBoostCalculator, ITokenLocker} from "../interfaces/IBoostCalculator.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 
 /**
@@ -47,7 +47,7 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
             are returned to the unallocated token supply, and distributed again in the
             emissions of future weeks.
  */
-contract BoostCalculator is SystemStart {
+contract BoostCalculator is IBoostCalculator, SystemStart {
     ITokenLocker public immutable locker;
 
     // initial number of weeks where all accounts recieve max boost
