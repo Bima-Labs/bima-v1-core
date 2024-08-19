@@ -2,10 +2,8 @@
 pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IStabilityPool} from "../interfaces/IStabilityPool.sol";
 import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
-import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
-import {ITroveManager} from "../interfaces/ITroveManager.sol";
+import {ILiquidationManager, IBabelBase, IStabilityPool, IBorrowerOperations, ITroveManager} from "../interfaces/ILiquidationManager.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelBase} from "../dependencies/BabelBase.sol";
 
@@ -35,7 +33,7 @@ import {BabelBase} from "../dependencies/BabelBase.sol";
                the value of the debt is distributed between stability pool depositors. The remaining
                collateral is left claimable by the trove owner.
  */
-contract LiquidationManager is BabelBase {
+contract LiquidationManager is ILiquidationManager, BabelBase {
     IStabilityPool public immutable stabilityPool;
     IBorrowerOperations public immutable borrowerOperations;
     address public immutable factory;

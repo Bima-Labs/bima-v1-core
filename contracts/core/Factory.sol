@@ -86,7 +86,7 @@ contract Factory is IFactory, BabelOwnable {
         ITroveManager(troveManager).fetchPrice();
 
         stabilityPool.enableCollateral(collateral);
-        liquidationManager.enableTroveManager(troveManager);
+        liquidationManager.enableTroveManager(ITroveManager(troveManager));
         debtToken.enableTroveManager(troveManager);
         borrowerOperations.configureCollateral(ITroveManager(troveManager), IERC20(collateral));
 
