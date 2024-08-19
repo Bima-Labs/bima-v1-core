@@ -28,7 +28,7 @@ contract TroveManagerGetters {
         uint256 collateralCount;
         for (uint256 i; i < length; i++) {
             address troveManager = factory.troveManagers(i);
-            address collateral = ITroveManager(troveManager).collateralToken();
+            address collateral = address(ITroveManager(troveManager).collateralToken());
             troveManagersAndCollaterals[i] = [troveManager, collateral];
             for (uint256 x; x < length; x++) {
                 if (uniqueCollaterals[x] == collateral) break;
