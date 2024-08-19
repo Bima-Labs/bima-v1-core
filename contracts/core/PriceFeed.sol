@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IAggregatorV3Interface} from "../interfaces/IAggregatorV3Interface.sol";
+import {IPriceFeed, IAggregatorV3Interface} from "../interfaces/IPriceFeed.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
@@ -13,7 +13,7 @@ import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 
             Babel's implementation additionally caches price values within a block and incorporates exchange rate settings for derivative tokens (e.g. stETH -> wstETH).
  */
-contract PriceFeed is BabelOwnable {
+contract PriceFeed is IPriceFeed, BabelOwnable {
     struct OracleRecord {
         IAggregatorV3Interface chainLinkOracle;
         uint8 decimals;

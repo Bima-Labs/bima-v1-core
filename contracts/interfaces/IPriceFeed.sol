@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IPriceFeed {
-    event NewOracleRegistered(address token, address chainlinkAggregator, bool isEthIndexed);
-    event PriceFeedStatusUpdated(address token, address oracle, bool isWorking);
-    event PriceRecordUpdated(address indexed token, uint256 _price);
+import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IAggregatorV3Interface} from "./IAggregatorV3Interface.sol";
 
+interface IPriceFeed is IBabelOwnable {
     function fetchPrice(address _token) external returns (uint256);
 
     function setOracle(
         address _token,
         address _chainlinkOracle,
+        uint32 _heartbeat,
         bytes4 sharePriceSignature,
         uint8 sharePriceDecimals,
         bool _isEthIndexed
@@ -18,13 +18,9 @@ interface IPriceFeed {
 
     function MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND() external view returns (uint256);
 
-    function BABEL_CORE() external view returns (address);
-
-    function RESPONSE_TIMEOUT() external view returns (uint256);
+    function RESPONSE_TIMEOUT_BUFFER() external view returns (uint256);
 
     function TARGET_DIGITS() external view returns (uint256);
-
-    function guardian() external view returns (address);
 
     function oracleRecords(
         address
@@ -32,15 +28,14 @@ interface IPriceFeed {
         external
         view
         returns (
-            address chainLinkOracle,
+            IAggregatorV3Interface chainLinkOracle,
             uint8 decimals,
+            uint32 heartbeat,
             bytes4 sharePriceSignature,
             uint8 sharePriceDecimals,
             bool isFeedWorking,
             bool isEthIndexed
         );
-
-    function owner() external view returns (address);
 
     function priceRecords(
         address
