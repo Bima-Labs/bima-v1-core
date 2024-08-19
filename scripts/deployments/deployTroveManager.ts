@@ -4,36 +4,35 @@ const ZERO_ADDRESS = ethers.ZeroAddress;
 
 // FILL IN WITH YOUR TARGET ADDRESSES
 const COLLATERAL_ADDRESS = "";
-const ORACLE_ADDRESS = "";
 const FACTORY_ADDRESS = "";
 const PRICEFEED_ADDRESS = "";
 const BABELVAULT_ADDRESS = "";
+
+// Comment/Uncomment respective oracle deployments, based on the oracle we use
+const ORACLE_ADDRESS = ""; // If we use existing AggregatorV3Interface onchain oracle
+const STORK_ORACLE_ADDRESS = ""; // If we use Stork oracle
+const ENCODED_ASSET_ID = ""; // If we use Stork oracle
 
 async function main() {
   const priceFeed = await ethers.getContractAt("PriceFeed", PRICEFEED_ADDRESS);
   const factory = await ethers.getContractAt("Factory", FACTORY_ADDRESS);
   const babelVault = await ethers.getContractAt("BabelVault", BABELVAULT_ADDRESS);
 
-  //?  Not necessary if we use a real collateral token
-  // const mockedStBtcFactory = await ethers.getContractFactory("StakedBTC");
-  // const mockedStBtc = await mockedStBtcFactory.deploy();
-  // await mockedStBtc.waitForDeployment();
-  // const mockedStBtcAddress = await mockedStBtc.getAddress();
-  // console.log("MOCKED stBTC deployed!: ", mockedStBtcAddress);
+  //? NOT NECESSARY IF WE USE A COLLATERAL TOKEN
+  // const mockedStBtcAddress = await deployMockCollateral();
 
   //! DO NOT USE MOCK ORACLE IF YOU ARE NOT DEPLOYING ON THE LOCAL NETWORK
-  // const mockOracleFactory = await ethers.getContractFactory("MockOracle");
-  // const mockOracle = await mockOracleFactory.deploy();
-  // await mockOracle.waitForDeployment();
-  // const mockOracleAddress = await mockOracle.getAddress();
-  // console.log("MockOracle deployed!: ", mockOracleAddress);
+  // const mockOracleAddress = await deployMockOracle();
+
+  //! USE IF WE USE STORK ORACLE FOR THIS TROVE MANAGER
+  const storkOracleWrapperAddress = await deployStorkOracleWrapper();
 
   console.log("troveManagerCount before: ", await factory.troveManagerCount());
 
   {
     const tx = await priceFeed.setOracle(
       COLLATERAL_ADDRESS,
-      ORACLE_ADDRESS,
+      storkOracleWrapperAddress,
       BigInt("80000"),
       "0x00000000",
       BigInt("18"),
@@ -74,6 +73,33 @@ async function main() {
 
   console.log("new Trove Manager address: ", troveManagerAddressFromFactory);
 }
+
+const deployMockCollateral = async () => {
+  const mockedStBtcFactory = await ethers.getContractFactory("StakedBTC");
+  const mockedStBtc = await mockedStBtcFactory.deploy();
+  await mockedStBtc.waitForDeployment();
+  const mockedStBtcAddress = await mockedStBtc.getAddress();
+  console.log("MOCKED stBTC deployed!: ", mockedStBtcAddress);
+  return mockedStBtcAddress;
+};
+
+const deployMockOracle = async () => {
+  const mockOracleFactory = await ethers.getContractFactory("MockOracle");
+  const mockOracle = await mockOracleFactory.deploy();
+  await mockOracle.waitForDeployment();
+  const mockOracleAddress = await mockOracle.getAddress();
+  console.log("MockOracle deployed!: ", mockOracleAddress);
+  return mockOracleAddress;
+};
+
+const deployStorkOracleWrapper = async () => {
+  const storkOracleWrapperFactory = await ethers.getContractFactory("StorkOracleWrapper");
+  const storkOracleWrapper = await storkOracleWrapperFactory.deploy(STORK_ORACLE_ADDRESS, ENCODED_ASSET_ID);
+  await storkOracleWrapper.waitForDeployment();
+  const storkOracleWrapperAddress = await storkOracleWrapper.getAddress();
+  console.log("StorkOracleWrapper deployed!: ", storkOracleWrapperAddress);
+  return storkOracleWrapperAddress;
+};
 
 main()
   .then(() => process.exit(0))
