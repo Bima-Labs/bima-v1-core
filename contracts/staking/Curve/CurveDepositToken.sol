@@ -105,7 +105,7 @@ contract CurveDepositToken {
         uint256 supply = totalSupply;
         balanceOf[msg.sender] = balance - amount;
         totalSupply = supply - amount;
-        curveProxy.withdrawFromGauge(address(gauge), address(lpToken), amount, receiver);
+        curveProxy.withdrawFromGauge(address(gauge), lpToken, amount, receiver);
 
         _updateIntegrals(msg.sender, balance, supply);
         if (block.timestamp / 1 weeks >= periodFinish / 1 weeks) _fetchRewards();

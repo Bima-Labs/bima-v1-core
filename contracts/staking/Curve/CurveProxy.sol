@@ -1,33 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../../interfaces/IGaugeController.sol";
-import "../../interfaces/ILiquidityGauge.sol";
-import "../../dependencies/BabelOwnable.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
+import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 
-interface IVotingEscrow {
-    function create_lock(uint256 amount, uint256 unlock_time) external;
-
-    function increase_amount(uint256 amount) external;
-
-    function increase_unlock_time(uint256 unlock_time) external;
-}
-
-interface IMinter {
-    function mint(address gauge) external;
-}
-
-interface IFeeDistributor {
-    function claim() external returns (uint256);
-
-    function token() external view returns (address);
-}
-
-interface IAragon {
-    function vote(uint256 _voteData, bool _supports, bool _executesIfDecided) external;
-}
+import {ICurveProxy, IGaugeController, IERC20, IMinter, IFeeDistributor, IVotingEscrow, IAragon} from "../../interfaces/ICurveProxy.sol";
 
 /**
     @title Babel Curve Proxy
@@ -37,11 +16,9 @@ interface IAragon {
          smart wallet whitelist. See the Curve documentation for more info:
          https://docs.curve.fi/curve_dao/VotingEscrow/#smart-wallet-whitelist
  */
-contract CurveProxy is BabelOwnable {
+contract CurveProxy is ICurveProxy, BabelOwnable {
     using Address for address;
     using SafeERC20 for IERC20;
-
-    event CrvFeePctSet(uint256 feePct);
 
     IERC20 public immutable CRV;
     IGaugeController public immutable gaugeController;
@@ -69,16 +46,6 @@ contract CurveProxy is BabelOwnable {
 
     // permission for callers which can execute arbitrary calls via this contract's `execute` function
     mapping(address caller => mapping(address target => mapping(bytes4 selector => bool))) executePermissions;
-
-    struct GaugeWeightVote {
-        address gauge;
-        uint256 weight;
-    }
-
-    struct TokenBalance {
-        IERC20 token;
-        uint256 amount;
-    }
 
     constructor(
         address _babelCore,
