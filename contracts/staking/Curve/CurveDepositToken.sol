@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "../../interfaces/ICurveProxy.sol";
-import "../../interfaces/IVault.sol";
-import "../../interfaces/ILiquidityGauge.sol";
-import "../../dependencies/BabelOwnable.sol";
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
+import {IBabelVault} from "../../interfaces/IVault.sol";
+import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
+import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 
 /**
     @title Babel Curve Deposit Wrapper

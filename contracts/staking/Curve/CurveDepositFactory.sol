@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "../../dependencies/BabelOwnable.sol";
-import "../../interfaces/ICurveProxy.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 
 interface ICurveDepositToken {
     function initialize(address _gauge) external;
