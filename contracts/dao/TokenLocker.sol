@@ -3,9 +3,7 @@ pragma solidity 0.8.19;
 
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
-import {IIncentiveVoting} from "../interfaces/IIncentiveVoting.sol";
-import {IBabelToken} from "../interfaces/IBabelToken.sol";
+import {ITokenLocker, IBabelToken, IBabelCore, IIncentiveVoting} from "../interfaces/ITokenLocker.sol";
 
 /**
     @title Babel Token Locker
@@ -13,7 +11,7 @@ import {IBabelToken} from "../interfaces/IBabelToken.sol";
             which is used within `AdminVoting` and `IncentiveVoting` to vote on
             core protocol operations.
  */
-contract TokenLocker is BabelOwnable, SystemStart {
+contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     // The maximum number of weeks that tokens may be locked for. Also determines the maximum
     // number of active locks that a single account may open. Weight is calculated as:
     // `[balance] * [weeks to unlock]`. Weights are stored as `uint40` and balances as `uint32`,
@@ -55,17 +53,6 @@ contract TokenLocker is BabelOwnable, SystemStart {
         uint256[256] updateWeeks;
     }
 
-    // structs used in function inputs
-    struct LockData {
-        uint256 amount;
-        uint256 weeksToUnlock;
-    }
-    struct ExtendLockData {
-        uint256 amount;
-        uint256 currentWeeks;
-        uint256 newWeeks;
-    }
-
     // Rate at which the total lock weight decreases each week. The total decay rate may not
     // be equal to the total number of locked tokens, as it does not include frozen accounts.
     uint32 public totalDecayRate;
@@ -86,14 +73,6 @@ contract TokenLocker is BabelOwnable, SystemStart {
 
     // account -> primary account data structure
     mapping(address => AccountData) accountLockData;
-
-    event LockCreated(address indexed account, uint256 amount, uint256 _weeks);
-    event LockExtended(address indexed account, uint256 amount, uint256 _weeks, uint256 newWeeks);
-    event LocksCreated(address indexed account, LockData[] newLocks);
-    event LocksExtended(address indexed account, ExtendLockData[] locks);
-    event LocksFrozen(address indexed account, uint256 amount);
-    event LocksUnfrozen(address indexed account, uint256 amount);
-    event LocksWithdrawn(address indexed account, uint256 withdrawn, uint256 penalty);
 
     constructor(
         address _babelCore,

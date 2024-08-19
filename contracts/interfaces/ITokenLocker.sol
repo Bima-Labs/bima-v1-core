@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface ITokenLocker {
+import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {ISystemStart} from "./ISystemStart.sol";
+import {IBabelToken} from "./IBabelToken.sol";
+import {IBabelCore} from "./IBabelCore.sol";
+import {IIncentiveVoting} from "./IIncentiveVoting.sol";
+interface ITokenLocker is IBabelOwnable, ISystemStart {
     struct LockData {
         uint256 amount;
         uint256 weeksToUnlock;
@@ -44,8 +49,6 @@ interface ITokenLocker {
 
     function MAX_LOCK_WEEKS() external view returns (uint256);
 
-    function BABEL_CORE() external view returns (address);
-
     function getAccountActiveLocks(
         address account,
         uint256 minWeeks
@@ -61,26 +64,20 @@ interface ITokenLocker {
 
     function getTotalWeightAt(uint256 week) external view returns (uint256);
 
-    function getWeek() external view returns (uint256 week);
-
     function getWithdrawWithPenaltyAmounts(
         address account,
         uint256 amountToWithdraw
     ) external view returns (uint256 amountWithdrawn, uint256 penaltyAmountPaid);
 
-    function guardian() external view returns (address);
-
-    function incentiveVoter() external view returns (address);
+    function incentiveVoter() external view returns (IIncentiveVoting);
 
     function lockToTokenRatio() external view returns (uint256);
 
-    function lockToken() external view returns (address);
-
-    function owner() external view returns (address);
+    function lockToken() external view returns (IBabelToken);
 
     function penaltyWithdrawalsEnabled() external view returns (bool);
 
-    function babelCore() external view returns (address);
+    function babelCore() external view returns (IBabelCore);
 
     function totalDecayRate() external view returns (uint32);
 
