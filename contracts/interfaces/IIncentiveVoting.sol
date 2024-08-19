@@ -1,22 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IIncentiveVoting {
+import {ISystemStart} from "./ISystemStart.sol";
+import {IDelegatedOps} from "./IDelegatedOps.sol";
+import {ITokenLocker} from "./ITokenLocker.sol";
+
+interface IIncentiveVoting is ISystemStart, IDelegatedOps {
     struct Vote {
         uint256 id;
         uint256 points;
-    }
-
-    struct LockData {
-        uint256 amount;
-        uint256 weeksToUnlock;
     }
 
     event AccountWeightRegistered(
         address indexed account,
         uint256 indexed week,
         uint256 frozenBalance,
-        LockData[] registeredLockData
+        ITokenLocker.LockData[] registeredLockData
     );
     event ClearedVotes(address indexed account, uint256 indexed week);
     event NewVotes(address indexed account, uint256 indexed week, Vote[] newVotes, uint256 totalPointsUsed);
@@ -37,8 +36,6 @@ interface IIncentiveVoting {
 
     function registerNewReceiver() external returns (uint256);
 
-    function setDelegateApproval(address _delegate, bool _isApproved) external;
-
     function unfreeze(address account, bool keepVote) external returns (bool);
 
     function vote(address account, Vote[] calldata votes, bool clearPrevious) external;
@@ -51,7 +48,7 @@ interface IIncentiveVoting {
 
     function getAccountRegisteredLocks(
         address account
-    ) external view returns (uint256 frozenWeight, LockData[] memory lockData);
+    ) external view returns (uint256 frozenWeight, ITokenLocker.LockData[] memory lockData);
 
     function getReceiverWeight(uint256 idx) external view returns (uint256);
 
@@ -61,10 +58,6 @@ interface IIncentiveVoting {
 
     function getTotalWeightAt(uint256 week) external view returns (uint256);
 
-    function getWeek() external view returns (uint256 week);
-
-    function isApprovedDelegate(address owner, address caller) external view returns (bool isApproved);
-
     function receiverCount() external view returns (uint256);
 
     function receiverDecayRate(uint256) external view returns (uint32);
@@ -73,7 +66,7 @@ interface IIncentiveVoting {
 
     function receiverWeeklyUnlocks(uint256, uint256) external view returns (uint32);
 
-    function tokenLocker() external view returns (address);
+    function tokenLocker() external view returns (ITokenLocker);
 
     function totalDecayRate() external view returns (uint32);
 
