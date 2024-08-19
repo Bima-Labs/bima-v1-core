@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
 // import { OFT, IERC20, ERC20 } from "@layerzerolabs/solidity-examples/contracts/token/oft/OFT.sol";
 import { OFT, IERC20, ERC20 } from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
 import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
-import "../interfaces/IBabelCore.sol";
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
 /**
     @title Babel Debt Token "acUSD"

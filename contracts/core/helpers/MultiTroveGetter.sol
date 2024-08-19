@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../../interfaces/ITroveManager.sol";
-import "../../interfaces/ISortedTroves.sol";
-import "../../interfaces/IFactory.sol";
+import {ITroveManager} from "../../interfaces/ITroveManager.sol";
+import {ISortedTroves} from "../../interfaces/ISortedTroves.sol";
+import {IFactory} from "../../interfaces/IFactory.sol";
 
 /*  Helper contract for grabbing Trove data for the front end. Not part of the core Babel system. */
 contract MultiTroveGetter {
@@ -63,13 +62,13 @@ contract MultiTroveGetter {
     ) internal view returns (CombinedTroveData[] memory _troves) {
         address currentTroveowner = sortedTroves.getFirst();
 
-        for (uint256 idx = 0; idx < _startIdx; ++idx) {
+        for (uint256 idx; idx < _startIdx; ++idx) {
             currentTroveowner = sortedTroves.getNext(currentTroveowner);
         }
 
         _troves = new CombinedTroveData[](_count);
 
-        for (uint256 idx = 0; idx < _count; ++idx) {
+        for (uint256 idx; idx < _count; ++idx) {
             _troves[idx].owner = currentTroveowner;
             (
                 _troves[idx].debt,
@@ -98,13 +97,13 @@ contract MultiTroveGetter {
     ) internal view returns (CombinedTroveData[] memory _troves) {
         address currentTroveowner = sortedTroves.getLast();
 
-        for (uint256 idx = 0; idx < _startIdx; ++idx) {
+        for (uint256 idx; idx < _startIdx; ++idx) {
             currentTroveowner = sortedTroves.getPrev(currentTroveowner);
         }
 
         _troves = new CombinedTroveData[](_count);
 
-        for (uint256 idx = 0; idx < _count; ++idx) {
+        for (uint256 idx; idx < _count; ++idx) {
             _troves[idx].owner = currentTroveowner;
             (
                 _troves[idx].debt,

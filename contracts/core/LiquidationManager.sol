@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IStabilityPool.sol";
-import "../interfaces/ISortedTroves.sol";
-import "../interfaces/IBorrowerOperations.sol";
-import "../interfaces/ITroveManager.sol";
-import "../dependencies/BabelMath.sol";
-import "../dependencies/BabelBase.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
+import {ILiquidationManager, IBabelBase, IStabilityPool, IBorrowerOperations, ITroveManager} from "../interfaces/ILiquidationManager.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BabelBase} from "../dependencies/BabelBase.sol";
 
 /**
     @title Babel Liquidation Manager
@@ -36,7 +33,7 @@ import "../dependencies/BabelBase.sol";
                the value of the debt is distributed between stability pool depositors. The remaining
                collateral is left claimable by the trove owner.
  */
-contract LiquidationManager is BabelBase {
+contract LiquidationManager is ILiquidationManager, BabelBase {
     IStabilityPool public immutable stabilityPool;
     IBorrowerOperations public immutable borrowerOperations;
     address public immutable factory;
@@ -161,11 +158,11 @@ contract LiquidationManager is BabelBase {
         troveManagerValues.price = troveManager.fetchPrice();
         troveManagerValues.sunsetting = troveManager.sunsetting();
         troveManagerValues.MCR = troveManager.MCR();
-        uint debtInStabPool = stabilityPoolCached.getTotalDebtTokenDeposits();
+        uint256 debtInStabPool = stabilityPoolCached.getTotalDebtTokenDeposits();
 
         while (trovesRemaining > 0 && troveCount > 1) {
             address account = sortedTrovesCached.getLast();
-            uint ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
+            uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
             if (ICR > maxICR) {
                 // set to 0 to ensure the next if block evaluates false
                 trovesRemaining = 0;
@@ -190,13 +187,13 @@ contract LiquidationManager is BabelBase {
             }
         }
         if (trovesRemaining > 0 && !troveManagerValues.sunsetting && troveCount > 1) {
-            (uint entireSystemColl, uint entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
+            (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
             entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
             address nextAccount = sortedTrovesCached.getLast();
             ITroveManager _troveManager = troveManager; //stack too deep workaround
             while (trovesRemaining > 0 && troveCount > 1) {
-                uint ICR = troveManager.getCurrentICR(nextAccount, troveManagerValues.price);
+                uint256 ICR = troveManager.getCurrentICR(nextAccount, troveManagerValues.price);
                 if (ICR > maxICR) break;
                 unchecked {
                     --trovesRemaining;
@@ -277,19 +274,19 @@ contract LiquidationManager is BabelBase {
         TroveManagerValues memory troveManagerValues;
 
         IStabilityPool stabilityPoolCached = stabilityPool;
-        uint debtInStabPool = stabilityPoolCached.getTotalDebtTokenDeposits();
+        uint256 debtInStabPool = stabilityPoolCached.getTotalDebtTokenDeposits();
         troveManagerValues.price = troveManager.fetchPrice();
         troveManagerValues.sunsetting = troveManager.sunsetting();
         troveManagerValues.MCR = troveManager.MCR();
-        uint troveCount = troveManager.getTroveOwnersCount();
-        uint length = _troveArray.length;
-        uint troveIter;
+        uint256 troveCount = troveManager.getTroveOwnersCount();
+        uint256 length = _troveArray.length;
+        uint256 troveIter;
         while (troveIter < length && troveCount > 1) {
             // first iteration round, when all liquidated troves have ICR < MCR we do not need to track TCR
             address account = _troveArray[troveIter];
 
             // closed / non-existent troves return an ICR of type(uint).max and are ignored
-            uint ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
+            uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
             if (ICR <= _100pct) {
                 singleLiquidation = _liquidateWithoutSP(troveManager, account);
             } else if (ICR < troveManagerValues.MCR) {
@@ -318,7 +315,7 @@ contract LiquidationManager is BabelBase {
             entireSystemDebt -= totals.totalDebtToOffset;
             while (troveIter < length && troveCount > 1) {
                 address account = _troveArray[troveIter];
-                uint ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
+                uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
                 unchecked {
                     ++troveIter;
                 }
@@ -400,8 +397,8 @@ contract LiquidationManager is BabelBase {
         uint256 _debtInStabPool,
         bool sunsetting
     ) internal returns (LiquidationValues memory singleLiquidation) {
-        uint pendingDebtReward;
-        uint pendingCollReward;
+        uint256 pendingDebtReward;
+        uint256 pendingCollReward;
 
         (
             singleLiquidation.entireTroveDebt,
@@ -453,10 +450,10 @@ contract LiquidationManager is BabelBase {
         uint256 _MCR,
         uint256 _price
     ) internal returns (LiquidationValues memory singleLiquidation) {
-        uint entireTroveDebt;
-        uint entireTroveColl;
-        uint pendingDebtReward;
-        uint pendingCollReward;
+        uint256 entireTroveDebt;
+        uint256 entireTroveColl;
+        uint256 pendingDebtReward;
+        uint256 pendingCollReward;
 
         (entireTroveDebt, entireTroveColl, pendingDebtReward, pendingCollReward) = troveManager.getEntireDebtAndColl(
             _borrower
@@ -506,8 +503,8 @@ contract LiquidationManager is BabelBase {
         ITroveManager troveManager,
         address _borrower
     ) internal returns (LiquidationValues memory singleLiquidation) {
-        uint pendingDebtReward;
-        uint pendingCollReward;
+        uint256 pendingDebtReward;
+        uint256 pendingCollReward;
 
         (
             singleLiquidation.entireTroveDebt,

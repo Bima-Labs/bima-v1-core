@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/ITroveManager.sol";
-import "../interfaces/IDebtToken.sol";
-import "../dependencies/BabelBase.sol";
-import "../dependencies/BabelMath.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/DelegatedOps.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BabelBase} from "../dependencies/BabelBase.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
+import {IBorrowerOperations, ITroveManager, IDebtToken} from "../interfaces/IBorrowerOperations.sol";
 
 /**
     @title Babel Borrower Operations
@@ -19,7 +16,7 @@ import "../dependencies/DelegatedOps.sol";
             Babel's implementation is modified to support multiple collaterals. There is a 1:n
             relationship between `BorrowerOperations` and each `TroveManager` / `SortedTroves` pair.
  */
-contract BorrowerOperations is BabelBase, BabelOwnable, DelegatedOps {
+contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, DelegatedOps {
     using SafeERC20 for IERC20;
 
     IDebtToken public immutable debtToken;
@@ -32,12 +29,6 @@ contract BorrowerOperations is BabelBase, BabelOwnable, DelegatedOps {
     struct TroveManagerData {
         IERC20 collateralToken;
         uint16 index;
-    }
-
-    struct SystemBalances {
-        uint256[] collaterals;
-        uint256[] debts;
-        uint256[] prices;
     }
 
     struct LocalVariables_adjustTrove {
@@ -68,25 +59,6 @@ contract BorrowerOperations is BabelBase, BabelOwnable, DelegatedOps {
         uint256 stake;
         uint256 arrayIndex;
     }
-
-    enum BorrowerOperation {
-        openTrove,
-        closeTrove,
-        adjustTrove
-    }
-
-    event TroveUpdated(
-        address indexed _borrower,
-        uint256 _debt,
-        uint256 _coll,
-        uint256 stake,
-        BorrowerOperation operation
-    );
-    event TroveCreated(address indexed _borrower, uint256 arrayIndex);
-    event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 stake, uint8 operation);
-    event BorrowingFeePaid(address indexed borrower, uint256 amount);
-    event CollateralConfigured(ITroveManager troveManager, IERC20 collateralToken);
-    event TroveManagerRemoved(ITroveManager troveManager);
 
     constructor(
         address _babelCore,

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "../../interfaces/ICurveProxy.sol";
-import "../../interfaces/IVault.sol";
-import "../../interfaces/ILiquidityGauge.sol";
-import "../../dependencies/BabelOwnable.sol";
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
+import {IBabelVault} from "../../interfaces/IVault.sol";
+import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
+import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 
 /**
     @title Babel Curve Deposit Wrapper
@@ -106,7 +105,7 @@ contract CurveDepositToken {
         uint256 supply = totalSupply;
         balanceOf[msg.sender] = balance - amount;
         totalSupply = supply - amount;
-        curveProxy.withdrawFromGauge(address(gauge), address(lpToken), amount, receiver);
+        curveProxy.withdrawFromGauge(address(gauge), lpToken, amount, receiver);
 
         _updateIntegrals(msg.sender, balance, supply);
         if (block.timestamp / 1 weeks >= periodFinish / 1 weeks) _fetchRewards();
@@ -150,7 +149,7 @@ contract CurveDepositToken {
         uint256 supply = totalSupply;
         uint256[2] memory amounts;
 
-        for (uint256 i = 0; i < 2; i++) {
+        for (uint256 i; i < 2; i++) {
             uint256 integral = rewardIntegral[i];
             if (supply > 0) {
                 integral += (duration * rewardRate[i] * 1e18) / supply;
@@ -201,7 +200,7 @@ contract CurveDepositToken {
         uint256 duration = updated - lastUpdate;
         if (duration > 0) lastUpdate = uint32(updated);
 
-        for (uint256 i = 0; i < 2; i++) {
+        for (uint256 i; i < 2; i++) {
             uint256 integral = rewardIntegral[i];
             if (duration > 0 && supply > 0) {
                 integral += (duration * rewardRate[i] * 1e18) / supply;

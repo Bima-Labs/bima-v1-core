@@ -5,6 +5,8 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "dotenv/config";
 
+require("@nomicfoundation/hardhat-foundry");
+
 const config: HardhatUserConfig = {
   // defaultNetwork: "polygon_amoy",
 

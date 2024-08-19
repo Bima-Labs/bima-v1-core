@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: MIT
+pragma solidity 0.8.19;
 
-pragma solidity ^0.8.0;
+import {IBabelBase} from "./IBabelBase.sol";
+import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {ISystemStart} from "./ISystemStart.sol";
+import {IDebtToken} from "./IDebtToken.sol";
+import {IBabelVault} from "./IVault.sol";
+import {IPriceFeed} from "./IPriceFeed.sol";
+import {ISortedTroves} from "./ISortedTroves.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ITroveManager {
+interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
     event BaseRateUpdated(uint256 _baseRate);
     event CollateralSent(address _to, uint256 _amount);
     event LTermsUpdated(uint256 _L_collateral, uint256 _L_debt);
@@ -18,7 +26,22 @@ interface ITroveManager {
     event TotalStakesUpdated(uint256 _newTotalStakes);
     event TroveIndexUpdated(address _borrower, uint256 _newIndex);
     event TroveSnapshotsUpdated(uint256 _L_collateral, uint256 _L_debt);
-    event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 _stake, uint8 _operation);
+    event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 _stake, TroveManagerOperation _operation);
+
+    enum Status {
+        nonExistent,
+        active,
+        closedByOwner,
+        closedByLiquidation,
+        closedByRedemption
+    }
+
+    enum TroveManagerOperation {
+        applyPendingRewards,
+        liquidateInNormalMode,
+        liquidateInRecoveryMode,
+        redeemCollateral
+    }
 
     function addCollateralSurplus(address borrower, uint256 collSurplus) external;
 
@@ -113,12 +136,6 @@ interface ITroveManager {
 
     function BOOTSTRAP_PERIOD() external view returns (uint256);
 
-    function CCR() external view returns (uint256);
-
-    function DEBT_GAS_COMPENSATION() external view returns (uint256);
-
-    function DECIMAL_PRECISION() external view returns (uint256);
-
     function L_collateral() external view returns (uint256);
 
     function L_debt() external view returns (uint256);
@@ -126,10 +143,6 @@ interface ITroveManager {
     function MAX_INTEREST_RATE_IN_BPS() external view returns (uint256);
 
     function MCR() external view returns (uint256);
-
-    function PERCENT_DIVISOR() external view returns (uint256);
-
-    function BABEL_CORE() external view returns (address);
 
     function SUNSETTING_INTEREST_RATE() external view returns (uint256);
 
@@ -142,7 +155,7 @@ interface ITroveManager {
             uint256 debt,
             uint256 coll,
             uint256 stake,
-            uint8 status,
+            Status status,
             uint128 arrayIndex,
             uint256 activeInterestIndex
         );
@@ -159,11 +172,11 @@ interface ITroveManager {
 
     function claimableReward(address account) external view returns (uint256);
 
-    function collateralToken() external view returns (address);
+    function collateralToken() external view returns (IERC20);
 
     function dailyMintReward(uint256) external view returns (uint256);
 
-    function debtToken() external view returns (address);
+    function debtToken() external view returns (IDebtToken);
 
     function defaultedCollateral() external view returns (uint256);
 
@@ -215,11 +228,7 @@ interface ITroveManager {
 
     function getTroveStatus(address _borrower) external view returns (uint256);
 
-    function getWeek() external view returns (uint256 week);
-
     function getWeekAndDay() external view returns (uint256, uint256);
-
-    function guardian() external view returns (address);
 
     function hasPendingRewards(address _borrower) external view returns (bool);
 
@@ -247,13 +256,11 @@ interface ITroveManager {
 
     function minuteDecayFactor() external view returns (uint256);
 
-    function owner() external view returns (address);
-
     function paused() external view returns (bool);
 
     function periodFinish() external view returns (uint32);
 
-    function priceFeed() external view returns (address);
+    function priceFeed() external view returns (IPriceFeed);
 
     function redemptionFeeFloor() external view returns (uint256);
 
@@ -265,7 +272,7 @@ interface ITroveManager {
 
     function rewardSnapshots(address) external view returns (uint256 collateral, uint256 debt);
 
-    function sortedTroves() external view returns (address);
+    function sortedTroves() external view returns (ISortedTroves);
 
     function sunsetting() external view returns (bool);
 
@@ -279,5 +286,5 @@ interface ITroveManager {
 
     function totalStakesSnapshot() external view returns (uint256);
 
-    function vault() external view returns (address);
+    function vault() external view returns (IBabelVault);
 }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "../dependencies/DelegatedOps.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/ITokenLocker.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
 /**
     @title Babel DAO Admin Voter
@@ -186,7 +186,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
             })
         );
 
-        for (uint256 i = 0; i < payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             proposalPayloads[idx].push(payload[i]);
         }
         latestProposalTimestamp[account] = block.timestamp;
@@ -270,7 +270,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         Action[] storage payload = proposalPayloads[id];
         uint256 payloadLength = payload.length;
 
-        for (uint256 i = 0; i < payloadLength; i++) {
+        for (uint256 i; i < payloadLength; i++) {
             payload[i].target.functionCall(payload[i].data);
         }
         emit ProposalExecuted(id);

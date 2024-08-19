@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
 interface ILiquidityGauge {
     function deposit(uint256 amount, address receiver) external;
 
-    function withdraw(uint value) external;
+    function withdraw(uint256 value) external;
 
     function lp_token() external view returns (address);
 

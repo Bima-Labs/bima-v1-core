@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IBabelCore.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
 /**
     @title Babel DAO Interim Admin
@@ -88,7 +87,7 @@ contract InterimAdmin is Ownable {
         uint256 day = block.timestamp / 1 days;
         uint256 currentDailyCount = dailyProposalsCount[day];
         require(currentDailyCount < MAX_DAILY_PROPOSALS, "MAX_DAILY_PROPOSALS");
-        uint loopEnd = payload.length;
+        uint256 loopEnd = payload.length;
         for (uint256 i; i < loopEnd; i++) {
             require(!_isSetGuardianPayload(payload[i]), "Cannot change guardian");
         }
@@ -102,7 +101,7 @@ contract InterimAdmin is Ownable {
             })
         );
 
-        for (uint256 i = 0; i < payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             proposalPayloads[idx].push(payload[i]);
         }
         emit ProposalCreated(idx, payload);
@@ -142,7 +141,7 @@ contract InterimAdmin is Ownable {
         Action[] storage payload = proposalPayloads[id];
         uint256 payloadLength = payload.length;
 
-        for (uint256 i = 0; i < payloadLength; i++) {
+        for (uint256 i; i < payloadLength; i++) {
             payload[i].target.functionCall(payload[i].data);
         }
         emit ProposalExecuted(id);

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../interfaces/IBabelCore.sol";
+import {ISystemStart} from "../interfaces/ISystemStart.sol";
+import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
 /**
     @title Babel System Start Time
     @dev Provides a unified `startTime` and `getWeek`, used for emissions.
  */
-contract SystemStart {
+contract SystemStart is ISystemStart {
     uint256 immutable startTime;
 
     constructor(address babelCore) {

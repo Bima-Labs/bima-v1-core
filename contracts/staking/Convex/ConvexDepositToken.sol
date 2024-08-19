@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "../../interfaces/ICurveProxy.sol";
-import "../../interfaces/IVault.sol";
-import "../../dependencies/BabelOwnable.sol";
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
+import {IBabelVault} from "../../interfaces/IVault.sol";
+import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 
 interface IBooster {
     function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool);
@@ -200,7 +199,7 @@ contract ConvexDepositToken {
         uint256 supply = totalSupply;
         uint256[3] memory amounts;
 
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i; i < 3; i++) {
             uint256 integral = rewardIntegral[i];
             if (supply > 0) {
                 integral += (duration * rewardRate[i] * 1e18) / supply;
@@ -251,7 +250,7 @@ contract ConvexDepositToken {
         uint256 duration = updated - lastUpdate;
         if (duration > 0) lastUpdate = uint32(updated);
 
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i; i < 3; i++) {
             uint256 integral = rewardIntegral[i];
             if (duration > 0 && supply > 0) {
                 integral += (duration * rewardRate[i] * 1e18) / supply;

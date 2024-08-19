@@ -1,26 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/IBabelToken.sol";
-import "../interfaces/IEmissionSchedule.sol";
-import "../interfaces/IIncentiveVoting.sol";
-import "../interfaces/ITokenLocker.sol";
-import "../interfaces/IBoostDelegate.sol";
-import "../interfaces/IBoostCalculator.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
 
 interface IEmissionReceiver {
     function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool);
-}
-
-interface IRewards {
-    function vaultClaimReward(address claimant, address receiver) external returns (uint256);
-
-    function claimableReward(address account) external view returns (uint256);
 }
 
 /**
@@ -30,7 +18,7 @@ interface IRewards {
             vault gradually releases tokens to registered emissions receivers
             as determined by `EmissionSchedule` and `BoostCalculator`.
  */
-contract BabelVault is BabelOwnable, SystemStart {
+contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     using Address for address;
     using SafeERC20 for IERC20;
 
@@ -38,7 +26,7 @@ contract BabelVault is BabelOwnable, SystemStart {
     ITokenLocker public immutable locker;
     IIncentiveVoting public immutable voter;
     address public immutable deploymentManager;
-    uint256 immutable lockToTokenRatio;
+    uint256 public immutable lockToTokenRatio;
 
     IEmissionSchedule public emissionSchedule;
     IBoostCalculator public boostCalculator;
@@ -84,20 +72,6 @@ contract BabelVault is BabelOwnable, SystemStart {
         IBoostDelegate callback;
     }
 
-    struct InitialAllowance {
-        address receiver;
-        uint256 amount;
-    }
-
-    event NewReceiverRegistered(address receiver, uint256 id);
-    event ReceiverIsActiveStatusModified(uint256 indexed id, bool isActive);
-    event UnallocatedSupplyReduced(uint256 reducedAmount, uint256 unallocatedTotal);
-    event UnallocatedSupplyIncreased(uint256 increasedAmount, uint256 unallocatedTotal);
-    event IncreasedAllocation(address indexed receiver, uint256 increasedAmount);
-    event EmissionScheduleSet(address emissionScheduler);
-    event BoostCalculatorSet(address boostCalculator);
-    event BoostDelegationSet(address indexed boostDelegate, bool isEnabled, uint256 feePct, address callback);
-
     constructor(
         address _babelCore,
         IBabelToken _token,
@@ -137,7 +111,7 @@ contract BabelVault is BabelOwnable, SystemStart {
         uint256 totalAllocated;
         uint256 length = _fixedInitialAmounts.length;
         uint256 offset = getWeek() + 1;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint128 amount = _fixedInitialAmounts[i];
             weeklyEmissions[i + offset] = amount;
             totalAllocated += amount;
@@ -145,7 +119,7 @@ contract BabelVault is BabelOwnable, SystemStart {
 
         // set initial transfer allowances for airdrops, vests, bribes
         length = initialAllowances.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 amount = initialAllowances[i].amount;
             address receiver = initialAllowances[i].receiver;
             totalAllocated += amount;
@@ -172,7 +146,7 @@ contract BabelVault is BabelOwnable, SystemStart {
     function registerReceiver(address receiver, uint256 count) external onlyOwner returns (bool) {
         uint256[] memory assignedIds = new uint256[](count);
         uint16 week = uint16(getWeek());
-        for (uint256 i = 0; i < count; i++) {
+        for (uint256 i; i < count; i++) {
             uint256 id = voter.registerNewReceiver();
             assignedIds[i] = id;
             receiverUpdatedWeek[id] = week;
@@ -357,7 +331,7 @@ contract BabelVault is BabelOwnable, SystemStart {
 
         uint256 total;
         uint256 length = rewardContracts.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 amount = rewardContracts[i].vaultClaimReward(msg.sender, receiver);
             allocated[address(rewardContracts[i])] -= amount;
             total += amount;

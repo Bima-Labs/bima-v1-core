@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../interfaces/IERC2612.sol";
-import { OFT, IERC20, ERC20 } from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
+import {IERC2612} from "../interfaces/IERC2612.sol";
+import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
 /**
     @title Babel Governance Token
     @notice Given as an incentive for users of the protocol. Can be locked in `TokenLocker`

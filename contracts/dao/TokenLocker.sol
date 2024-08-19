@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
-import "../interfaces/IBabelCore.sol";
-import "../interfaces/IIncentiveVoting.sol";
-import "../interfaces/IBabelToken.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {ITokenLocker, IBabelToken, IBabelCore, IIncentiveVoting} from "../interfaces/ITokenLocker.sol";
 
 /**
     @title Babel Token Locker
@@ -14,7 +11,7 @@ import "../interfaces/IBabelToken.sol";
             which is used within `AdminVoting` and `IncentiveVoting` to vote on
             core protocol operations.
  */
-contract TokenLocker is BabelOwnable, SystemStart {
+contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     // The maximum number of weeks that tokens may be locked for. Also determines the maximum
     // number of active locks that a single account may open. Weight is calculated as:
     // `[balance] * [weeks to unlock]`. Weights are stored as `uint40` and balances as `uint32`,
@@ -56,17 +53,6 @@ contract TokenLocker is BabelOwnable, SystemStart {
         uint256[256] updateWeeks;
     }
 
-    // structs used in function inputs
-    struct LockData {
-        uint256 amount;
-        uint256 weeksToUnlock;
-    }
-    struct ExtendLockData {
-        uint256 amount;
-        uint256 currentWeeks;
-        uint256 newWeeks;
-    }
-
     // Rate at which the total lock weight decreases each week. The total decay rate may not
     // be equal to the total number of locked tokens, as it does not include frozen accounts.
     uint32 public totalDecayRate;
@@ -87,14 +73,6 @@ contract TokenLocker is BabelOwnable, SystemStart {
 
     // account -> primary account data structure
     mapping(address => AccountData) accountLockData;
-
-    event LockCreated(address indexed account, uint256 amount, uint256 _weeks);
-    event LockExtended(address indexed account, uint256 amount, uint256 _weeks, uint256 newWeeks);
-    event LocksCreated(address indexed account, LockData[] newLocks);
-    event LocksExtended(address indexed account, ExtendLockData[] locks);
-    event LocksFrozen(address indexed account, uint256 amount);
-    event LocksUnfrozen(address indexed account, uint256 amount);
-    event LocksWithdrawn(address indexed account, uint256 withdrawn, uint256 penalty);
 
     constructor(
         address _babelCore,
@@ -256,7 +234,7 @@ contract TokenLocker is BabelOwnable, SystemStart {
             lockData = new LockData[](length);
             uint256 x = length;
             // increment i, decrement x so LockData is ordered from longest to shortest duration
-            for (uint256 i = 0; x != 0; i++) {
+            for (uint256 i; x != 0; i++) {
                 x--;
                 uint256 idx = unlockWeeks[x];
                 lockData[i] = LockData({ weeksToUnlock: idx - systemWeek, amount: unlocks[idx] });
@@ -307,7 +285,7 @@ contract TokenLocker is BabelOwnable, SystemStart {
             if ((bitfield >> (accountWeek % 256)) & uint256(1) == 1) {
                 uint256 lockAmount = unlocks[accountWeek] * lockToTokenRatio;
 
-                uint256 penaltyOnAmount = 0;
+                uint256 penaltyOnAmount;
                 if (accountWeek > systemWeek) {
                     // only apply the penalty if the lock has not expired
                     penaltyOnAmount = (lockAmount * (weeksToUnlock - offset)) / MAX_LOCK_WEEKS;
@@ -556,7 +534,7 @@ contract TokenLocker is BabelOwnable, SystemStart {
 
         // iterate new locks and store intermediate values in memory where possible
         uint256 length = newLocks.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 amount = newLocks[i].amount;
             uint256 week = newLocks[i].weeksToUnlock;
             require(amount > 0, "Amount must be nonzero");
@@ -621,7 +599,7 @@ contract TokenLocker is BabelOwnable, SystemStart {
 
         // iterate extended locks and store intermediate values in memory where possible
         uint256 length = newExtendLocks.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             uint256 amount = newExtendLocks[i].amount;
             uint256 oldWeeks = newExtendLocks[i].currentWeeks;
             uint256 newWeeks = newExtendLocks[i].newWeeks;

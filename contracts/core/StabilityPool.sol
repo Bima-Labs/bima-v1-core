@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../dependencies/SystemStart.sol";
-import "../dependencies/BabelMath.sol";
-import "../interfaces/IDebtToken.sol";
-import "../interfaces/IVault.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 /**
     @title Babel Stability Pool
@@ -18,7 +15,7 @@ import "../interfaces/IVault.sol";
             Babel's implementation is modified to support multiple collaterals. Deposits into
             the stability pool may be used to liquidate any supported collateral type.
  */
-contract StabilityPool is BabelOwnable, SystemStart {
+contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
     uint256 public constant DECIMAL_PRECISION = 1e18;
@@ -119,22 +116,6 @@ contract StabilityPool is BabelOwnable, SystemStart {
         uint16 nextSunsetIndexKey;
     }
 
-    event StabilityPoolDebtBalanceUpdated(uint256 _newBalance);
-
-    event P_Updated(uint256 _P);
-    event S_Updated(uint256 idx, uint256 _S, uint128 _epoch, uint128 _scale);
-    event G_Updated(uint256 _G, uint128 _epoch, uint128 _scale);
-    event EpochUpdated(uint128 _currentEpoch);
-    event ScaleUpdated(uint128 _currentScale);
-
-    event DepositSnapshotUpdated(address indexed _depositor, uint256 _P, uint256 _G);
-    event UserDepositChanged(address indexed _depositor, uint256 _newDeposit);
-
-    event CollateralGainWithdrawn(address indexed _depositor, uint256[] _collateral);
-    event CollateralOverwritten(IERC20 oldCollateral, IERC20 newCollateral);
-
-    event RewardClaimed(address indexed account, address indexed recipient, uint256 claimed);
-
     constructor(
         address _babelCore,
         IDebtToken _debtTokenAddress,
@@ -153,7 +134,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         require(msg.sender == factory, "Not factory");
         uint256 length = collateralTokens.length;
         bool collateralEnabled;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             if (collateralTokens[i] == _collateral) {
                 collateralEnabled = true;
                 break;
@@ -525,7 +506,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         uint256[256] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
         uint256[256] storage depSums = depositSums[_depositor];
 
-        for (uint256 i = 0; i < collateralGains.length; i++) {
+        for (uint256 i; i < collateralGains.length; i++) {
             collateralGains[i] = depositorGains[i];
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
@@ -552,7 +533,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         uint256[256] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
         uint256[256] storage depSums = depositSums[_depositor];
 
-        for (uint256 i = 0; i < collaterals; i++) {
+        for (uint256 i; i < collaterals; i++) {
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             hasGains = true;
             uint256 firstPortion = sums[i] - depSums[i];
@@ -727,7 +708,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
             delete depositSnapshots[_depositor];
 
             length = collateralTokens.length;
-            for (uint256 i = 0; i < length; i++) {
+            for (uint256 i; i < length; i++) {
                 depositSums[_depositor][i] = 0;
             }
             emit DepositSnapshotUpdated(_depositor, 0, 0);
@@ -748,7 +729,7 @@ contract StabilityPool is BabelOwnable, SystemStart {
         depositSnapshots[_depositor].epoch = currentEpochCached;
 
         length = collateralTokens.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             depositSums[_depositor][i] = currentS[i];
         }
 

@@ -1,18 +1,41 @@
 // SPDX-License-Identifier: MIT
-import "./interfaces/IAggregatorV3Interface.sol";
-
 pragma solidity 0.8.19;
 
+import {IAggregatorV3Interface} from "./interfaces/IAggregatorV3Interface.sol";
+
 contract MockOracle is IAggregatorV3Interface {
-    function decimals() external view returns (uint8) {
+    uint80  public roundId;
+    int256  public answer;
+    uint256 public startedAt;
+    uint256 public updatedAt;
+    uint80  public answeredInRound;
+
+    constructor() {
+        roundId = 12345;
+        answer = 60000 * 10 ** 8;
+        startedAt = block.timestamp;
+        updatedAt = block.timestamp;
+        answeredInRound = 12345;
+    }
+
+    function setResponse(uint80 _roundId, int256 _answer, uint256 _startedAt, 
+                         uint256 _updatedAt, uint80 _answeredInRound) external {
+        roundId = _roundId;
+        answer = _answer;
+        startedAt = _startedAt;
+        updatedAt = _updatedAt;
+        answeredInRound = _answeredInRound;
+    }
+
+    function decimals() external pure returns (uint8) {
         return 8;
     }
 
-    function description() external view returns (string memory) {
+    function description() external pure returns (string memory) {
         return "BTC / USD";
     }
 
-    function version() external view returns (uint256) {
+    function version() external pure returns (uint256) {
         return 4;
     }
 
@@ -21,33 +44,16 @@ contract MockOracle is IAggregatorV3Interface {
     )
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        )
+        returns (uint80,int256,uint256,uint256,uint80)
     {
-        // Return round id equal to the input round id
-        // Return answer equal to 60000
-        // Started at should be block.timestamp - 1 day
-        // Updated at should be block.timestamp
-        // Answered in round should be 0
-        return (_roundId, 60000 * 10 ** 8, block.timestamp - 1 days, block.timestamp - 1 days, _roundId);
+        return (_roundId,answer,startedAt,updatedAt,_roundId);
     }
 
     function latestRoundData()
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        )
+        returns (uint80,int256,uint256,uint256,uint80)
     {
-        return (12345, 60000 * 10 ** 8, block.timestamp, block.timestamp, 12345);
+        return (roundId,answer,startedAt,updatedAt,answeredInRound);
     }
 }

@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../interfaces/IBorrowerOperations.sol";
-import "../interfaces/IDebtToken.sol";
-import "../interfaces/ISortedTroves.sol";
-import "../interfaces/IVault.sol";
-import "../interfaces/IPriceFeed.sol";
-import "../dependencies/SystemStart.sol";
-import "../dependencies/BabelBase.sol";
-import "../dependencies/BabelMath.sol";
-import "../dependencies/BabelOwnable.sol";
-import "hardhat/console.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
+import {ITroveManager, IDebtToken, IBabelVault, IPriceFeed, ISortedTroves, IERC20} from "../interfaces/ITroveManager.sol";
+import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BabelBase} from "../dependencies/BabelBase.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+
+// todo: remove before production
+import {console} from "hardhat/console.sol";
 /**
     @title Babel Trove Manager
     @notice Based on Liquity's `TroveManager`
@@ -27,7 +25,7 @@ import "hardhat/console.sol";
             Functionality related to liquidations has been moved to `LiquidationManager`. This was
             necessary to avoid the restriction on deployed bytecode size.
  */
-contract TroveManager is BabelBase, BabelOwnable, SystemStart {
+contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
     // --- Connected contract declarations ---
@@ -190,45 +188,6 @@ contract TroveManager is BabelBase, BabelOwnable, SystemStart {
         uint256 collateral;
         uint256 debt;
     }
-
-    enum TroveManagerOperation {
-        applyPendingRewards,
-        liquidateInNormalMode,
-        liquidateInRecoveryMode,
-        redeemCollateral
-    }
-
-    enum Status {
-        nonExistent,
-        active,
-        closedByOwner,
-        closedByLiquidation,
-        closedByRedemption
-    }
-
-    event TroveUpdated(
-        address indexed _borrower,
-        uint256 _debt,
-        uint256 _coll,
-        uint256 _stake,
-        TroveManagerOperation _operation
-    );
-    event Redemption(
-        uint256 _attemptedDebtAmount,
-        uint256 _actualDebtAmount,
-        uint256 _collateralSent,
-        uint256 _collateralFee
-    );
-    event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 stake, uint8 operation);
-    event BaseRateUpdated(uint256 _baseRate);
-    event LastFeeOpTimeUpdated(uint256 _lastFeeOpTime);
-    event TotalStakesUpdated(uint256 _newTotalStakes);
-    event SystemSnapshotsUpdated(uint256 _totalStakesSnapshot, uint256 _totalCollateralSnapshot);
-    event LTermsUpdated(uint256 _L_collateral, uint256 _L_debt);
-    event TroveSnapshotsUpdated(uint256 _L_collateral, uint256 _L_debt);
-    event TroveIndexUpdated(address _borrower, uint256 _newIndex);
-    event CollateralSent(address _to, uint256 _amount);
-    event RewardClaimed(address indexed account, address indexed recipient, uint256 claimed);
 
     modifier whenNotPaused() {
         require(!paused, "Collateral Paused");
@@ -968,7 +927,7 @@ contract TroveManager is BabelBase, BabelOwnable, SystemStart {
         uint256 reward = dailyMintReward[previousWeek];
         if (reward > 0) {
             uint32[7] memory totals = totalMints[previousWeek];
-            for (uint256 i = 0; i < 7; i++) {
+            for (uint256 i; i < 7; i++) {
                 if (totals[i] == 0) {
                     amount += reward;
                 }

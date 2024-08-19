@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
+
+import {IDelegatedOps} from "../interfaces/IDelegatedOps.sol";
 
 /**
     @title Babel Delegated Operations
@@ -16,7 +17,7 @@ pragma solidity 0.8.19;
             from the caller, create the debt position for `account`, and send newly
             minted tokens to the caller.
  */
-contract DelegatedOps {
+contract DelegatedOps is IDelegatedOps {
     mapping(address owner => mapping(address caller => bool isApproved)) public isApprovedDelegate;
 
     modifier callerOrDelegated(address _account) {

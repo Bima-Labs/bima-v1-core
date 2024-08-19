@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "../dependencies/BabelOwnable.sol";
-import "../interfaces/ITroveManager.sol";
-import "../interfaces/IBorrowerOperations.sol";
-import "../interfaces/IDebtToken.sol";
-import "../interfaces/ISortedTroves.sol";
-import "../interfaces/IStabilityPool.sol";
-import "../interfaces/ILiquidationManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {ITroveManager} from "../interfaces/ITroveManager.sol";
+import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
+import {IFactory, IDebtToken, ILiquidationManager, IBorrowerOperations, IStabilityPool} from "../interfaces/IFactory.sol";
 
 /**
     @title Babel Trove Factory
     @notice Deploys cloned pairs of `TroveManager` and `SortedTroves` in order to
             add new collateral types within the system.
  */
-contract Factory is BabelOwnable {
+contract Factory is IFactory, BabelOwnable {
     using Clones for address;
 
     // fixed single-deployment contracts
@@ -30,20 +27,6 @@ contract Factory is BabelOwnable {
     address public troveManagerImpl;
 
     address[] public troveManagers;
-
-    // commented values are suggested default parameters
-    struct DeploymentParams {
-        uint256 minuteDecayFactor; // 999037758833783000  (half life of 12 hours)
-        uint256 redemptionFeeFloor; // 1e18 / 1000 * 5  (0.5%)
-        uint256 maxRedemptionFee; // 1e18  (100%)
-        uint256 borrowingFeeFloor; // 1e18 / 1000 * 5  (0.5%)
-        uint256 maxBorrowingFee; // 1e18 / 100 * 5  (5%)
-        uint256 interestRateInBps; // 100 (1%)
-        uint256 maxDebt;
-        uint256 MCR; // 2e18  (200%)
-    }
-
-    event NewDeployment(address collateral, address priceFeed, address troveManager, address sortedTroves);
 
     constructor(
         address _babelCore,
@@ -102,10 +85,10 @@ contract Factory is BabelOwnable {
         // verify that the oracle is correctly working
         ITroveManager(troveManager).fetchPrice();
 
-        stabilityPool.enableCollateral(collateral);
-        liquidationManager.enableTroveManager(troveManager);
+        stabilityPool.enableCollateral(IERC20(collateral));
+        liquidationManager.enableTroveManager(ITroveManager(troveManager));
         debtToken.enableTroveManager(troveManager);
-        borrowerOperations.configureCollateral(troveManager, collateral);
+        borrowerOperations.configureCollateral(ITroveManager(troveManager), IERC20(collateral));
 
         ITroveManager(troveManager).setParameters(
             params.minuteDecayFactor,

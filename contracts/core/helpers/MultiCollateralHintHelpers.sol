@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../../interfaces/IBorrowerOperations.sol";
-import "../../interfaces/ITroveManager.sol";
-import "../../interfaces/ISortedTroves.sol";
-import "../../interfaces/IFactory.sol";
-import "../../dependencies/BabelBase.sol";
-import "../../dependencies/BabelMath.sol";
+import {IBorrowerOperations} from "../../interfaces/IBorrowerOperations.sol";
+import {ITroveManager} from "../../interfaces/ITroveManager.sol";
+import {ISortedTroves} from "../../interfaces/ISortedTroves.sol";
+import {IFactory} from "../../interfaces/IFactory.sol";
+import {BabelBase} from "../../dependencies/BabelBase.sol";
+import {BabelMath} from "../../dependencies/BabelMath.sol";
 
 contract MultiCollateralHintHelpers is BabelBase {
     IBorrowerOperations public immutable borrowerOperations;

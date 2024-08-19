@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.19;
 
-import "../../interfaces/ITroveManager.sol";
-import "../../interfaces/IFactory.sol";
+import {ITroveManager} from "../../interfaces/ITroveManager.sol";
+import {IFactory} from "../../interfaces/IFactory.sol";
 
 /*  Helper contract for grabbing Trove data for the front end. Not part of the core Babel system. */
 contract TroveManagerGetters {
@@ -27,11 +26,11 @@ contract TroveManagerGetters {
         address[2][] memory troveManagersAndCollaterals = new address[2][](length);
         address[] memory uniqueCollaterals = new address[](length);
         uint256 collateralCount;
-        for (uint i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             address troveManager = factory.troveManagers(i);
-            address collateral = ITroveManager(troveManager).collateralToken();
+            address collateral = address(ITroveManager(troveManager).collateralToken());
             troveManagersAndCollaterals[i] = [troveManager, collateral];
-            for (uint x = 0; x < length; x++) {
+            for (uint256 x; x < length; x++) {
                 if (uniqueCollaterals[x] == collateral) break;
                 if (uniqueCollaterals[x] == address(0)) {
                     uniqueCollaterals[x] = collateral;
@@ -41,18 +40,18 @@ contract TroveManagerGetters {
             }
         }
         Collateral[] memory collateralMap = new Collateral[](collateralCount);
-        for (uint i = 0; i < collateralCount; i++) {
+        for (uint256 i; i < collateralCount; i++) {
             collateralMap[i].collateral = uniqueCollaterals[i];
-            uint tmCollCount = 0;
+            uint256 tmCollCount;
             address[] memory troveManagers = new address[](length);
-            for (uint x = 0; x < length; x++) {
+            for (uint256 x; x < length; x++) {
                 if (troveManagersAndCollaterals[x][1] == uniqueCollaterals[i]) {
                     troveManagers[tmCollCount] = troveManagersAndCollaterals[x][0];
                     tmCollCount++;
                 }
             }
             collateralMap[i].troveManagers = new address[](tmCollCount);
-            for (uint x = 0; x < tmCollCount; x++) {
+            for (uint256 x; x < tmCollCount; x++) {
                 collateralMap[i].troveManagers[x] = troveManagers[x];
             }
         }
@@ -67,7 +66,7 @@ contract TroveManagerGetters {
         uint256 length = factory.troveManagerCount();
         address[] memory troveManagers = new address[](length);
         uint256 tmCount;
-        for (uint i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             address troveManager = factory.troveManagers(i);
             if (ITroveManager(troveManager).getTroveStatus(account) > 0) {
                 troveManagers[tmCount] = troveManager;
