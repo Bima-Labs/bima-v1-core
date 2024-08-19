@@ -2,12 +2,10 @@
 pragma solidity 0.8.19;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
-import {IDebtToken} from "../interfaces/IDebtToken.sol";
-import {IBabelVault} from "../interfaces/IVault.sol";
+import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 /**
     @title Babel Stability Pool
@@ -17,7 +15,7 @@ import {IBabelVault} from "../interfaces/IVault.sol";
             Babel's implementation is modified to support multiple collaterals. Deposits into
             the stability pool may be used to liquidate any supported collateral type.
  */
-contract StabilityPool is BabelOwnable, SystemStart {
+contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
     uint256 public constant DECIMAL_PRECISION = 1e18;
@@ -117,22 +115,6 @@ contract StabilityPool is BabelOwnable, SystemStart {
         uint16 firstSunsetIndexKey;
         uint16 nextSunsetIndexKey;
     }
-
-    event StabilityPoolDebtBalanceUpdated(uint256 _newBalance);
-
-    event P_Updated(uint256 _P);
-    event S_Updated(uint256 idx, uint256 _S, uint128 _epoch, uint128 _scale);
-    event G_Updated(uint256 _G, uint128 _epoch, uint128 _scale);
-    event EpochUpdated(uint128 _currentEpoch);
-    event ScaleUpdated(uint128 _currentScale);
-
-    event DepositSnapshotUpdated(address indexed _depositor, uint256 _P, uint256 _G);
-    event UserDepositChanged(address indexed _depositor, uint256 _newDeposit);
-
-    event CollateralGainWithdrawn(address indexed _depositor, uint256[] _collateral);
-    event CollateralOverwritten(IERC20 oldCollateral, IERC20 newCollateral);
-
-    event RewardClaimed(address indexed account, address indexed recipient, uint256 claimed);
 
     constructor(
         address _babelCore,

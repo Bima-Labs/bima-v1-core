@@ -228,7 +228,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         if (totals.totalDebtToOffset > 0 || totals.totalCollToSendToSP > 0) {
             // Move liquidated collateral and Debt to the appropriate pools
             stabilityPoolCached.offset(
-                troveManager.collateralToken(),
+                IERC20(troveManager.collateralToken()),
                 totals.totalDebtToOffset,
                 totals.totalCollToSendToSP
             );
@@ -359,7 +359,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         if (totals.totalDebtToOffset > 0 || totals.totalCollToSendToSP > 0) {
             // Move liquidated collateral and Debt to the appropriate pools
             stabilityPoolCached.offset(
-                troveManager.collateralToken(),
+                IERC20(troveManager.collateralToken()),
                 totals.totalDebtToOffset,
                 totals.totalCollToSendToSP
             );
