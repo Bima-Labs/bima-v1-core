@@ -31,7 +31,7 @@ import {FeeReceiver} from "../../contracts/dao/FeeReceiver.sol";
 import {InterimAdmin} from "../../contracts/dao/InterimAdmin.sol";
 import {TokenLocker} from "../../contracts/dao/TokenLocker.sol";
 import {IncentiveVoting} from "../../contracts/dao/IncentiveVoting.sol";
-import {BabelToken} from "../../contracts/dao/PrismaToken.sol";
+import {BabelToken} from "../../contracts/dao/BabelToken.sol";
 import {BabelVault} from "../../contracts/dao/Vault.sol";
 
 // foundry
