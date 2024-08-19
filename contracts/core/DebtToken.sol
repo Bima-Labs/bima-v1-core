@@ -18,7 +18,6 @@ contract DebtToken is OFT {
     // --- ERC 3156 Data ---
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
     uint256 public constant FLASH_LOAN_FEE = 9; // 1 = 0.0001%
-    uint256 public constant MIN_FLASH_LOAN = 1112;
 
     // --- Data for EIP2612 ---
 
@@ -164,11 +163,11 @@ contract DebtToken is OFT {
      * implementation has 0 fees. This function can be overloaded to make
      * the flash loan mechanism deflationary.
      * @param amount The amount of tokens to be loaned.
-     * @return The fees applied to the corresponding flash loan.
+     * @return fee applied to the corresponding flash loan.
      */
-    function _flashFee(uint256 amount) internal pure returns (uint256) {
-        require(amount >= MIN_FLASH_LOAN, "ERC20FlashMint: amount too small");
-        return (amount * FLASH_LOAN_FEE) / 10000;
+    function _flashFee(uint256 amount) internal pure returns (uint256 fee) {
+        fee = (amount * FLASH_LOAN_FEE) / 10000;
+        require(fee > 0, "ERC20FlashMint: amount too small");
     }
 
     /**
