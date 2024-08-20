@@ -95,15 +95,27 @@ contract AdminVoting is DelegatedOps, SystemStart {
         return proposalData.length;
     }
 
-    function minCreateProposalWeight() public view returns (uint256) {
-        uint256 week = getWeek();
-        if (week == 0) return 0;
-        week -= 1;
+    function minCreateProposalWeight() public view returns (uint256 weight) {
+        // store getWeek() directly into output `weight` return
+        weight = getWeek();
 
-        uint256 totalWeight = tokenLocker.getTotalWeightAt(week);
-        require(totalWeight > 0, "Zero total voting weight for given week");
+        // if week == 0 nothing else to do since weight also 0
+        if(weight != 0) {
+            // otherwise over-write output with weight calculation subtracting
+            // 1 from the week
+            weight = _minCreateProposalWeight(weight-1);
+        }
+    }
 
-        return (totalWeight * minCreateProposalPct) / MAX_PCT;
+    function _minCreateProposalWeight(uint256 week) internal view returns (uint256 weight) {
+        // store total weight directly into output `weight` return
+        weight = tokenLocker.getTotalWeightAt(week);
+
+        // prevent proposal creation if zero total weight for given week
+        require(weight > 0, "Zero total voting weight for given week");
+
+        // over-write output return with weight calculation
+        weight = (weight * minCreateProposalPct / MAX_PCT);
     }
 
     /**
@@ -163,7 +175,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         week -= 1;
 
         uint256 accountWeight = tokenLocker.getAccountWeightAt(account, week);
-        require(accountWeight >= minCreateProposalWeight(), "Not enough weight to propose");
+        require(accountWeight >= _minCreateProposalWeight(week), "Not enough weight to propose");
 
         // if the only action is `babelCore.setGuardian()`, use
         // `SET_GUARDIAN_PASSING_PCT` instead of `passingPct`
