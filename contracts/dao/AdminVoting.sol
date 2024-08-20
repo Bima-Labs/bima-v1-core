@@ -162,8 +162,10 @@ contract AdminVoting is DelegatedOps, SystemStart {
                        executed if the proposal is passed.
      */
     function createNewProposal(address account, Action[] calldata payload) external callerOrDelegated(account) {
+        // enforce >=1 payload
         require(payload.length > 0, "Empty payload");
 
+        // restrict accounts from spamming proposals
         require(
             latestProposalTimestamp[account] + MIN_TIME_BETWEEN_PROPOSALS < block.timestamp,
             "MIN_TIME_BETWEEN_PROPOSALS"
@@ -174,20 +176,30 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(week > 0, "No proposals in first week");
         week -= 1;
 
+        // account must satisfy minimum weight to create proposals
         uint256 accountWeight = tokenLocker.getAccountWeightAt(account, week);
         require(accountWeight >= _minCreateProposalWeight(week), "Not enough weight to propose");
 
         // if the only action is `babelCore.setGuardian()`, use
         // `SET_GUARDIAN_PASSING_PCT` instead of `passingPct`
-        uint256 _passingPct;
-        bool isSetGuardianPayload = _isSetGuardianPayload(payload.length, payload[0]);
-        if (isSetGuardianPayload) {
-            require(block.timestamp > startTime + BOOTSTRAP_PERIOD, "Cannot change guardian during bootstrap");
-            _passingPct = SET_GUARDIAN_PASSING_PCT;
-        } else _passingPct = passingPct;
+        uint256 proposalPassPct;
 
+        if (_isSetGuardianPayload(payload.length, payload[0])) {
+            // prevent changing guardians during bootstrap period
+            require(block.timestamp > startTime + BOOTSTRAP_PERIOD, "Cannot change guardian during bootstrap");
+
+            // enforce 50.1% majority for setGuardian proposals
+            proposalPassPct = SET_GUARDIAN_PASSING_PCT;
+        }
+        // otherwise enforce standard configured passing % for ordinary proposals
+        else proposalPassPct = passingPct;
+
+        // fetch total voting weight for the week
         uint256 totalWeight = tokenLocker.getTotalWeightAt(week);
-        uint40 requiredWeight = uint40((totalWeight * _passingPct) / MAX_PCT);
+
+        // calculate required quorum for the proposal to pass
+        uint40 requiredWeight = uint40((totalWeight * proposalPassPct) / MAX_PCT);
+
         uint256 idx = proposalData.length;
         proposalData.push(
             Proposal({
