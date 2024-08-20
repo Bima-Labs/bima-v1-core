@@ -27,6 +27,7 @@ const config: HardhatUserConfig = {
       polygon_testnet: "",
       fluent_testnet:"",
       filecoin_testnet:"",
+      bnb_testnet:"",
     },
     customChains: [
       {
@@ -36,6 +37,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "bnb_testnet",
+        chainId: 97,
+
+        urls: {
+          browserURL: "https://testnet.bscscan.com/",
+          apiURL: "https://api-testnet.bscscan.com/api",
         },
       },
       {
@@ -241,6 +251,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    bnb_testnet: {
+      url: "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     filecoin_testnet: {
