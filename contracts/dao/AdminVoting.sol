@@ -101,6 +101,8 @@ contract AdminVoting is DelegatedOps, SystemStart {
         week -= 1;
 
         uint256 totalWeight = tokenLocker.getTotalWeightAt(week);
+        require(totalWeight > 0, "Zero total voting weight for given week");
+
         return (totalWeight * minCreateProposalPct) / MAX_PCT;
     }
 

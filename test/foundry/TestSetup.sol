@@ -95,6 +95,10 @@ contract TestSetup is Test {
 
 
     function setUp() public virtual {
+        // prevent Foundry from setting block.timestamp = 1 which can cause
+        // errors in this protocol
+        vm.warp(1659973223);
+
         // set addresses used by tests
         users.owner = address(0x1111);
         users.guardian = address(0x2222);
