@@ -73,10 +73,10 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
 
     uint256 timestamp = timestampNs / 1e9;
 
-    roundId = 1;
+    roundId = 1000;
     answer = int256(quantizedValue / 1e10);
     startedAt = timestamp;
     updatedAt = timestamp;
-    answeredInRound = 1;
+    answeredInRound = 1000;
   }
 }
