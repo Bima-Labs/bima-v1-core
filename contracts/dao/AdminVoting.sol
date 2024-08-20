@@ -95,7 +95,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         return proposalData.length;
     }
 
-    function minCreateProposalWeight() public view returns (uint256 weight) {
+    function minCreateProposalWeight() external view returns (uint256 weight) {
         // store getWeek() directly into output `weight` return
         weight = getWeek();
 
