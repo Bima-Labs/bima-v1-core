@@ -174,6 +174,7 @@
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xDD9AEa4613dee5329033d2F53d146E2fe57A8d0D | 0x822265703c1c75da4Ebfc2264036c6137a18C5E1 |
+| stBTC (mocked)  | 0x2e2C128B256884cc2C10D88214FEC53a33a0db49 | 0xaF58080033062728c052d1d142421ffB13F94588 | 0x7b71439efb506d7E8fcEe921471CAfb6F471B46c |
 
 ## Citrea Testnet
 
@@ -418,11 +419,9 @@
 | BabelToken         | 0x479641cb71FC11646e551e1F578707a7bBA673a8 |
 | BabelVault         | 0xf8d238C6E93aC0f6551388B24d7457C3d10C0C63 |
 
-
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-
 
 ## Fluent Testnet
 
@@ -473,7 +472,6 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-
 
 ## Filecoin Testnet
 
@@ -574,6 +572,7 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
+
 ## Moonbase Alpha Testnet
 
 | Contract           | Address                                    |
