@@ -27,6 +27,7 @@ const config: HardhatUserConfig = {
       polygon_testnet: "",
       fluent_testnet:"",
       filecoin_testnet:"",
+      morph_testnet:""
     },
     customChains: [
       {
@@ -235,6 +236,14 @@ const config: HardhatUserConfig = {
           apiURL:"https://exchaintestrpc.okex.org",
         }
       },
+      {
+        network: "morph_testnet",
+        chainId: 2810,
+        urls: {
+          browserURL:"https://explorer-holesky.morphl2.io/",
+          apiURL:"https://rpc-holesky.morphl2.io",
+        }
+      },
       
     ],
   },
@@ -332,7 +341,13 @@ const config: HardhatUserConfig = {
     okx_testnet: {
       url:"https://exchaintestrpc.okex.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+
+    morph_testnet: {
+      url:"https://rpc-holesky.morphl2.io",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
+
   },
   solidity: {
     compilers: [
