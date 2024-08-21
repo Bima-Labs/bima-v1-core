@@ -104,7 +104,7 @@ contract TestSetup is Test {
     uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
     uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
     uint64[2][] internal scheduledWeeklyPct;
-    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = 1_000_000e18;
+    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max;
     uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
 
 

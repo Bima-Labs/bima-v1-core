@@ -148,7 +148,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                 }
             }
         }
-        return (locked, unlocked);
     }
 
     /**
@@ -161,7 +160,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     /**
         @notice Get the lock weight for an account in a given week
      */
-    function getAccountWeightAt(address account, uint256 week) public view returns (uint256) {
+    function getAccountWeightAt(address account, uint256 week) public view returns (uint256 weight) {
         if (week > getWeek()) return 0;
         uint32[65535] storage weeklyUnlocks = accountWeeklyUnlocks[account];
         uint40[65535] storage weeklyWeights = accountWeeklyWeights[account];
@@ -171,7 +170,8 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         if (accountWeek >= week) return weeklyWeights[week];
 
         uint256 locked = accountData.locked;
-        uint256 weight = weeklyWeights[accountWeek];
+        weight = weeklyWeights[accountWeek];
+        
         if (locked == 0 || accountData.frozen > 0) {
             return weight;
         }
@@ -191,7 +191,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                 if (locked == 0) break;
             }
         }
-        return weight;
     }
 
     /**
@@ -240,7 +239,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                 lockData[i] = LockData({ weeksToUnlock: idx - systemWeek, amount: unlocks[idx] });
             }
         }
-        return (lockData, frozenAmount);
     }
 
     /**
@@ -315,7 +313,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             }
         }
         amountToWithdraw -= remaining;
-        return (amountToWithdraw, penaltyTotal);
     }
 
     /**
@@ -328,7 +325,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     /**
         @notice Get the total lock weight for a given week
      */
-    function getTotalWeightAt(uint256 week) public view returns (uint256) {
+    function getTotalWeightAt(uint256 week) public view returns (uint256 weight) {
         uint256 systemWeek = getWeek();
         if (week > systemWeek) return 0;
 
@@ -336,7 +333,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         if (week <= updatedWeek) return totalWeeklyWeights[week];
 
         uint32 rate = totalDecayRate;
-        uint40 weight = totalWeeklyWeights[updatedWeek];
+        weight = totalWeeklyWeights[updatedWeek];
         if (rate == 0 || updatedWeek >= systemWeek) {
             return weight;
         }
@@ -346,7 +343,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             weight -= rate;
             rate -= totalWeeklyUnlocks[updatedWeek];
         }
-        return weight;
     }
 
     /**
@@ -924,6 +920,5 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         accountData.unlocked = uint32(accountData.unlocked + unlocked);
         accountData.locked = uint32(locked);
         accountData.week = uint16(accountWeek);
-        return weight;
     }
 }
