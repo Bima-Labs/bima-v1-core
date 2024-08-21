@@ -7,6 +7,8 @@ import {console} from "forge-std/console.sol";
 import {StorkOracleWrapper, IStorkOracle} from "../../contracts/core/StorkOracleWrapper.sol";
 import {IAggregatorV3Interface} from "../../contracts/interfaces/IAggregatorV3Interface.sol";
 import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
+import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
+import {ITroveManager} from "../../contracts/interfaces/ITroveManager.sol";
 
 contract TestSetup is Test {
   StorkOracleWrapper public storkOracleWrapper;
@@ -32,34 +34,6 @@ contract TestSetup is Test {
     assertEq(storkOracleWrapper.version(), 1);
   }
 
-  // function testOracle() public {
-  //   IAggregatorV3Interface oracle = IAggregatorV3Interface(0x7363a69249710548c670Dac0505c9C8710c9Fb50);
-  //   PriceFeed priceFeed = PriceFeed(0xaa7Feffe3a3edFd4e9D016e897A21693099F8b8d);
-
-  //   console.log("OWNER: ", priceFeed.owner());
-
-  //   vm.prank(0x5bfe5b93649eD957131594B9906BcFBb5Bb3B920);
-  //   priceFeed.setOracle(
-  //     0x2e2C128B256884cc2C10D88214FEC53a33a0db49,
-  //     address(oracle),
-  //     80000,
-  //     bytes4(0x00000000),
-  //     18,
-  //     false
-  //   );
-
-  //   // (, int256 answer, , uint256 updatedAt, ) = oracle.latestRoundData();
-  //   // console.log(answer);
-  //   // console.log(updatedAt);
-
-  //   // (uint64 timestampNs, int192 quantizedValue) = storkOracle.getTemporalNumericValueV1(encodedAssetId);
-
-  //   // console.log("-");
-
-  //   // console.log(quantizedValue);
-  //   // console.log(timestampNs);
-  // }
-
   function testLatestRoundData() public view {
     (uint64 timestampNs, int192 quantizedValue) = storkOracle.getTemporalNumericValueV1(encodedAssetId);
 
@@ -80,5 +54,41 @@ contract TestSetup is Test {
     assertEq(answer, quantizedValue / 1e10);
     assertEq(startedAt, timestampNs / 1e9 - 1 minutes);
     assertEq(updatedAt, timestampNs / 1e9 - 1 minutes);
+  }
+
+  function testFlow() public {
+    // NEW COLLATERAL, TROVE MANAGER, AND ORACLE WRAPPER ADDRESSES
+    address collateralAddress = 0x0206E1f1c74bf0E375f2d8418067CBE996B184ec;
+    address troveManagerAddress = 0xCe5873Cca64EcEd738961405832521E959454f97;
+    address oracleAddress = 0xc0565F0711B23008831AD9eA47DecaAdfE61dBaD;
+
+    // CORE CONTRACT ADDRESSES ON HOLESKY CHAIN
+    address borrowOperationsAddress = 0xa4de6030cd34aD3b6ce951d1b714e6E832b41910;
+    address priceFeedAddress = 0xaa7Feffe3a3edFd4e9D016e897A21693099F8b8d;
+
+    // ORACLE WRAPPER WORKS AS EXPECTED
+    (uint80 roundId1, int256 answer, , uint256 updatedAt, ) = IAggregatorV3Interface(oracleAddress).latestRoundData();
+    console.log("ROUND ID AND ANSWER AND UPDATED AT FROM ORACLE: ");
+    console.log(roundId1);
+    console.log(answer);
+    console.log(updatedAt);
+
+    // THE PRICE FEED CORRECTLY FETCHES PRICES FROM THE NEWLY DEPLOYED WRAPPER ORACLE WHICH IS LINKED TO THAT COLLATERAL TOKEN
+    PriceFeed(priceFeedAddress).fetchPrice(collateralAddress);
+
+    // When observed with -vvvv, this function calls fetch price on PriceFeed with the incorrect collateral token,
+    // Actually, that collateral token is the address of a token which was the first collateral token that I opened TroveManager
+    // for on this chain. But you can see that when calling this funciton, the new troveManagerAddress is passed as an argument.
+    // So, the PriceFeed contract should fetch the price from the new oracleWrapper contract linked to the new collateral token.
+    // But it doesn't. It fetches the price for the old collateral token.
+    IBorrowerOperations(borrowOperationsAddress).openTrove(
+      ITroveManager(troveManagerAddress),
+      address(this),
+      0.1e18,
+      1e18,
+      20_000e18,
+      address(0),
+      address(0)
+    );
   }
 }
