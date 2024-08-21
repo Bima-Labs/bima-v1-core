@@ -79,7 +79,7 @@ export const fetchPrice = async ({
     const oracleContract = MockOracle__factory.connect(oracleAddress, signer);
 
     const result = await oracleContract.latestRoundData();
-    return result.answer;
+    return result[1];
   } catch (err) {
     console.log(err);
     return null;
