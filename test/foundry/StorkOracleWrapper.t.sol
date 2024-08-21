@@ -56,6 +56,7 @@ contract TestSetup is Test {
     assertEq(updatedAt, timestampNs / 1e9 - 1 minutes);
   }
 
+  //! FAILS
   function testFlow() public {
     // NEW COLLATERAL, TROVE MANAGER, AND ORACLE WRAPPER ADDRESSES
     address collateralAddress = 0x0206E1f1c74bf0E375f2d8418067CBE996B184ec;
@@ -76,11 +77,12 @@ contract TestSetup is Test {
     // THE PRICE FEED CORRECTLY FETCHES PRICES FROM THE NEWLY DEPLOYED WRAPPER ORACLE WHICH IS LINKED TO THAT COLLATERAL TOKEN
     PriceFeed(priceFeedAddress).fetchPrice(collateralAddress);
 
-    // When observed with -vvvv, this function calls fetch price on PriceFeed with the incorrect collateral token,
-    // Actually, that collateral token is the address of a token which was the first collateral token that I opened TroveManager
+    // When observed with -vvvv, this function calls `fetchPrice` on PriceFeed for the incorrect collateral token,
+    // and that incorrect collateral token is the address of a token which was the first collateral token ever that I opened TroveManager
     // for on this chain. But you can see that when calling this funciton, the new troveManagerAddress is passed as an argument.
     // So, the PriceFeed contract should fetch the price from the new oracleWrapper contract linked to the new collateral token.
     // But it doesn't. It fetches the price for the old collateral token.
+    vm.prank(0x5bfe5b93649eD957131594B9906BcFBb5Bb3B920); // This address holds the mock collateral token
     IBorrowerOperations(borrowOperationsAddress).openTrove(
       ITroveManager(troveManagerAddress),
       address(this),
