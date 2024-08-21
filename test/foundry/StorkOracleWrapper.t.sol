@@ -9,6 +9,7 @@ import {IAggregatorV3Interface} from "../../contracts/interfaces/IAggregatorV3In
 import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ITroveManager} from "../../contracts/interfaces/ITroveManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TestSetup is Test {
   StorkOracleWrapper public storkOracleWrapper;
@@ -56,41 +57,45 @@ contract TestSetup is Test {
     assertEq(updatedAt, timestampNs / 1e9 - 1 minutes);
   }
 
-  //! FAILS
   function testFlow() public {
-    // NEW COLLATERAL, TROVE MANAGER, AND ORACLE WRAPPER ADDRESSES
-    address collateralAddress = 0x0206E1f1c74bf0E375f2d8418067CBE996B184ec;
-    address troveManagerAddress = 0xCe5873Cca64EcEd738961405832521E959454f97;
-    address oracleAddress = 0xc0565F0711B23008831AD9eA47DecaAdfE61dBaD;
+    address collateralAddress = 0xE20B0B5E240910Ca1461893542C6F226793aAD25;
+    address troveManagerAddress = 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613;
+    address oracleAddress = 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d;
 
-    // CORE CONTRACT ADDRESSES ON HOLESKY CHAIN
-    address borrowOperationsAddress = 0xa4de6030cd34aD3b6ce951d1b714e6E832b41910;
-    address priceFeedAddress = 0xaa7Feffe3a3edFd4e9D016e897A21693099F8b8d;
+    address borrowOperationsAddress = 0x98cb20D30da0389028EB71eF299B688979F5cB8b;
+    address priceFeedAddress = 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB;
 
-    // ORACLE WRAPPER WORKS AS EXPECTED
     (uint80 roundId1, int256 answer, , uint256 updatedAt, ) = IAggregatorV3Interface(oracleAddress).latestRoundData();
-    console.log("ROUND ID AND ANSWER AND UPDATED AT FROM ORACLE: ");
-    console.log(roundId1);
+    // console.log("ROUND ID AND ANSWER AND UPDATED AT FROM ORACLE: ");
+    // console.log(roundId1);
     console.log(answer);
-    console.log(updatedAt);
+    // console.log(updatedAt);
 
-    // THE PRICE FEED CORRECTLY FETCHES PRICES FROM THE NEWLY DEPLOYED WRAPPER ORACLE WHICH IS LINKED TO THAT COLLATERAL TOKEN
+    console.log("FETCHING PRICE");
+
     PriceFeed(priceFeedAddress).fetchPrice(collateralAddress);
 
-    // When observed with -vvvv, this function calls `fetchPrice` on PriceFeed for the incorrect collateral token,
-    // and that incorrect collateral token is the address of a token which was the first collateral token ever that I opened TroveManager
-    // for on this chain. But you can see that when calling this funciton, the new troveManagerAddress is passed as an argument.
-    // So, the PriceFeed contract should fetch the price from the new oracleWrapper contract linked to the new collateral token.
-    // But it doesn't. It fetches the price for the old collateral token.
-    vm.prank(0x5bfe5b93649eD957131594B9906BcFBb5Bb3B920); // This address holds the mock collateral token
+    console.log("PRICE FETCHED");
+
+    console.log("APPROVING COLLATERAL");
+
+    vm.prank(0x39d2770AbcC456f6C6be820705eD966592E0ad96); // This address holds the mock collateral token
+    IERC20(collateralAddress).approve(borrowOperationsAddress, 1e18);
+
+    console.log("OPENING TROVE");
+
+    vm.prank(0x39d2770AbcC456f6C6be820705eD966592E0ad96);
     IBorrowerOperations(borrowOperationsAddress).openTrove(
       ITroveManager(troveManagerAddress),
-      address(this),
+      0x39d2770AbcC456f6C6be820705eD966592E0ad96,
       0.1e18,
       1e18,
-      20_000e18,
+      10_000e18,
       address(0),
       address(0)
     );
+
+    console.log(IERC20(collateralAddress).balanceOf(0x39d2770AbcC456f6C6be820705eD966592E0ad96));
+    console.log(ITroveManager(troveManagerAddress).debtToken().balanceOf(0x39d2770AbcC456f6C6be820705eD966592E0ad96));
   }
 }
