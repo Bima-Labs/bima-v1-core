@@ -156,6 +156,12 @@ contract AdminVoting is DelegatedOps, SystemStart {
         );
     }
 
+    // helper functions added because getProposalData returns a lot of fields
+    // which can result in "stack too deep" errors
+    function getProposalRequiredWeight(uint256 id) external view returns(uint256) {
+        return proposalData[id].requiredWeight;
+    }
+
     /**
         @notice Create a new proposal
         @param payload Tuple of [(target address, calldata), ... ] to be
@@ -180,11 +186,11 @@ contract AdminVoting is DelegatedOps, SystemStart {
         uint256 accountWeight = tokenLocker.getAccountWeightAt(account, week);
         require(accountWeight >= _minCreateProposalWeight(week), "Not enough weight to propose");
 
-        // if the only action is `babelCore.setGuardian()`, use
-        // `SET_GUARDIAN_PASSING_PCT` instead of `passingPct`
+        // if any of the payloads are `IBabelCore::setGuardian` payloads,
+        // then enforce the `SET_GUARDIAN_PASSING_PCT` 50.1% majority
         uint256 proposalPassPct;
 
-        if (_isSetGuardianPayload(payload.length, payload[0])) {
+        if (_containsSetGuardianPayload(payload.length, payload)) {
             // prevent changing guardians during bootstrap period
             require(block.timestamp > startTime + BOOTSTRAP_PERIOD, "Cannot change guardian during bootstrap");
 
@@ -269,7 +275,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(id < proposalData.length, "Invalid ID");
 
         Action[] storage payload = proposalPayloads[id];
-        require(!_isSetGuardianPayload(payload.length, payload[0]), "Guardian replacement not cancellable");
+        require(!_containsSetGuardianPayload(payload.length, payload), "Guardian replacement not cancellable");
         proposalData[id].processed = true;
         emit ProposalCancelled(id);
     }
@@ -337,16 +343,19 @@ contract AdminVoting is DelegatedOps, SystemStart {
         babelCore.acceptTransferOwnership();
     }
 
-    function _isSetGuardianPayload(uint256 payloadLength, Action memory action) internal view returns (bool) {
-        if (payloadLength == 1 && action.target == address(babelCore)) {
-            bytes memory data = action.data;
+    function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal view returns (bool) {
+        for(uint256 i; i<payloadLength; i++) {
+            bytes memory data = payload[i].data;
+
             // Extract the call sig from payload data
             bytes4 sig;
             assembly {
                 sig := mload(add(data, 0x20))
             }
-            return sig == IBabelCore.setGuardian.selector;
+
+            if(sig == IBabelCore.setGuardian.selector) return true;
         }
+
         return false;
     }
 }

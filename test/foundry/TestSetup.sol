@@ -305,5 +305,8 @@ contract TestSetup is Test {
         // approve BorrowerOperations for 50 StakedBTC tokens
         // stakedBTC.approve(addresses.borrowerOps, 50e18);
         vm.stopPrank();
+
+        // verify we are in the first week
+        assertEq(tokenLocker.getWeek(), 0);
     }
 }

@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {AdminVoting} from "../../../contracts/dao/AdminVoting.sol";
+import {IBabelCore} from "../../../contracts/interfaces/IBabelCore.sol";
 
 // test setup
 import {TestSetup, IBabelVault} from "../TestSetup.sol";
@@ -87,5 +88,31 @@ contract AdminVotingTest is TestSetup {
         vm.expectRevert("Zero total voting weight for given week");
         adminVoting.createNewProposal(users.user1, payload);
         vm.stopPrank();
+    }
+
+    function test_createNewProposal_setGuardian() external {
+        // create a setGuardian proposal that also contains a dummy proposal
+        AdminVoting.Action[] memory payload = new AdminVoting.Action[](2);
+        payload[0].target = address(0x0);
+        payload[0].data   = abi.encode("");
+        payload[1].target = address(babelCore);
+        payload[1].data   = abi.encodeWithSelector(IBabelCore.setGuardian.selector, users.user1);
+
+        // lock up user tokens to receive voting power
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, INIT_BAB_TKN_TOTAL_SUPPLY, 52);
+
+        // warp forward BOOTSTRAP_PERIOD so voting power becomes active
+        // and setGuardian proposals are allowed
+        vm.warp(block.timestamp + adminVoting.BOOTSTRAP_PERIOD());
+
+        // create the proposal
+        vm.prank(users.user1);
+        adminVoting.createNewProposal(users.user1, payload);
+
+        // verify requiredWeight is 50.1% majority for setGuardian proposals
+        assertEq(adminVoting.getProposalRequiredWeight(0), 
+                 (tokenLocker.getTotalWeight() * adminVoting.SET_GUARDIAN_PASSING_PCT()) /
+                 adminVoting.MAX_PCT());
     }
 }

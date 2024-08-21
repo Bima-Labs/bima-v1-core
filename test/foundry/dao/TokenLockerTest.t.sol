@@ -32,9 +32,6 @@ contract TokenLockerTest is TestSetup {
 
         // verify recipients have received voting tokens
         assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY);
-
-        // verify we are in the first week
-        assertEq(tokenLocker.getWeek(), 0);
     }
 
     function test_lock(uint256 amountToLock, uint256 weeksToLockFor) public
