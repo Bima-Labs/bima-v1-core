@@ -3,15 +3,15 @@ import { ethers } from "hardhat";
 const ZERO_ADDRESS = ethers.ZeroAddress;
 
 // FILL IN WITH YOUR TARGET ADDRESSES
-// const COLLATERAL_ADDRESS = "";
-const FACTORY_ADDRESS = "0x1C8d37EdA77132E851d41c93c77f1cbE8BFa3F87";
-const PRICEFEED_ADDRESS = "0xaa7Feffe3a3edFd4e9D016e897A21693099F8b8d";
-const BABELVAULT_ADDRESS = "0x2C80b4985924803Df71ff81D2159cEF516052669";
+const COLLATERAL_ADDRESS = "";
+const FACTORY_ADDRESS = "";
+const PRICEFEED_ADDRESS = "";
+const BABELVAULT_ADDRESS = "";
 
 // Comment/Uncomment respective oracle deployments, based on the oracle we use
-// const ORACLE_ADDRESS = ""; // If we use existing AggregatorV3Interface onchain oracle
-const STORK_ORACLE_ADDRESS = "0xacC0a0cF13571d30B4b8637996F5D6D774d4fd62"; // If we use Stork oracle
-const ENCODED_ASSET_ID = "0x7404e3d104ea7841c3d9e6fd20adfe99b4ad586bc08d8f3bd3afef894cf184de"; // If we use Stork oracle
+const ORACLE_ADDRESS = ""; // If we use existing AggregatorV3Interface onchain oracle
+const STORK_ORACLE_ADDRESS = ""; // If we use Stork oracle
+const ENCODED_ASSET_ID = ""; // If we use Stork oracle
 
 async function main() {
   const priceFeed = await ethers.getContractAt("PriceFeed", PRICEFEED_ADDRESS);
@@ -19,20 +19,20 @@ async function main() {
   const babelVault = await ethers.getContractAt("BabelVault", BABELVAULT_ADDRESS);
 
   //? NOT NECESSARY IF WE USE A COLLATERAL TOKEN
-  const mockedStBtcAddress = await deployMockCollateral();
+  // const mockedStBtcAddress = await deployMockCollateral();
 
   //! DO NOT USE MOCK ORACLE IF YOU ARE NOT DEPLOYING ON THE LOCAL NETWORK
   // const mockOracleAddress = await deployMockOracle();
 
   //! USE IF WE USE STORK ORACLE FOR THIS TROVE MANAGER
-  const storkOracleWrapperAddress = await deployStorkOracleWrapper();
+  // const storkOracleWrapperAddress = await deployStorkOracleWrapper();
 
   console.log("troveManagerCount before: ", await factory.troveManagerCount());
 
   {
     const tx = await priceFeed.setOracle(
-      mockedStBtcAddress,
-      storkOracleWrapperAddress,
+      COLLATERAL_ADDRESS,
+      ORACLE_ADDRESS,
       BigInt("80000"),
       "0x00000000",
       BigInt("18"),
@@ -46,7 +46,7 @@ async function main() {
   await new Promise((res) => setTimeout(res, 10000));
 
   {
-    const tx = await factory.deployNewInstance(mockedStBtcAddress, PRICEFEED_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, {
+    const tx = await factory.deployNewInstance(COLLATERAL_ADDRESS, PRICEFEED_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, {
       minuteDecayFactor: BigInt("999037758833783000"),
       redemptionFeeFloor: BigInt("5000000000000000"),
       maxRedemptionFee: BigInt("1000000000000000000"),
