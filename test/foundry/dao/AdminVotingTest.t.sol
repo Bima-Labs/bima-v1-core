@@ -221,15 +221,16 @@ contract AdminVotingTest is TestSetup {
         assertEq(adminVoting.getProposalCanExecute(proposalId), false);
     }
 
-    function test_cancelProposal_onlyGuardianCanCancel() external {
+    function test_cancelProposal_onlyGuardianCanCancel() public returns(uint256 proposalId) {
         // create first proposal
-        uint256 proposalId = test_createNewProposal_withVotingWeight();
+        proposalId = test_createNewProposal_withVotingWeight();
 
         // verify fails if non-guardian tries to cancel
         vm.expectRevert("Only guardian can cancel proposals");
         vm.prank(users.user1);
         adminVoting.cancelProposal(proposalId);
 
+        // cancel as guardian
         _cancelProposal(proposalId);
     }
 
@@ -374,6 +375,26 @@ contract AdminVotingTest is TestSetup {
         vm.expectRevert("Already voted");
         vm.prank(users.user1);
         adminVoting.voteForProposal(users.user1, proposalId, halfVotingWeight);
+    }
+
+    function test_voteForProposal_cantVoteOnCancelledProposal() external {
+        // create and cancel a proposal
+        uint256 proposalId = test_cancelProposal_onlyGuardianCanCancel();
+
+        // verify voting on a cancelled proposal fails
+        vm.expectRevert("Proposal already processed");
+        vm.prank(users.user1);
+        adminVoting.voteForProposal(users.user1, proposalId, 1);
+    }
+
+    function test_voteForProposal_cantVoteOnExecutedProposal() external {
+        // create and execute a proposal
+        uint256 proposalId = test_executeProposal_withoutSetGuardian();
+
+        // verify voting on an executed proposal fails
+        vm.expectRevert("Proposal already processed");
+        vm.prank(users.user2);
+        adminVoting.voteForProposal(users.user2, proposalId, 1);
     }
 
     // helper function to successfully execute a proposal
