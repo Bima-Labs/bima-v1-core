@@ -301,7 +301,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
 
             // enforce minimum weight > 0 to vote
             require(weight > 0, "No vote weight");
-        // otherwise if account specific an exact voting weight > 0 then
+        // otherwise if account specified an exact voting weight > 0 then
         // enforce it is <= their max voting weight
         } else {
             require(weight <= accountWeight, "Weight exceeds account weight");
