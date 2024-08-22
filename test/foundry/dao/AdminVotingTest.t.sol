@@ -321,11 +321,14 @@ contract AdminVotingTest is TestSetup {
         // create first proposal
         uint256 proposalId = test_createNewProposal_withVotingWeight();
 
+        // save voting weights
+        uint256 user1Weight = tokenLocker.getAccountWeightAt(users.user1,
+                                                             adminVoting.getProposalWeek(proposalId));
+        uint256 user2Weight = tokenLocker.getAccountWeightAt(users.user2,
+                                                             adminVoting.getProposalWeek(proposalId));
+
         // first user votes with enough weight to pass proposal
-        _voteForProposal(users.user1,
-                         proposalId,
-                         tokenLocker.getAccountWeightAt(users.user1,
-                                                        adminVoting.getProposalWeek(proposalId)));
+        _voteForProposal(users.user1, proposalId, user1Weight);
                                                     
         // verify proposal has passed
         assertEq(adminVoting.getProposalPassed(proposalId), true);
@@ -334,10 +337,10 @@ contract AdminVotingTest is TestSetup {
         assertEq(adminVoting.getProposalProcessed(proposalId), false);
 
         // user2 can still vote on the proposal, even though it has passed
-        _voteForProposal(users.user2,
-                         proposalId,
-                         tokenLocker.getAccountWeightAt(users.user2,
-                                                        adminVoting.getProposalWeek(proposalId)));
+        _voteForProposal(users.user2, proposalId, user2Weight);
+
+        // verify proposal's voting weight has accumulated from both votes
+        assertEq(adminVoting.getProposalCurrentWeight(proposalId), user1Weight + user2Weight);
     }
 
     function test_voteForProposal_cantVoteWithMoreWeight(uint256 votingWeight) external {
