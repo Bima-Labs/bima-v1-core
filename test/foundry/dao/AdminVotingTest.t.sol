@@ -16,6 +16,9 @@ contract AdminVotingTest is TestSetup {
     uint256 constant internal INIT_PROP_PASSING_PCT    = 2000; // 20%
     uint256 constant internal UPDT_PROP_PASSING_PCT    = 3000; // 30%
 
+    uint256 constant internal USER1_TOKEN_ALLOCATION = INIT_BAB_TKN_TOTAL_SUPPLY * 8000/10000;
+    uint256 constant internal USER2_TOKEN_ALLOCATION = INIT_BAB_TKN_TOTAL_SUPPLY * 2000/10000;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -27,11 +30,13 @@ contract AdminVotingTest is TestSetup {
         // setup the vault to get BabelTokens which are used for voting
         uint128[] memory _fixedInitialAmounts;
         IBabelVault.InitialAllowance[] memory initialAllowances 
-            = new IBabelVault.InitialAllowance[](1);
+            = new IBabelVault.InitialAllowance[](2);
         
-        // give user1 allowance over the entire supply of voting tokens
+        // give user1 80% and user2 20% of token allocation
         initialAllowances[0].receiver = users.user1;
-        initialAllowances[0].amount = INIT_BAB_TKN_TOTAL_SUPPLY;
+        initialAllowances[0].amount = USER1_TOKEN_ALLOCATION;
+        initialAllowances[1].receiver = users.user2;
+        initialAllowances[1].amount = USER2_TOKEN_ALLOCATION;
 
         vm.prank(users.owner);
         babelVault.setInitialParameters(emissionSchedule,
@@ -43,10 +48,13 @@ contract AdminVotingTest is TestSetup {
 
         // transfer voting tokens to recipients
         vm.prank(users.user1);
-        babelToken.transferFrom(address(babelVault), users.user1, INIT_BAB_TKN_TOTAL_SUPPLY);
+        babelToken.transferFrom(address(babelVault), users.user1, USER1_TOKEN_ALLOCATION);
+        vm.prank(users.user2);
+        babelToken.transferFrom(address(babelVault), users.user2, USER2_TOKEN_ALLOCATION);
 
         // verify recipients have received voting tokens
-        assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(babelToken.balanceOf(users.user1), USER1_TOKEN_ALLOCATION);
+        assertEq(babelToken.balanceOf(users.user2), USER2_TOKEN_ALLOCATION);
     }
 
     function test_constructor() external view {
@@ -131,7 +139,7 @@ contract AdminVotingTest is TestSetup {
 
         // lock up user tokens to receive voting power
         vm.prank(users.user1);
-        tokenLocker.lock(users.user1, INIT_BAB_TKN_TOTAL_SUPPLY, 52);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION, 52);
 
         // warp forward BOOTSTRAP_PERIOD so voting power becomes active
         // and setGuardian proposals are allowed
@@ -157,7 +165,7 @@ contract AdminVotingTest is TestSetup {
 
         // lock up user tokens to receive voting power
         vm.prank(users.user1);
-        tokenLocker.lock(users.user1, INIT_BAB_TKN_TOTAL_SUPPLY, 52);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION, 52);
 
         // advance time by 1 week
         vm.warp(block.timestamp + 1 weeks);
@@ -285,6 +293,24 @@ contract AdminVotingTest is TestSetup {
                                                              adminVoting.getProposalWeek(proposalId)));
 
         _voteForProposal(users.user1, proposalId, votingWeight);
+    }
+
+    function test_voteForProposal_differentVotersAccumulate() external {
+        // lock up user2 tokens to receive voting power
+        vm.prank(users.user2);
+        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION, 52);
+
+        // create first proposal
+        uint256 proposalId = test_createNewProposal_withVotingWeight();
+
+        // each user votes with 50 weight
+        uint256 votingWeight = 50;
+
+        _voteForProposal(users.user1, proposalId, votingWeight);
+        _voteForProposal(users.user2, proposalId, votingWeight);
+
+        // verify proposal's voting weight has accumulated from both votes
+        assertEq(adminVoting.getProposalCurrentWeight(proposalId), votingWeight*2);
     }
 
     function test_voteForProposal_cantVoteWithMoreWeight(uint256 votingWeight) external {
