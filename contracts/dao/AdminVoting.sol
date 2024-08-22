@@ -158,8 +158,34 @@ contract AdminVoting is DelegatedOps, SystemStart {
 
     // helper functions added because getProposalData returns a lot of fields
     // which can result in "stack too deep" errors
+    function getProposalWeek(uint256 id) external view returns(uint256) {
+        return proposalData[id].week;
+    }
+    function getProposalCreatedAt(uint256 id) external view returns(uint32) {
+        return proposalData[id].createdAt;
+    }
+    function getProposalCurrentWeight(uint256 id) external view returns(uint256) {
+        return proposalData[id].currentWeight;
+    }
     function getProposalRequiredWeight(uint256 id) external view returns(uint256) {
         return proposalData[id].requiredWeight;
+    }
+    function getProposalCanExecuteAfter(uint256 id) external view returns(uint32) {
+        return proposalData[id].canExecuteAfter;
+    }
+    function getProposalProcessed(uint256 id) external view returns(bool) {
+        return proposalData[id].processed;
+    }
+    function getProposalCanExecute(uint256 id) external view returns(bool) {
+        Proposal memory proposal = proposalData[id];
+
+        return (!proposal.processed &&
+                proposal.currentWeight >= proposal.requiredWeight &&
+                proposal.canExecuteAfter < block.timestamp &&
+                proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
+    }
+    function getProposalPayload(uint256 id) external view returns(Action[] memory) {
+        return proposalPayloads[id];
     }
 
     /**
@@ -167,7 +193,9 @@ contract AdminVoting is DelegatedOps, SystemStart {
         @param payload Tuple of [(target address, calldata), ... ] to be
                        executed if the proposal is passed.
      */
-    function createNewProposal(address account, Action[] calldata payload) external callerOrDelegated(account) {
+    function createNewProposal(address account, 
+                               Action[] calldata payload)
+    external callerOrDelegated(account) returns(uint256 proposalId) {
         // enforce >=1 payload
         require(payload.length > 0, "Empty payload");
 
@@ -206,7 +234,9 @@ contract AdminVoting is DelegatedOps, SystemStart {
         // calculate required quorum for the proposal to pass
         uint40 requiredWeight = uint40((totalWeight * proposalPassPct) / MAX_PCT);
 
-        uint256 idx = proposalData.length;
+        // output newly created proposal id
+        proposalId = proposalData.length;
+
         proposalData.push(
             Proposal({
                 week: uint16(week),
@@ -219,10 +249,10 @@ contract AdminVoting is DelegatedOps, SystemStart {
         );
 
         for (uint256 i; i < payload.length; i++) {
-            proposalPayloads[idx].push(payload[i]);
+            proposalPayloads[proposalId].push(payload[i]);
         }
         latestProposalTimestamp[account] = block.timestamp;
-        emit ProposalCreated(account, idx, payload, week, requiredWeight);
+        emit ProposalCreated(account, proposalId, payload, week, requiredWeight);
     }
 
     /**
@@ -276,6 +306,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
 
         Action[] storage payload = proposalPayloads[id];
         require(!_containsSetGuardianPayload(payload.length, payload), "Guardian replacement not cancellable");
+        require(!proposalData[id].processed, "Already processed");
         proposalData[id].processed = true;
         emit ProposalCancelled(id);
     }
