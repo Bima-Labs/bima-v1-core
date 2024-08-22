@@ -187,6 +187,11 @@ contract AdminVoting is DelegatedOps, SystemStart {
     function getProposalPayload(uint256 id) external view returns(Action[] memory) {
         return proposalPayloads[id];
     }
+    function getProposalPassed(uint256 id) external view returns(bool) {
+        Proposal memory proposal = proposalData[id];
+        return proposal.currentWeight >= proposal.requiredWeight;
+    }
+
 
     /**
         @notice Create a new proposal

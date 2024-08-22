@@ -271,8 +271,8 @@ contract AdminVotingTest is TestSetup {
         // verify proposal can't be executed
         assertEq(adminVoting.getProposalCanExecute(proposalId), false);
 
-        // if voted with >= weight required to pass, verify the proposal passed
-        if(votingWeight >= adminVoting.getProposalRequiredWeight(proposalId)) {
+        // if proposal has passed, verify executeAfter correctly set
+        if(adminVoting.getProposalPassed(proposalId)) {
             assertEq(adminVoting.getProposalCanExecuteAfter(proposalId),
                      block.timestamp + adminVoting.MIN_TIME_TO_EXECUTION());
         }
@@ -311,6 +311,33 @@ contract AdminVotingTest is TestSetup {
 
         // verify proposal's voting weight has accumulated from both votes
         assertEq(adminVoting.getProposalCurrentWeight(proposalId), votingWeight*2);
+    }
+
+    function test_voteForProposal_canVoteOnPassedProposal() external {
+        // lock up user2 tokens to receive voting power
+        vm.prank(users.user2);
+        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION, 52);
+
+        // create first proposal
+        uint256 proposalId = test_createNewProposal_withVotingWeight();
+
+        // each user votes with 50 weight
+        uint256 votingWeight = 50;
+
+        // first user votes with enough weight to pass proposal
+        _voteForProposal(users.user1,
+                         proposalId,
+                         tokenLocker.getAccountWeightAt(users.user1,
+                                                        adminVoting.getProposalWeek(proposalId)));
+                                                    
+        // verify proposal has passed
+        assertEq(adminVoting.getProposalPassed(proposalId), true);
+
+        // verify it hasn't been cancelled or executed
+        assertEq(adminVoting.getProposalProcessed(proposalId), false);
+
+        // user2 can still vote on the proposal, even though it has passed
+        _voteForProposal(users.user2, proposalId, votingWeight);
     }
 
     function test_voteForProposal_cantVoteWithMoreWeight(uint256 votingWeight) external {
