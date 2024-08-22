@@ -343,7 +343,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         babelCore.acceptTransferOwnership();
     }
 
-    function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal view returns (bool) {
+    function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal pure returns (bool) {
         for(uint256 i; i<payloadLength; i++) {
             bytes memory data = payload[i].data;
 
