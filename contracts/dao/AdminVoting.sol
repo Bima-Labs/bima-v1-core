@@ -61,11 +61,14 @@ contract AdminVoting is DelegatedOps, SystemStart {
     IBabelCore public immutable babelCore;
 
     Proposal[] proposalData;
-    mapping(uint256 => Action[]) proposalPayloads;
 
-    // account -> ID -> amount of weight voted in favor
-    mapping(address => mapping(uint256 => uint256)) public accountVoteWeights;
+    // proposal payloads
+    mapping(uint256 proposalId => Action[] payload) proposalPayloads;
 
+    // voting records
+    mapping(address account => mapping(uint256 proposalId => uint256 votedWeight)) public accountVoteWeights;
+
+    // account last proposal creation timestamps
     mapping(address account => uint256 timestamp) public latestProposalTimestamp;
 
     // percentages are expressed as a whole number out of `MAX_PCT`
@@ -219,7 +222,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         uint256 accountWeight = tokenLocker.getAccountWeightAt(account, week);
         require(accountWeight >= _minCreateProposalWeight(week), "Not enough weight to propose");
 
-        // if any of the payloads are `IBabelCore::setGuardian` payloads,
+        // if any of the payloads call `IBabelCore::setGuardian`,
         // then enforce the `SET_GUARDIAN_PASSING_PCT` 50.1% majority
         uint256 proposalPassPct;
 
@@ -230,7 +233,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
             // enforce 50.1% majority for setGuardian proposals
             proposalPassPct = SET_GUARDIAN_PASSING_PCT;
         }
-        // otherwise enforce standard configured passing % for ordinary proposals
+        // otherwise for ordinary proposals enforce standard configured passing %
         else proposalPassPct = passingPct;
 
         // fetch total voting weight for the week
@@ -242,6 +245,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         // output newly created proposal id
         proposalId = proposalData.length;
 
+        // save proposal data
         proposalData.push(
             Proposal({
                 week: uint16(week),
@@ -253,10 +257,14 @@ contract AdminVoting is DelegatedOps, SystemStart {
             })
         );
 
+        // save proposal payload data
         for (uint256 i; i < payload.length; i++) {
             proposalPayloads[proposalId].push(payload[i]);
         }
+
+        // update account's last proposal creation timestamp
         latestProposalTimestamp[account] = block.timestamp;
+
         emit ProposalCreated(account, proposalId, payload, week, requiredWeight);
     }
 
@@ -269,31 +277,59 @@ contract AdminVoting is DelegatedOps, SystemStart {
                       weight to reflect partial support from their own users.
      */
     function voteForProposal(address account, uint256 id, uint256 weight) external callerOrDelegated(account) {
+        // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
+
+        // prevent account from voting on same proposal more than once
         require(accountVoteWeights[account][id] == 0, "Already voted");
 
+        // cache proposal data from storage into memory
         Proposal memory proposal = proposalData[id];
+
+        // prevent voting if proposal has been cancelled or executed
         require(!proposal.processed, "Proposal already processed");
+
+        // prevent voting outside the allowing voting window
         require(proposal.createdAt + VOTING_PERIOD > block.timestamp, "Voting period has closed");
 
+        // fetch account's voting weight during the proposal's week
         uint256 accountWeight = tokenLocker.getAccountWeightAt(account, proposal.week);
+
+        // if account passed 0 they want to vote with all their weight
         if (weight == 0) {
             weight = accountWeight;
+
+            // enforce minimum weight > 0 to vote
             require(weight > 0, "No vote weight");
+        // otherwise if account specific an exact voting weight > 0 then
+        // enforce it is <= their max voting weight
         } else {
             require(weight <= accountWeight, "Weight exceeds account weight");
         }
 
+        // update account voting record for this proposal to save voting weight
         accountVoteWeights[account][id] = weight;
+
+        // calculate proposal's accumulated voting weight
         uint40 updatedWeight = uint40(proposal.currentWeight + weight);
+
+        // update proposal's accumulated voting weight
         proposalData[id].currentWeight = updatedWeight;
+
+        // proposal has passed if the updated weight is >= required weight
         bool hasPassed = updatedWeight >= proposal.requiredWeight;
 
+        // if the proposal has passed as a result of this vote, then update
+        // the time at which the proposal can be executed
         if (proposal.canExecuteAfter == 0 && hasPassed) {
             uint256 canExecuteAfter = block.timestamp + MIN_TIME_TO_EXECUTION;
+
             proposalData[id].canExecuteAfter = uint32(canExecuteAfter);
             emit ProposalHasMetQuorum(id, canExecuteAfter);
         }
+
+        // note: explicitly allowing users to vote on proposals which have
+        // passed but have not yet been cancelled or executed
 
         emit VoteCast(account, id, weight, updatedWeight, hasPassed);
     }
@@ -306,13 +342,24 @@ contract AdminVoting is DelegatedOps, SystemStart {
         @param id Proposal ID
      */
     function cancelProposal(uint256 id) external {
+        // enforce only guardian can cancel
         require(msg.sender == babelCore.guardian(), "Only guardian can cancel proposals");
+
+        // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
 
+        // get a reference to storage data of proposal's payload
         Action[] storage payload = proposalPayloads[id];
+
+        // prevent cancellation of proposals with payloads containing `setGuardian` calls
         require(!_containsSetGuardianPayload(payload.length, payload), "Guardian replacement not cancellable");
+
+        // prevent cancellation of executed or cancelled proposals
         require(!proposalData[id].processed, "Already processed");
+
+        // mark the proposal as cancelled
         proposalData[id].processed = true;
+
         emit ProposalCancelled(id);
     }
 
@@ -323,24 +370,40 @@ contract AdminVoting is DelegatedOps, SystemStart {
         @param id Proposal ID
      */
     function executeProposal(uint256 id) external {
+        // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
 
+        // cache proposal data from storage into memory
         Proposal memory proposal = proposalData[id];
+
+        // prevent execution of executed or cancelled proposals
         require(!proposal.processed, "Already processed");
 
-        uint256 executeAfter = proposal.canExecuteAfter;
-        require(executeAfter != 0, "Not passed");
-        require(executeAfter < block.timestamp, "MIN_TIME_TO_EXECUTION");
-        require(executeAfter + MAX_TIME_TO_EXECUTION > block.timestamp, "MAX_TIME_TO_EXECUTION");
+        // revert if proposal has not yet passed
+        require(proposal.canExecuteAfter != 0, "Not passed");
 
+        // revert if it has passed but the minimum time from passing
+        // to execution has not yet elapsed (execute too early after passing)
+        require(proposal.canExecuteAfter < block.timestamp, "MIN_TIME_TO_EXECUTION");
+
+        // revert if it has passed but the maximum time from passing
+        // to execution has elapsed (execute too late after passing)
+        require(proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp, "MAX_TIME_TO_EXECUTION");
+
+        // mark the proposal as executed
         proposalData[id].processed = true;
 
+        // get a reference to storage data of proposal's payload
         Action[] storage payload = proposalPayloads[id];
+
+        // cache the payload length
         uint256 payloadLength = payload.length;
 
+        // execute every payload
         for (uint256 i; i < payloadLength; i++) {
             payload[i].target.functionCall(payload[i].data);
         }
+
         emit ProposalExecuted(id);
     }
 
@@ -350,9 +413,15 @@ contract AdminVoting is DelegatedOps, SystemStart {
              to this contract and function within it's payload
      */
     function setMinCreateProposalPct(uint256 pct) external returns (bool) {
+        // enforce this function can only be called by this contract
         require(msg.sender == address(this), "Only callable via proposal");
+
+        // restrict max value
         require(pct <= MAX_PCT, "Invalid value");
+
+        // update to new value
         minCreateProposalPct = pct;
+
         emit ProposalCreationMinPctSet(pct);
         return true;
     }
@@ -364,9 +433,15 @@ contract AdminVoting is DelegatedOps, SystemStart {
              to this contract and function within it's payload
      */
     function setPassingPct(uint256 pct) external returns (bool) {
+        // enforce this function can only be called by this contract
         require(msg.sender == address(this), "Only callable via proposal");
+
+        // restrict max value
         require(pct <= MAX_PCT, "Invalid value");
+
+        // update to new value
         passingPct = pct;
+
         emit ProposalPassingPctSet(pct);
         return true;
     }
@@ -380,6 +455,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
     }
 
     function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal pure returns (bool) {
+        // iterate through every payload
         for(uint256 i; i<payloadLength; i++) {
             bytes memory data = payload[i].data;
 
@@ -389,6 +465,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
                 sig := mload(add(data, 0x20))
             }
 
+            // return true if any payload calls `IBabelCore::setGuardian`
             if(sig == IBabelCore.setGuardian.selector) return true;
         }
 
