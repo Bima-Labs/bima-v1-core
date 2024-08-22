@@ -427,6 +427,30 @@ contract AdminVotingTest is TestSetup {
         adminVoting.executeProposal(executedProposalId);
     }
 
+    function test_executeProposal_cantExecuteAfterMaxTimeElapsed() external {
+        // create the proposal
+        uint256 proposalId = test_createNewProposal_withVotingWeight();
+
+        // vote with full weight so proposal passes
+        _voteForProposal(users.user1,
+                         proposalId,
+                         tokenLocker.getAccountWeightAt(users.user1,
+                                                        adminVoting.getProposalWeek(proposalId)));
+
+        // warp to after proposal execution time
+        vm.warp(adminVoting.getProposalCanExecuteAfter(proposalId) + 1);
+
+        // verify proposal can be executed
+        assertEq(adminVoting.getProposalCanExecute(proposalId), true);
+
+        // warp to after max time to execution
+        vm.warp(block.timestamp + adminVoting.MAX_TIME_TO_EXECUTION() + 1);
+
+        // attempting to execute fails now
+        vm.expectRevert("MAX_TIME_TO_EXECUTION");
+        adminVoting.executeProposal(proposalId);
+    }
+
     function test_executeProposal_withoutSetGuardian() public returns(uint256 proposalId) {
         // create the proposal
         proposalId = test_createNewProposal_withVotingWeight();
