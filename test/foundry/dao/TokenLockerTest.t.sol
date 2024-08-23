@@ -42,7 +42,9 @@ contract TokenLockerTest is TestSetup {
         assertEq(userInitialBalance, INIT_BAB_TKN_TOTAL_SUPPLY);
 
         // bound fuzz inputs
-        lockedAmount = bound(amountToLock, 1, userInitialBalance);
+        // need to divide by lockToTokenRatio when calling the
+        // lock function since the token transfer multiplies by lockToTokenRatio
+        lockedAmount = bound(amountToLock, 1, userInitialBalance/INIT_LOCK_TO_TOKEN_RATIO);
         weeksLockedFor = bound(weeksToLockFor, 1, tokenLocker.MAX_LOCK_WEEKS());
 
         // verify user has no voting weight
@@ -56,7 +58,9 @@ contract TokenLockerTest is TestSetup {
         (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
         assertEq(locked, lockedAmount);
         assertEq(unlocked, 0);
-        assertEq(babelToken.balanceOf(users.user1), userInitialBalance - lockedAmount);
+        // when checking actual token balances, need to multipy lockedAmount by
+        // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
+        assertEq(babelToken.balanceOf(users.user1), userInitialBalance - lockedAmount*INIT_LOCK_TO_TOKEN_RATIO);
 
         // verify user has positive voting weight in the current week
         uint256 userWeight = tokenLocker.getAccountWeight(users.user1);
@@ -150,7 +154,10 @@ contract TokenLockerTest is TestSetup {
             (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
             assertEq(locked, lockedAmount);
             assertEq(unlocked, 0);
-            assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY - lockedAmount);
+            // when checking actual token balances, need to multipy lockedAmount by
+            // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
+            assertEq(babelToken.balanceOf(users.user1), 
+                     INIT_BAB_TKN_TOTAL_SUPPLY - lockedAmount*INIT_LOCK_TO_TOKEN_RATIO);
 
             // verify user has positive voting weight in the current week
             uint256 userWeight = tokenLocker.getAccountWeight(users.user1);

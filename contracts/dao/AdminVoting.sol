@@ -289,7 +289,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         // prevent voting if proposal has been cancelled or executed
         require(!proposal.processed, "Proposal already processed");
 
-        // prevent voting outside the allowing voting window
+        // prevent voting outside the allowed voting window
         require(proposal.createdAt + VOTING_PERIOD > block.timestamp, "Voting period has closed");
 
         // fetch account's voting weight during the proposal's week

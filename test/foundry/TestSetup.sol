@@ -96,7 +96,7 @@ contract TestSetup is Test {
     // constants
     uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
     uint256 internal constant INIT_MIN_NET_DEBT = 1800e18;
-    uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1;
+    uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
     address internal constant ZERO_ADDRESS = address(0);
 
     uint256 internal constant INIT_BS_GRACE_WEEKS = 1;
@@ -104,7 +104,7 @@ contract TestSetup is Test {
     uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
     uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
     uint64[2][] internal scheduledWeeklyPct;
-    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max;
+    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max*INIT_LOCK_TO_TOKEN_RATIO;
     uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
 
 

@@ -100,6 +100,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         uint128[] memory _fixedInitialAmounts,
         InitialAllowance[] memory initialAllowances
     ) external {
+        // enforce invariant described in TokenLocker to prevent overflows
+        require(totalSupply <= type(uint32).max * locker.lockToTokenRatio(), 
+                "Total supply must be <= type(uint32).max * lockToTokenRatio");
+
         require(msg.sender == deploymentManager, "!deploymentManager");
         emissionSchedule = _emissionSchedule;
         boostCalculator = _boostCalculator;

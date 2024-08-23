@@ -10,7 +10,6 @@ import {TestSetup, IBabelVault} from "../TestSetup.sol";
 contract AdminVotingTest is TestSetup {
     AdminVoting adminVoting;
 
-
     uint256 constant internal INIT_MIN_CREATE_PROP_PCT = 10;   // 0.01%
     uint256 constant internal UPDT_MIN_CREATE_PROP_PCT = 50;   // 0.05%
     uint256 constant internal INIT_PROP_PASSING_PCT    = 2000; // 20%
@@ -138,8 +137,10 @@ contract AdminVotingTest is TestSetup {
         payload[2].data   = abi.encodeWithSelector(IBabelCore.setGuardian.selector, users.user1);
 
         // lock up user tokens to receive voting power
+        // need to divide by lockToTokenRatio when calling the
+        // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user1);
-        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION, 52);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // warp forward BOOTSTRAP_PERIOD so voting power becomes active
         // and setGuardian proposals are allowed
@@ -164,8 +165,10 @@ contract AdminVotingTest is TestSetup {
         payload[1].data   = abi.encodeWithSelector(AdminVoting.setPassingPct.selector, UPDT_PROP_PASSING_PCT);
 
         // lock up user tokens to receive voting power
+        // need to divide by lockToTokenRatio when calling the
+        // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user1);
-        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION, 52);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // advance time by 1 week
         vm.warp(block.timestamp + 1 weeks);
@@ -298,8 +301,10 @@ contract AdminVotingTest is TestSetup {
 
     function test_voteForProposal_differentVotersAccumulate() external {
         // lock up user2 tokens to receive voting power
+        // need to divide by lockToTokenRatio when calling the
+        // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user2);
-        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION, 52);
+        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // create first proposal
         uint256 proposalId = test_createNewProposal_withVotingWeight();
@@ -316,8 +321,10 @@ contract AdminVotingTest is TestSetup {
 
     function test_voteForProposal_canVoteOnPassedProposal() external {
         // lock up user2 tokens to receive voting power
+        // need to divide by lockToTokenRatio when calling the
+        // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user2);
-        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION, 52);
+        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // create first proposal
         uint256 proposalId = test_createNewProposal_withVotingWeight();
