@@ -18,6 +18,7 @@ contract InterimAdmin is Ownable {
     event ProposalCreated(uint256 proposalId, Action[] payload);
     event ProposalExecuted(uint256 proposalId);
     event ProposalCancelled(uint256 proposalId);
+    event AdminVotingSet(address);
 
     struct Proposal {
         uint32 createdAt; // timestamp when the proposal was created
@@ -39,16 +40,25 @@ contract InterimAdmin is Ownable {
 
     Proposal[] proposalData;
     mapping(uint256 => Action[]) proposalPayloads;
-    mapping(uint256 => uint256) dailyProposalsCount;
+
+    // store number of proposals created per day
+    mapping(uint256 dayNumber => uint256 proposalCount) dailyProposalsCount;
 
     constructor(address _babelCore) {
         babelCore = IBabelCore(_babelCore);
     }
 
     function setAdminVoting(address _adminVoting) external onlyOwner {
+        // can only be set once
         require(adminVoting == address(0), "Already set");
+
+        // must be set to a valid contract
         require(_adminVoting.isContract(), "adminVoting must be a contract");
+
+        // update storage
         adminVoting = _adminVoting;
+
+        emit AdminVotingSet(_adminVoting);
     }
 
     /**
@@ -83,16 +93,29 @@ contract InterimAdmin is Ownable {
                        executed if the proposal is passed.
      */
     function createNewProposal(Action[] calldata payload) external onlyOwner {
+        // enforce >=1 payload
         require(payload.length > 0, "Empty payload");
+        
+        // get current day number
         uint256 day = block.timestamp / 1 days;
-        uint256 currentDailyCount = dailyProposalsCount[day];
+
+        // fetch how many proposals have been created today
+        // and increment storage by 1 after fetching value
+        uint256 currentDailyCount = dailyProposalsCount[day]++;
+
+        // enforce maximum on number of proposals per day
         require(currentDailyCount < MAX_DAILY_PROPOSALS, "MAX_DAILY_PROPOSALS");
-        uint256 loopEnd = payload.length;
-        for (uint256 i; i < loopEnd; i++) {
+
+        // more efficient to not cache length for calldata
+        // search every payload and prevent calls to `IBabelCore::setGuardian`
+        for (uint256 i; i < payload.length; i++) {
             require(!_isSetGuardianPayload(payload[i]), "Cannot change guardian");
         }
-        dailyProposalsCount[day] = currentDailyCount + 1;
-        uint256 idx = proposalData.length;
+
+        // fetch next proposal id
+        uint256 proposalId = proposalData.length;
+
+        // save new proposal data
         proposalData.push(
             Proposal({
                 createdAt: uint32(block.timestamp),
@@ -101,10 +124,11 @@ contract InterimAdmin is Ownable {
             })
         );
 
+        // save payload data for new proposal
         for (uint256 i; i < payload.length; i++) {
-            proposalPayloads[idx].push(payload[i]);
+            proposalPayloads[proposalId].push(payload[i]);
         }
-        emit ProposalCreated(idx, payload);
+        emit ProposalCreated(proposalId, payload);
     }
 
     /**
@@ -115,9 +139,18 @@ contract InterimAdmin is Ownable {
         @param id Proposal ID
      */
     function cancelProposal(uint256 id) external {
+        // only owner or guardian can cancel proposals
         require(msg.sender == owner() || msg.sender == babelCore.guardian(), "Unauthorized");
+
+        // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
+
+        // prevent cancellation of executed or cancelled proposals
+        require(!proposalData[id].processed, "Already processed");
+
+        // mark proposal as cancelled
         proposalData[id].processed = true;
+
         emit ProposalCancelled(id);
     }
 
@@ -127,23 +160,37 @@ contract InterimAdmin is Ownable {
         @param id Proposal ID
      */
     function executeProposal(uint256 id) external onlyOwner {
+        // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
 
+        // cache proposal data from storage into memory
         Proposal memory proposal = proposalData[id];
+
+        // prevent execution of executed or cancelled proposals
         require(!proposal.processed, "Already processed");
 
-        uint256 executeAfter = proposal.canExecuteAfter;
-        require(executeAfter < block.timestamp, "MIN_TIME_TO_EXECUTION");
-        require(executeAfter + MAX_TIME_TO_EXECUTION > block.timestamp, "MAX_TIME_TO_EXECUTION");
+        // revert if the minimum time from passing to execution
+        // has not yet elapsed (execute too early after passing)
+        require(proposal.canExecuteAfter < block.timestamp, "MIN_TIME_TO_EXECUTION");
 
+        // revert if the maximum time from passing to execution
+        // has elapsed (execute too late after passing)
+        require(proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp, "MAX_TIME_TO_EXECUTION");
+
+        // mark the proposal as executed
         proposalData[id].processed = true;
 
+        // get a reference to storage data of proposal's payload
         Action[] storage payload = proposalPayloads[id];
+
+        // cache the payload length
         uint256 payloadLength = payload.length;
 
+        // execute every payload
         for (uint256 i; i < payloadLength; i++) {
             payload[i].target.functionCall(payload[i].data);
         }
+        
         emit ProposalExecuted(id);
     }
 
@@ -163,7 +210,7 @@ contract InterimAdmin is Ownable {
         babelCore.commitTransferOwnership(adminVoting);
     }
 
-    function _isSetGuardianPayload(Action memory action) internal pure returns (bool) {
+    function _isSetGuardianPayload(Action calldata action) internal pure returns (bool) {
         bytes memory data = action.data;
         // Extract the call sig from payload data
         bytes4 sig;

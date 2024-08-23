@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IERC2612} from "../interfaces/IERC2612.sol";
 import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 /**
     @title Babel Governance Token
     @notice Given as an incentive for users of the protocol. Can be locked in `TokenLocker`
@@ -89,7 +90,7 @@ contract BabelToken is OFT, IERC2612 {
                 keccak256(abi.encode(permitTypeHash, owner, spender, amount, _nonces[owner]++, deadline))
             )
         );
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = ECDSA.recover(digest, v, r, s);
         require(recoveredAddress == owner, "BABEL: invalid signature");
         _approve(owner, spender, amount);
     }
