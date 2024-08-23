@@ -25,9 +25,12 @@ const config: HardhatUserConfig = {
       scroll_testnet: "",
       blast_testnet: "",
       polygon_testnet: "",
-      fluent_testnet:"",
-      filecoin_testnet:"",
-      bnb_testnet:"",
+      fluent_testnet: "",
+      filecoin_testnet: "",
+      morph_testnet: "",
+      bnb_testnet: "",
+      godwoken_testnet: "",
+      fantom_testnet: "",
     },
     customChains: [
       {
@@ -37,6 +40,24 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "godwoken_testnet",
+        chainId: 71401,
+
+        urls: {
+          browserURL: "https://v1.testnet.gwscan.com/",
+          apiURL: "https://v1.testnet.gwscan.com/api",
+        },
+      },
+      {
+        network: "fantom_testnet",
+        chainId: 4002,
+
+        urls: {
+          browserURL: "https://testnet.ftmscan.com/",
+          apiURL: "https://testnet.ftmscan.com/api/",
         },
       },
       {
@@ -226,7 +247,7 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
           apiURL: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
-        }
+        },
       },
       {
         network: "moonbase_alpha_testnet",
@@ -234,23 +255,45 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://1287.rpc.thirdweb.com/${THIRDWEB_API_KEY}",
           apiURL: "https://1287.rpc.thirdweb.com/${THIRDWEB_API_KEY}",
-          
-        }
+        },
       },
       {
         network: "okx_testnet",
         chainId: 65,
         urls: {
-          browserURL:"https://exchaintestrpc.okex.org",
-          apiURL:"https://exchaintestrpc.okex.org",
-        }
+          browserURL: "https://exchaintestrpc.okex.org",
+          apiURL: "https://exchaintestrpc.okex.org",
+        },
       },
-      
+      {
+        network: "stratovm_testnet",
+        chainId: 93747,
+        urls: {
+          browserURL: " https://explorer.stratovm.io",
+          apiURL: "https://rpc.stratovm.io",
+        },
+      },
+      {
+        network: "morph_testnet",
+        chainId: 2810,
+        urls: {
+          browserURL: "https://explorer-holesky.morphl2.io/",
+          apiURL: "https://rpc-holesky.morphl2.io",
+        },
+      },
     ],
   },
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    godwoken_testnet: {
+      url: "https://v1.testnet.godwoken.io/rpc",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    fantom_testnet: {
+      url: "https://rpc.testnet.fantom.network/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bnb_testnet: {
@@ -334,19 +377,29 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     x_layer_testnet: {
-      url:"https://endpoints.omniatech.io/v1/xlayer/testnet/public",
+      url: "https://endpoints.omniatech.io/v1/xlayer/testnet/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
 
     moonbase_alpha_testnet: {
-      url: "https://1287.rpc.thirdweb.com", 
+      url: "https://1287.rpc.thirdweb.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
 
     okx_testnet: {
-      url:"https://exchaintestrpc.okex.org",
+      url: "https://exchaintestrpc.okex.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    }
+    },
+
+    morph_testnet: {
+      url: "https://rpc-holesky.morphl2.io",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+
+    stratovm_testnet: {
+      url: "https://rpc.stratovm.io",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
   },
   solidity: {
     compilers: [
