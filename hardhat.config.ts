@@ -245,6 +245,14 @@ const config: HardhatUserConfig = {
           apiURL:"https://exchaintestrpc.okex.org",
         }
       },
+      {
+        network: "stratovm_testnet",
+        chainId: 93747,
+        urls: {
+          browserURL:" https://explorer.stratovm.io",
+          apiURL:"https://rpc.stratovm.io",
+        }
+      },
       
     ],
   },
@@ -345,6 +353,10 @@ const config: HardhatUserConfig = {
 
     okx_testnet: {
       url:"https://exchaintestrpc.okex.org",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    stratovm_testnet: {
+      url:"https://rpc.stratovm.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
