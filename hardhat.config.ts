@@ -28,6 +28,7 @@ const config: HardhatUserConfig = {
       fluent_testnet:"",
       filecoin_testnet:"",
       bnb_testnet:"",
+      fantom_testnet:"",
     },
     customChains: [
       {
@@ -37,6 +38,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "fantom_testnet",
+        chainId: 4002,
+
+        urls: {
+          browserURL: "https://testnet.ftmscan.com/",
+          apiURL: "https://testnet.ftmscan.com/api/",
         },
       },
       {
@@ -259,6 +269,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    fantom_testnet: {
+      url: "https://rpc.testnet.fantom.network/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bnb_testnet: {
