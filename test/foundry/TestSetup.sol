@@ -103,7 +103,6 @@ contract TestSetup is Test {
     uint64 internal constant INIT_ES_LOCK_WEEKS = 4;
     uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
     uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
-    uint64[2][] internal scheduledWeeklyPct;
     uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max*INIT_LOCK_TO_TOKEN_RATIO;
     uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
 
@@ -282,6 +281,7 @@ contract TestSetup is Test {
         assertEq(1, factory.troveManagerCount());
 
         // create EmissionSchedule
+        uint64[2][] memory scheduledWeeklyPct;
         emissionSchedule = new EmissionSchedule(address(babelCore), 
                                                 IIncentiveVoting(address(incentiveVoting)),
                                                 IBabelVault(address(babelVault)),

@@ -61,7 +61,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         @param _schedule Dynamic array of (week, weeklyPct) ordered by week descending.
                          Each `week` indicates the number of weeks after the current week.
      */
-    function setWeeklyPctSchedule(uint64[2][] memory _schedule) external onlyOwner returns (bool) {
+    function setWeeklyPctSchedule(uint64[2][] calldata _schedule) external onlyOwner returns (bool) {
         _setWeeklyPctSchedule(_schedule);
         return true;
     }
@@ -70,11 +70,16 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         @notice Set the number of lock weeks and rate at which lock weeks decay
      */
     function setLockParameters(uint64 _lockWeeks, uint64 _lockDecayWeeks) external onlyOwner returns (bool) {
+        // enforce max number of lock weeks
         require(_lockWeeks <= MAX_LOCK_WEEKS, "Cannot exceed MAX_LOCK_WEEKS");
+
+        // enforce positive decay rate
         require(_lockDecayWeeks > 0, "Decay weeks cannot be 0");
 
+        // update storage
         lockWeeks = _lockWeeks;
         lockDecayWeeks = _lockDecayWeeks;
+
         emit LockParametersSet(_lockWeeks, _lockDecayWeeks);
         return true;
     }
@@ -93,22 +98,41 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         uint256 week,
         uint256 unallocatedTotal
     ) external returns (uint256 amount, uint256 lock) {
+        // only vault can call this function
         require(msg.sender == address(vault));
 
         // apply the lock week decay
+        //
+        // output curret weeks to lock for        
         lock = lockWeeks;
+
+        // if current weeks to lock for > 0 AND
+        // this week is a decay week
         if (lock > 0 && week % lockDecayWeeks == 0) {
+            // then decrement current weeks to lock for
             lock -= 1;
             lockWeeks = uint64(lock);
         }
 
         // check for and apply scheduled update to `weeklyPct`
+        //
+        // get number of remaining scheduled weeklyPct updates
         uint256 length = scheduledWeeklyPct.length;
+
+        // get current weeklyPct
         uint256 pct = weeklyPct;
+
+        // if there are remaining scheduled weeklyPct updates
         if (length > 0) {
+            // read next update from storage
             uint64[2] memory nextUpdate = scheduledWeeklyPct[length - 1];
+
+            // if the update is for this week
             if (nextUpdate[0] == week) {
+                // remove the update from storage
                 scheduledWeeklyPct.pop();
+
+                // update the current weeklyPct
                 pct = nextUpdate[1];
                 weeklyPct = nextUpdate[1];
             }
@@ -116,26 +140,45 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
 
         // calculate the weekly emissions as a percentage of the unallocated supply
         amount = (unallocatedTotal * pct) / MAX_PCT;
-
-        return (amount, lock);
     }
 
     function _setWeeklyPctSchedule(uint64[2][] memory _scheduledWeeklyPct) internal {
+        // _scheduledWeeklyPct
+        // first parameter  : number of weeks from now, must be descending and unique
+        // second parameter : % of unallocated BABEL supply to be emitted in that week
+
+        // cache length
         uint256 length = _scheduledWeeklyPct.length;
+
         if (length > 0) {
+            // read week from first input element
             uint256 week = _scheduledWeeklyPct[0][0];
+
+            // get the current week protocol is in
             uint256 currentWeek = getWeek();
+
             for (uint256 i; i < length; i++) {
+                // for all subsequent week inputs, enforce descending and unique week
                 if (i > 0) {
                     require(_scheduledWeeklyPct[i][0] < week, "Must sort by week descending");
                     week = _scheduledWeeklyPct[i][0];
                 }
+
+                // add current week number to input week offset to get actual week
+                // number when emissions will occur
                 _scheduledWeeklyPct[i][0] = uint64(week + currentWeek);
+
+                // enforce maximum 100% distribution of remaining supply 
                 require(_scheduledWeeklyPct[i][1] <= MAX_PCT, "Cannot exceed MAX_PCT");
             }
+
+            // enforce week inputs as number of weeks from current week (ie > 0)
             require(week > 0, "Cannot schedule past weeks");
         }
+
+        // update storage
         scheduledWeeklyPct = _scheduledWeeklyPct;
+        
         emit WeeklyPctScheduleSet(_scheduledWeeklyPct);
     }
 }
