@@ -7,6 +7,8 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
 import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
 import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
     @title Babel DAO Admin Voter
     @notice Primary ownership contract for all Babel contracts. Allows executing
@@ -240,7 +242,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         uint256 totalWeight = tokenLocker.getTotalWeightAt(week);
 
         // calculate required quorum for the proposal to pass
-        uint40 requiredWeight = uint40((totalWeight * proposalPassPct) / MAX_PCT);
+        uint40 requiredWeight = SafeCast.toUint40((totalWeight * proposalPassPct) / MAX_PCT);
 
         // output newly created proposal id
         proposalId = proposalData.length;
@@ -248,7 +250,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         // save proposal data
         proposalData.push(
             Proposal({
-                week: uint16(week),
+                week: SafeCast.toUint16(week),
                 createdAt: uint32(block.timestamp),
                 canExecuteAfter: 0,
                 currentWeight: 0,
@@ -311,7 +313,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         accountVoteWeights[account][id] = weight;
 
         // calculate proposal's accumulated voting weight
-        uint40 updatedWeight = uint40(proposal.currentWeight + weight);
+        uint40 updatedWeight = SafeCast.toUint40(proposal.currentWeight + weight);
 
         // update proposal's accumulated voting weight
         proposalData[id].currentWeight = updatedWeight;
