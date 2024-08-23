@@ -14,6 +14,8 @@ import {IBabelVault} from "../../contracts/interfaces/IVault.sol";
 import {IBabelToken} from "../../contracts/interfaces/IBabelToken.sol";
 import {IIncentiveVoting} from "../../contracts/interfaces/IIncentiveVoting.sol";
 import {ITokenLocker} from "../../contracts/interfaces/ITokenLocker.sol";
+import {IEmissionSchedule} from "../../contracts/interfaces/IEmissionSchedule.sol";
+import {IBoostCalculator} from "../../contracts/interfaces/IBoostCalculator.sol";
 
 // core
 import {BabelCore} from "../../contracts/core/BabelCore.sol";
@@ -33,6 +35,8 @@ import {TokenLocker} from "../../contracts/dao/TokenLocker.sol";
 import {IncentiveVoting} from "../../contracts/dao/IncentiveVoting.sol";
 import {BabelToken} from "../../contracts/dao/BabelToken.sol";
 import {BabelVault} from "../../contracts/dao/Vault.sol";
+import {EmissionSchedule} from "../../contracts/dao/EmissionSchedule.sol";
+import {BoostCalculator} from "../../contracts/dao/BoostCalculator.sol";
 
 // foundry
 import {Test} from "forge-std/Test.sol";
@@ -86,6 +90,8 @@ contract TestSetup is Test {
     IncentiveVoting internal incentiveVoting;
     BabelToken internal babelToken;
     BabelVault internal babelVault;
+    EmissionSchedule internal emissionSchedule;
+    BoostCalculator  internal boostCalc;
 
     // constants
     uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
@@ -93,8 +99,20 @@ contract TestSetup is Test {
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
     address internal constant ZERO_ADDRESS = address(0);
 
+    uint256 internal constant INIT_BS_GRACE_WEEKS = 1;
+    uint64 internal constant INIT_ES_LOCK_WEEKS = 4;
+    uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
+    uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
+    uint64[2][] internal scheduledWeeklyPct;
+    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max*INIT_LOCK_TO_TOKEN_RATIO;
+    uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
+
 
     function setUp() public virtual {
+        // prevent Foundry from setting block.timestamp = 1 which can cause
+        // errors in this protocol
+        vm.warp(1659973223);
+
         // set addresses used by tests
         users.owner = address(0x1111);
         users.guardian = address(0x2222);
@@ -263,6 +281,20 @@ contract TestSetup is Test {
         // 1 TroveManager deployed
         assertEq(1, factory.troveManagerCount());
 
+        // create EmissionSchedule
+        emissionSchedule = new EmissionSchedule(address(babelCore), 
+                                                IIncentiveVoting(address(incentiveVoting)),
+                                                IBabelVault(address(babelVault)),
+                                                INIT_ES_LOCK_WEEKS,
+                                                INIT_ES_LOCK_DECAY_WEEKS,
+                                                INIT_ES_WEEKLY_PCT,
+                                                scheduledWeeklyPct);
+
+        // create BoostCalculator
+        boostCalc = new BoostCalculator(address(babelCore),
+                                        ITokenLocker(address(tokenLocker)),
+                                        INIT_BS_GRACE_WEEKS);
+
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later
         //
@@ -273,5 +305,8 @@ contract TestSetup is Test {
         // approve BorrowerOperations for 50 StakedBTC tokens
         // stakedBTC.approve(addresses.borrowerOps, 50e18);
         vm.stopPrank();
+
+        // verify we are in the first week
+        assertEq(tokenLocker.getWeek(), 0);
     }
 }
