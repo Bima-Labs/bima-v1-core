@@ -27,6 +27,7 @@ const config: HardhatUserConfig = {
       polygon_testnet: "",
       fluent_testnet: "",
       filecoin_testnet: "",
+      morph_testnet: "",
       bnb_testnet: "",
       godwoken_testnet: "",
       fantom_testnet: "",
@@ -272,6 +273,14 @@ const config: HardhatUserConfig = {
           apiURL: "https://rpc.stratovm.io",
         },
       },
+      {
+        network: "morph_testnet",
+        chainId: 2810,
+        urls: {
+          browserURL: "https://explorer-holesky.morphl2.io/",
+          apiURL: "https://rpc-holesky.morphl2.io",
+        },
+      },
     ],
   },
   networks: {
@@ -381,6 +390,12 @@ const config: HardhatUserConfig = {
       url: "https://exchaintestrpc.okex.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+
+    morph_testnet: {
+      url: "https://rpc-holesky.morphl2.io",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+
     stratovm_testnet: {
       url: "https://rpc.stratovm.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
