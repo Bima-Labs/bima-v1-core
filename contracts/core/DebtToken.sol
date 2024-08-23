@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-// import { OFT, IERC20, ERC20 } from "@layerzerolabs/solidity-examples/contracts/token/oft/OFT.sol";
-import { OFT, IERC20, ERC20 } from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
-import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
+import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
 /**
@@ -17,7 +17,7 @@ contract DebtToken is OFT {
 
     // --- ERC 3156 Data ---
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint256 public constant FLASH_LOAN_FEE = 9; // 1 = 0.0001%
+    uint256 public constant FLASH_LOAN_FEE = 9; // 1 = 0.01%
 
     // --- Data for EIP2612 ---
 
@@ -163,10 +163,11 @@ contract DebtToken is OFT {
      * implementation has 0 fees. This function can be overloaded to make
      * the flash loan mechanism deflationary.
      * @param amount The amount of tokens to be loaned.
-     * @return The fees applied to the corresponding flash loan.
+     * @return fee applied to the corresponding flash loan.
      */
-    function _flashFee(uint256 amount) internal pure returns (uint256) {
-        return (amount * FLASH_LOAN_FEE) / 10000;
+    function _flashFee(uint256 amount) internal pure returns (uint256 fee) {
+        fee = (amount * FLASH_LOAN_FEE) / 10000;
+        require(fee > 0, "ERC20FlashMint: amount too small");
     }
 
     /**
@@ -233,7 +234,7 @@ contract DebtToken is OFT {
                 keccak256(abi.encode(permitTypeHash, owner, spender, amount, _nonces[owner]++, deadline))
             )
         );
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = ECDSA.recover(digest, v, r, s);
         require(recoveredAddress == owner, "Debt: invalid signature");
         _approve(owner, spender, amount);
     }
