@@ -24,6 +24,8 @@ interface ITokenLocker is IBabelOwnable, ISystemStart {
     event LocksFrozen(address indexed account, uint256 amount);
     event LocksUnfrozen(address indexed account, uint256 amount);
     event LocksWithdrawn(address indexed account, uint256 withdrawn, uint256 penalty);
+    event SetAllowPenaltyWithdrawAfter(uint256 startTime);
+    event SetPenaltyWithdrawalsEnabled(bool status);
 
     function extendLock(uint256 _amount, uint256 _weeks, uint256 _newWeeks) external returns (bool);
 

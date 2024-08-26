@@ -97,10 +97,15 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     }
 
     function setAllowPenaltyWithdrawAfter(uint256 _timestamp) external returns (bool) {
+        // only deployment manager can set penalty withdraw start time
         require(msg.sender == deploymentManager, "!deploymentManager");
+
+        // penalty withdraw start time can only be set once
         require(allowPenaltyWithdrawAfter == 0, "Already set");
         require(_timestamp > block.timestamp && _timestamp < block.timestamp + 13 weeks, "Invalid timestamp");
         allowPenaltyWithdrawAfter = _timestamp;
+
+        emit SetAllowPenaltyWithdrawAfter(_timestamp);
         return true;
     }
 
@@ -111,6 +116,8 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         uint256 start = allowPenaltyWithdrawAfter;
         require(start != 0 && block.timestamp > start, "Not yet!");
         penaltyWithdrawalsEnabled = _enabled;
+
+        emit SetPenaltyWithdrawalsEnabled(_enabled);
         return true;
     }
 
@@ -774,24 +781,49 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         @return uint256 Amount of tokens withdrawn
      */
     function withdrawWithPenalty(uint256 amountToWithdraw) external notFrozen(msg.sender) returns (uint256) {
+        // penalty withdrawals must be enabled by admin
         require(penaltyWithdrawalsEnabled, "Penalty withdrawals are disabled");
-        AccountData storage accountData = accountLockData[msg.sender];
-        uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
-        uint256 weight = _weeklyWeightWrite(msg.sender);
-        if (amountToWithdraw != type(uint256).max) amountToWithdraw *= lockToTokenRatio;
 
-        // start by withdrawing unlocked balance without penalty
+        // revert on zero input
+        require(amountToWithdraw != 0, "Must withdraw a positive amount");
+
+        // get storage reference to user's account
+        AccountData storage accountData = accountLockData[msg.sender];
+
+        // trigger weekly account weight update before processing this call
+        uint256 weight = _weeklyWeightWrite(msg.sender);
+
+        // @audit no call to `getTotalWeightWrite` which is called after `_weeklyWeightWrite`
+        // inside `withdrawExpiredLocks` ?
+
+        // scale up both amount to withdraw and unlocked amount by lockToTokenRatio
+        if (amountToWithdraw != type(uint256).max) amountToWithdraw *= lockToTokenRatio;
         uint256 unlocked = accountData.unlocked * lockToTokenRatio;
+
+        // if user has enough unlocked to cover the withdraw, then there is no penalty
         if (unlocked >= amountToWithdraw) {
+            // update user's unlocked storage to deduct withdrawn amount
             accountData.unlocked = SafeCast.toUint32((unlocked - amountToWithdraw) / lockToTokenRatio);
+
+            // send user the tokens
             lockToken.transfer(msg.sender, amountToWithdraw);
+
+            // stop function execution here returning withdrawn amount
             return amountToWithdraw;
         }
+
+        // if execution reaches here user doesn't have enough unlocked to
+        // cover the amount they want to withdraw
 
         // clear the caller's registered vote weight
         incentiveVoter.clearRegisteredWeight(msg.sender);
 
+        // make a copy of the scaled up withdraw amount
         uint256 remaining = amountToWithdraw;
+
+        // if user has some unlocked tokens, deduct them from the
+        // remaining amount and reset user's unlocked - this way no
+        // penalty is applied on the unlocked amount
         if (unlocked > 0) {
             remaining -= unlocked;
             accountData.unlocked = 0;
@@ -811,32 +843,61 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             }
 
             if ((bitfield >> (systemWeek % 256)) & uint256(1) == 1) {
-                uint256 lockAmount = unlocks[systemWeek] * lockToTokenRatio;
+                // get amount locked for given week scaled up by lockToTokenRatio
+                uint256 lockAmount = accountWeeklyUnlocks[msg.sender][systemWeek] * lockToTokenRatio;
+
+                // calculate penalty such the longer the amount of weeks left before
+                // the tokens are unlocked, the greater amount of penalty. this first
+                // penalty calculation uses entire locked amount
                 uint256 penaltyOnAmount = (lockAmount * weeksToUnlock) / MAX_LOCK_WEEKS;
 
+                // if after deducting the penalty from the locked amount the result is
+                // greater than the remaining amount the user wishes to withdraw
                 if (lockAmount - penaltyOnAmount > remaining) {
-                    // after penalty, locked amount exceeds remaining required balance
-                    // we can complete the withdrawal using only a portion of this lock
+                    // then recalculate the penalty using only the portion of the lock
+                    // amount that will be withdrawn
                     penaltyOnAmount = (remaining * MAX_LOCK_WEEKS) / (MAX_LOCK_WEEKS - weeksToUnlock) - remaining;
+
+                    // add any dust to the penalty amount
                     uint256 dust = ((penaltyOnAmount + remaining) % lockToTokenRatio);
                     if (dust > 0) penaltyOnAmount += lockToTokenRatio - dust;
+
+                    // update memory total penalty
                     penaltyTotal += penaltyOnAmount;
+
+                    // calculate amount to reduce lock as penalty + withdrawn amount,
+                    // scaled down by lockToTokenRatio as those values were prev scaled up by this
                     uint256 lockReduceAmount = (penaltyOnAmount + remaining) / lockToTokenRatio;
+
+                    // update memory total voting weight reduction
                     decreasedWeight += lockReduceAmount * weeksToUnlock;
-                    unlocks[systemWeek] -= SafeCast.toUint32(lockReduceAmount);
+
+                    // update storage to decrease week's future unlocks
+                    accountWeeklyUnlocks[msg.sender][systemWeek] -= SafeCast.toUint32(lockReduceAmount);
                     totalWeeklyUnlocks[systemWeek] -= SafeCast.toUint32(lockReduceAmount);
+
+                    // nothing remaining to be withdrawn
                     remaining = 0;
-                } else {
-                    // after penalty, locked amount does not exceed remaining required balance
-                    // the entire lock must be used in the withdrawal
+                }
+                // otherwise use entire locked amount to service the withdrawal
+                else {
+                    // update memory total penalty
                     penaltyTotal += penaltyOnAmount;
+
+                    // update memory total voting weight reduction
                     decreasedWeight += (lockAmount / lockToTokenRatio) * weeksToUnlock;
+
                     bitfield = bitfield & ~(uint256(1) << (systemWeek % 256));
-                    unlocks[systemWeek] = 0;
+
+                    // update storage to decrease week's future unlocks
+                    accountWeeklyUnlocks[msg.sender][systemWeek] = 0;
                     totalWeeklyUnlocks[systemWeek] -= SafeCast.toUint32(lockAmount / lockToTokenRatio);
+
+                    // adjust remaining amount by net amount withdraw after penalty incurred
                     remaining -= lockAmount - penaltyOnAmount;
                 }
 
+                // exit loop if amount to be withdrawn satisfied
                 if (remaining == 0) {
                     break;
                 }
@@ -845,18 +906,37 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         accountData.updateWeeks[systemWeek / 256] = bitfield;
 
+        // if users tried to withdraw as much as possible, then subtract
+        // the "unfilled" net amount (not inc penalties) from the user input
+        // which gives the "filled" amount (not inc penalties)
         if (amountToWithdraw == type(uint256).max) {
             amountToWithdraw -= remaining;
-        } else {
+
+            // revert if nothing was withdrawn, eg if user had no locked
+            // tokens but attempted withdraw with input type(uint256).max
+            require(amountToWithdraw != 0, "Must withdraw a positive amount");
+        }
+        // otherwise if user tried to withdraw a specific amount, revert if
+        // it was impossible to fill that exact amount
+        else {
             require(remaining == 0, "Insufficient balance after fees");
         }
 
-        accountData.locked -= SafeCast.toUint32((amountToWithdraw + penaltyTotal - unlocked) / lockToTokenRatio);
-        totalDecayRate -= SafeCast.toUint32((amountToWithdraw + penaltyTotal - unlocked) / lockToTokenRatio);
+        // calculate & cache total amount of locked tokens withdraw inc penalties,
+        // scaled down by lockToTokenRatio
+        uint32 lockedPlusPenalties = SafeCast.toUint32((amountToWithdraw + penaltyTotal - unlocked) / lockToTokenRatio);
+
+        // update account locked and global totalDecayRate subtracting
+        // locked tokens withdrawn including penalties paid
+        accountData.locked -= lockedPlusPenalties;
+        totalDecayRate -= lockedPlusPenalties;
+        
+        // update account and global weights subtracting decreased weights
         systemWeek = getWeek();
         accountWeeklyWeights[msg.sender][systemWeek] = SafeCast.toUint40(weight - decreasedWeight);
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() - decreasedWeight);
 
+        // send the withdraw tokens and pay penalty fees
         lockToken.transfer(msg.sender, amountToWithdraw);
         lockToken.transfer(babelCore.feeReceiver(), penaltyTotal);
         emit LocksWithdrawn(msg.sender, amountToWithdraw, penaltyTotal);
