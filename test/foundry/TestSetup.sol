@@ -94,6 +94,7 @@ contract TestSetup is Test {
     BoostCalculator  internal boostCalc;
 
     // constants
+    uint64 constant internal MAX_PCT = 10000; // 100%
     uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
     uint256 internal constant INIT_MIN_NET_DEBT = 1800e18;
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;

@@ -99,6 +99,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         uint256 unallocatedTotal
     ) external returns (uint256 amount, uint256 lock) {
         // only vault can call this function
+        // vault always calls this function for current getWeek()
         require(msg.sender == address(vault));
 
         // apply the lock week decay
@@ -112,6 +113,10 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
             // then decrement current weeks to lock for
             lock -= 1;
             lockWeeks = uint64(lock);
+
+            // note: checks inside `BabelVault::_allocateTotalWeekly`
+            // prevent this function being called multiple times
+            // for the same week
         }
 
         // check for and apply scheduled update to `weeklyPct`
