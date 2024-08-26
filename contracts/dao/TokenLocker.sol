@@ -34,9 +34,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     IBabelCore public immutable babelCore;
     address public immutable deploymentManager;
 
-    bool public penaltyWithdrawalsEnabled;
-    uint256 public allowPenaltyWithdrawAfter;
-
     struct AccountData {
         // Currently locked balance. Each week the lock weight decays by this amount.
         uint32 locked;
@@ -61,6 +58,9 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     // Current week within `totalWeeklyWeights` and `totalWeeklyUnlocks`. When up-to-date
     // this value is always equal to `getWeek()`
     uint16 public totalUpdatedWeek;
+
+    bool public penaltyWithdrawalsEnabled;
+    uint256 public allowPenaltyWithdrawAfter;
 
     // week -> total lock weight
     uint40[65535] totalWeeklyWeights;
