@@ -68,13 +68,13 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     uint32[65535] totalWeeklyUnlocks;
 
     // account -> week -> lock weight
-    mapping(address => uint40[65535]) accountWeeklyWeights;
+    mapping(address account => uint40[65535] weeklyWeight) accountWeeklyWeights;
 
     // account -> week -> token balance unlocking this week
-    mapping(address => uint32[65535]) accountWeeklyUnlocks;
+    mapping(address account => uint32[65535] weeklyUnlock) accountWeeklyUnlocks;
 
     // account -> primary account data structure
-    mapping(address => AccountData) accountLockData;
+    mapping(address account => AccountData accountData) accountLockData;
 
     constructor(
         address _babelCore,
@@ -102,7 +102,11 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // penalty withdraw start time can only be set once
         require(allowPenaltyWithdrawAfter == 0, "Already set");
+
+        // start time must be greate than now and less than 13 weeks in the future
         require(_timestamp > block.timestamp && _timestamp < block.timestamp + 13 weeks, "Invalid timestamp");
+
+        // update storage
         allowPenaltyWithdrawAfter = _timestamp;
 
         emit SetAllowPenaltyWithdrawAfter(_timestamp);
@@ -113,8 +117,12 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         @notice Allow or disallow early-exit of locks by paying a penalty
      */
     function setPenaltyWithdrawalsEnabled(bool _enabled) external onlyOwner returns (bool) {
+        // revert if start time has not been set or if the
+        // start time is in the future (too early)
         uint256 start = allowPenaltyWithdrawAfter;
         require(start != 0 && block.timestamp > start, "Not yet!");
+
+        // update storage
         penaltyWithdrawalsEnabled = _enabled;
 
         emit SetPenaltyWithdrawalsEnabled(_enabled);
@@ -792,9 +800,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // trigger weekly account weight update before processing this call
         uint256 weight = _weeklyWeightWrite(msg.sender);
-
-        // @audit no call to `getTotalWeightWrite` which is called after `_weeklyWeightWrite`
-        // inside `withdrawExpiredLocks` ?
 
         // scale up both amount to withdraw and unlocked amount by lockToTokenRatio
         if (amountToWithdraw != type(uint256).max) amountToWithdraw *= lockToTokenRatio;
