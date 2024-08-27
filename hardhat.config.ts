@@ -31,6 +31,7 @@ const config: HardhatUserConfig = {
       bnb_testnet: "",
       godwoken_testnet: "",
       fantom_testnet: "",
+      aurora_testnet:"",
     },
     customChains: [
       {
@@ -40,6 +41,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "aurora_testnet",
+        chainId: 1313161555,
+
+        urls: {
+          browserURL: "https://explorer.testnet.aurora.dev/",
+          apiURL: "https://explorer.testnet.aurora.dev/api/",
         },
       },
       {
@@ -286,6 +296,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    aurora_testnet: {
+      url: "https://testnet.aurora.dev",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     godwoken_testnet: {
