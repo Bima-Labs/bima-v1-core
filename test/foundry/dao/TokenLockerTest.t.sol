@@ -256,7 +256,6 @@ contract TokenLockerTest is TestSetup {
         // verify total weekly unlocks increased in future extended lock week
         assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + extendFor),
                  totalWeeklyUnlocksExtendWeekPre + lockedAmount);
-
     }
 
     function test_extendLock_failMin1Week(uint256 amountToLock, uint256 weeksToLockFor) external {
@@ -331,6 +330,79 @@ contract TokenLockerTest is TestSetup {
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(users.user1);
         tokenLocker.extendLock(lockedAmount+1, weeksLockedFor, extendFor);
+    }
+
+    function test_freeze(uint256 amountToLock, uint256 weeksToLockFor) public returns(uint256 frozenAmount) {
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        // save previous state
+        uint256 totalDecayRatePre = tokenLocker.totalDecayRate();
+        uint256 systemWeek = tokenLocker.getWeek();
+        uint256 accountWeightPre = tokenLocker.getAccountWeightAt(users.user1, systemWeek);
+        uint256 totalWeightPre = tokenLocker.getTotalWeightAt(systemWeek);
+        uint256 accountWeeklyUnlocksOrigWeekPre = tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor);
+        uint256 totalWeeklyUnlocksOrigWeekPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor);
+
+        // freeze the account
+        vm.prank(users.user1);
+        tokenLocker.freeze();
+
+        // verify token decay rate reduced by frozen locked amount
+        assertEq(tokenLocker.totalDecayRate(), totalDecayRatePre - lockedAmount);
+
+        // verify account locked & frozen balances updated
+        (uint32 accountLockedPost, , uint32 accountFrozenPost) = tokenLocker.getAccountBalancesRaw(users.user1);
+        assertEq(accountLockedPost, 0);
+        assertEq(accountFrozenPost, lockedAmount);
+
+        frozenAmount = accountFrozenPost;
+
+        // verify account weekly unlocks decreased in original lock week
+        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor),
+                 accountWeeklyUnlocksOrigWeekPre - lockedAmount);
+
+        // verify total weekly unlocks decreased in original lock week
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor),
+                 totalWeeklyUnlocksOrigWeekPre - lockedAmount);
+
+        // verify account weight in current week set to frozen weight
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek),
+                 accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
+
+        // verify total weight in current week has subtracted previous
+        // account weight and added frozen weight
+        assertEq(tokenLocker.getTotalWeightAt(systemWeek),
+                 totalWeightPre - accountWeightPre + accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
+    }
+
+    function test_unfreeze(uint256 amountToLock, uint256 weeksToLockFor) external {
+        // perform the freeze
+        uint256 frozenAmount = test_freeze(amountToLock, weeksToLockFor);
+
+        // save previous state
+        uint256 totalDecayRatePre = tokenLocker.totalDecayRate();
+        uint256 unlockWeek = tokenLocker.getWeek() + tokenLocker.MAX_LOCK_WEEKS();
+        uint256 totalWeeklyUnlockWeekPre = tokenLocker.getTotalWeeklyUnlocks(unlockWeek);
+
+        vm.prank(users.user1);
+        tokenLocker.unfreeze(false);
+
+        // verify token decay rate increased by unfrozen amount
+        assertEq(tokenLocker.totalDecayRate(), totalDecayRatePre + frozenAmount);
+
+        // verify account locked & frozen balances updated
+        (uint32 accountLockedPost, , uint32 accountFrozenPost) = tokenLocker.getAccountBalancesRaw(users.user1);
+        assertEq(accountLockedPost, frozenAmount);
+        assertEq(accountFrozenPost, 0);
+
+        // verify account unlock week set to unfrozen amount
+        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, unlockWeek), frozenAmount);
+
+        // verify total unlock week increased by unfrozen amount
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(unlockWeek),
+                 totalWeeklyUnlockWeekPre + frozenAmount);
+        
     }
 
     // returns a valid penalty start time
@@ -450,6 +522,9 @@ contract TokenLockerTest is TestSetup {
         // verify total weight for current week all belongs to user
         assertEq(tokenLocker.getTotalWeight(), accountWeightPreWithdraw);
 
+        // save previous decay rate
+        uint256 totalDecayRatePre = tokenLocker.totalDecayRate();
+
         // perform the withdraw with penalty
         vm.prank(users.user1);
         tokenLocker.withdrawWithPenalty(type(uint256).max);
@@ -468,5 +543,8 @@ contract TokenLockerTest is TestSetup {
 
         // verify total weight was reset
         assertEq(tokenLocker.getTotalWeight(), 0);
+
+        // verify token decay rate reduced by withdrawn amount
+        assertEq(tokenLocker.totalDecayRate(), totalDecayRatePre - lockedAmount);
     }
 }

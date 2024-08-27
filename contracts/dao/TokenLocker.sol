@@ -904,33 +904,45 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
      */
     function unfreeze(bool keepIncentivesVote) external {
+        // get storage references for account lock & unlock data
         AccountData storage accountData = accountLockData[msg.sender];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
-        uint256 frozen = accountData.frozen;
+        
+        // revert if nothing to unfreeze
+        uint32 frozen = accountData.frozen;
         require(frozen > 0, "Locks already unfrozen");
 
         // unfreeze the caller's registered vote weights
         incentiveVoter.unfreeze(msg.sender, keepIncentivesVote);
 
-        // update account weights and get the current account week
+        // trigger account & total weekly writes, get fresh weights
         _weeklyWeightWrite(msg.sender);
         getTotalWeightWrite();
 
-        // add account decay to the total decay rate
-        totalDecayRate = SafeCast.toUint32(totalDecayRate + frozen);
-        accountData.locked = SafeCast.toUint32(frozen);
+        // add account frozen balance to the total decay rate
+        totalDecayRate += frozen;
+
+        // update storage account locked balance and reset frozen balance
+        accountData.locked = frozen;
         accountData.frozen = 0;
 
+        // get current system week
         uint256 systemWeek = getWeek();
 
+        // calculate locked week as always max lock time
         uint256 unlockWeek = systemWeek + MAX_LOCK_WEEKS;
 
-        // modify weekly unlocks and unlock bitfield
-        unlocks[unlockWeek] = SafeCast.toUint32(frozen);
-        totalWeeklyUnlocks[unlockWeek] += SafeCast.toUint32(frozen);
+        // account unlocks in unlock week set to frozen amount
+        unlocks[unlockWeek] = frozen;
+
+        // total unlocks in unlock week increased by frozen amount
+        totalWeeklyUnlocks[unlockWeek] += frozen;
+
+        // modify bitfield
         uint256 idx = unlockWeek / 256;
         uint256 bitfield = accountData.updateWeeks[idx] | (uint256(1) << (unlockWeek % 256));
         accountData.updateWeeks[idx] = bitfield;
+        
         emit LocksUnfrozen(msg.sender, frozen);
     }
 
