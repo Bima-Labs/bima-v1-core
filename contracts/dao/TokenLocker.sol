@@ -187,6 +187,15 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     }
 
     /**
+        @notice Get account balances without any processing
+     */
+    function getAccountBalancesRaw(address account) external view returns(uint32 locked, uint32 unlocked, uint32 frozen) {
+        return(accountLockData[account].locked,
+               accountLockData[account].unlocked,
+               accountLockData[account].frozen);
+    }
+
+    /**
         @notice Get total unlocks for given week
      */
     function getTotalWeeklyUnlocks(uint256 week) public view returns(uint256 unlocks) {
@@ -833,20 +842,29 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
              actions such as emissions voting.
      */
     function freeze() external notFrozen(msg.sender) {
+        // get storage references for account lock & unlock data
         AccountData storage accountData = accountLockData[msg.sender];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
 
+        // trigger account & total weekly writes, get fresh weights
         uint256 accountWeight = _weeklyWeightWrite(msg.sender);
         uint256 totalWeight = getTotalWeightWrite();
 
-        // remove account locked balance from the total decay rate
-        uint256 locked = accountData.locked;
+        // can only freeze an account with locked tokens
+        uint32 locked = accountData.locked;
         require(locked > 0, "No locked balance");
-        totalDecayRate = SafeCast.toUint32(totalDecayRate - locked);
-        accountData.frozen = SafeCast.toUint32(locked);
+
+        // remove account locked balance from the total decay rate
+        totalDecayRate -= locked;
+
+        // update storage account frozen balance and reset locked balance
+        accountData.frozen = locked;
         accountData.locked = 0;
 
+        // get current system week
         uint256 systemWeek = getWeek();
+
+        // update storage account and total weight for current system week
         accountWeeklyWeights[msg.sender][systemWeek] = SafeCast.toUint40(locked * MAX_LOCK_WEEKS);
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(totalWeight - accountWeight + locked * MAX_LOCK_WEEKS);
 
