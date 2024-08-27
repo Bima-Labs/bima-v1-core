@@ -7,6 +7,8 @@ import { DelegatedOps } from "../dependencies/DelegatedOps.sol";
 import { BabelOwnable } from "../dependencies/BabelOwnable.sol";
 import { ITokenLocker } from "../interfaces/ITokenLocker.sol";
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
  * @title Vesting contract for team and investors
  * @author BabelFi
@@ -26,6 +28,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
     error LockedAllocation();
     error IllegalVestingStart();
     error VestingAlreadyStarted();
+    error SelfTransfer();
     error IncompatibleVestingPeriod(uint256 numberOfWeeksFrom, uint256 numberOfWeeksTo);
 
     struct AllocationSplit {
@@ -81,25 +84,42 @@ contract AllocationVesting is DelegatedOps, Ownable {
      * @dev This can be called only once by the owner
      */
     function setAllocations(AllocationSplit[] calldata allocationSplits, uint256 vestingStart_) external onlyOwner {
+        // enforce vesting start in the future but not more than 5 weeks
         if (vestingStart_ < block.timestamp || block.timestamp + 5 weeks < vestingStart_) revert IllegalVestingStart();
+
+        // can only start vesting once
         if (vestingStart != 0) revert VestingAlreadyStarted();
+
+        // update storage with vesting start time
         vestingStart = vestingStart_;
-        uint256 loopEnd = allocationSplits.length;
+
+        // cumulative data
         uint256 totalPoints;
-        for (uint256 i; i < loopEnd; ) {
+
+        // more efficient to not cache loop length since calldata
+        for (uint256 i; i < allocationSplits.length; ) {
             address recipient = allocationSplits[i].recipient;
             uint8 numberOfWeeks = allocationSplits[i].numberOfWeeks;
             uint256 points = allocationSplits[i].points;
+
+            // sanity checks on allocation inputs
             if (points == 0) revert ZeroAllocation();
             if (numberOfWeeks == 0) revert ZeroNumberOfWeeks();
             if (allocations[recipient].numberOfWeeks > 0) revert DuplicateAllocation();
+
+            // update memory cumulative points
             totalPoints += points;
+
+            // set allocation state for recipient
             allocations[recipient].points = uint24(points);
             allocations[recipient].numberOfWeeks = numberOfWeeks;
+
             unchecked {
                 ++i;
             }
         }
+
+        // sanity check to ensure complete allocation
         if (totalPoints != TOTAL_POINTS) revert AllocationsMismatch();
     }
 
@@ -111,28 +131,54 @@ contract AllocationVesting is DelegatedOps, Ownable {
      * @param points Number of points to transfer
      */
     function transferPoints(address from, address to, uint256 points) external callerOrDelegated(from) {
+        // revert on self-transfer to prevent infinite points exploit
+        if(from == to) revert SelfTransfer();
+
+        // revert on zero points input
+        if (points == 0) revert ZeroAllocation();
+
+        // cache allocation state of `from` and `to` addresses
         AllocationState memory fromAllocation = allocations[from];
         AllocationState memory toAllocation = allocations[to];
-        uint8 numberOfWeeksFrom = fromAllocation.numberOfWeeks;
-        uint8 numberOfWeeksTo = toAllocation.numberOfWeeks;
-        if (numberOfWeeksTo != 0 && numberOfWeeksTo != numberOfWeeksFrom)
-            revert IncompatibleVestingPeriod(numberOfWeeksFrom, numberOfWeeksTo);
-        uint256 totalVested = _vestedAt(block.timestamp, fromAllocation.points, numberOfWeeksFrom);
-        if (totalVested < fromAllocation.claimed) revert LockedAllocation();
-        if (points == 0) revert ZeroAllocation();
+
+        // revert if `from` has less points allocation than they are
+        // trying to transfer
         if (fromAllocation.points < points) revert InsufficientPoints();
-        // We claim one last time before transfer
-        uint256 claimed = _claim(from, fromAllocation.points, fromAllocation.claimed, numberOfWeeksFrom);
-        // Passive balance to transfer
-        uint128 claimedAdjustment = uint128((claimed * points) / fromAllocation.points);
+        
+        // enforce identical vesting periods if `to` has an active vesting period
+        if (toAllocation.numberOfWeeks != 0 && 
+            toAllocation.numberOfWeeks != fromAllocation.numberOfWeeks)
+            revert IncompatibleVestingPeriod(fromAllocation.numberOfWeeks, toAllocation.numberOfWeeks);
+
+        // get points currently vested for `from` address
+        uint256 totalVested = _vestedAt(block.timestamp, fromAllocation.points, fromAllocation.numberOfWeeks);
+
+        // revert if `from` has claimed more than they've vested
+        // since then `from` has no points to transfer
+        if (totalVested < fromAllocation.claimed) revert LockedAllocation();
+        
+        // claim one last time before transfer
+        uint256 claimed = _claim(from, fromAllocation.points, fromAllocation.claimed, fromAllocation.numberOfWeeks);
+
+        // passive balance to transfer
+        uint128 claimedAdjustment = SafeCast.toUint128((claimed * points) / fromAllocation.points);
+        
+        // update storage - deduct points from `from` using memory cache
         allocations[from].points = uint24(fromAllocation.points - points);
+
         // we don't use fromAllocation as it's been modified with _claim()
         allocations[from].claimed = allocations[from].claimed - claimedAdjustment;
 
+        // update storage - increase points to `to` using memory cache
+        // self-transfer prevented at start of the function so this is safe
         allocations[to].points = toAllocation.points + uint24(points);
+
+        // update storage - increase `to` for claim adjustment
         allocations[to].claimed = toAllocation.claimed + claimedAdjustment;
-        if (numberOfWeeksTo == 0) {
-            allocations[to].numberOfWeeks = numberOfWeeksFrom;
+
+        // if `to` had no active vesting period, copy from `from`
+        if (toAllocation.numberOfWeeks == 0) {
+            allocations[to].numberOfWeeks = fromAllocation.numberOfWeeks;
         }
     }
 
@@ -158,7 +204,9 @@ contract AllocationVesting is DelegatedOps, Ownable {
         address receiver,
         uint256 amount
     ) public callerOrDelegated(account) {
+        // cache allocation state of account
         AllocationState memory allocation = allocations[account];
+
         if (allocation.points == 0 || vestingStart == 0) revert CannotLock();
         uint256 claimedUpdated = allocation.claimed;
         if (_claimableAt(block.timestamp, allocation.points, allocation.claimed, allocation.numberOfWeeks) > 0) {
@@ -202,7 +250,9 @@ contract AllocationVesting is DelegatedOps, Ownable {
         claimedUpdated = claimed + claimable;
         allocations[account].claimed = uint128(claimedUpdated);
         // We send to delegate for possible zaps
-        vestingToken.transferFrom(vault, msg.sender, claimable);
+
+        // @audit commented out for PoC
+        //vestingToken.transferFrom(vault, msg.sender, claimable);
     }
 
     /**
