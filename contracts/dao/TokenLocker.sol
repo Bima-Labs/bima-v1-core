@@ -915,7 +915,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         // unfreeze the caller's registered vote weights
         incentiveVoter.unfreeze(msg.sender, keepIncentivesVote);
 
-        // trigger account & total weekly writes, get fresh weights
+        // trigger account & total weekly writes
         _weeklyWeightWrite(msg.sender);
         getTotalWeightWrite();
 
@@ -938,11 +938,15 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         // total unlocks in unlock week increased by frozen amount
         totalWeeklyUnlocks[unlockWeek] += frozen;
 
+        // note: no changes required to totalWeeklyWeights and accountWeeklyWeights
+        // since a freeze is equivalent to a max length lock and unfreezing
+        // effectively creates a max length lock
+
         // modify bitfield
         uint256 idx = unlockWeek / 256;
         uint256 bitfield = accountData.updateWeeks[idx] | (uint256(1) << (unlockWeek % 256));
         accountData.updateWeeks[idx] = bitfield;
-        
+
         emit LocksUnfrozen(msg.sender, frozen);
     }
 
@@ -953,17 +957,26 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
      */
     function withdrawExpiredLocks(uint256 _weeks) external returns (bool) {
+        // trigger account & total weekly writes
         _weeklyWeightWrite(msg.sender);
         getTotalWeightWrite();
 
+        // get storage references for account lock data
         AccountData storage accountData = accountLockData[msg.sender];
+    
+        // revert if account has no unlocked balance
         uint256 unlocked = accountData.unlocked;
         require(unlocked > 0, "No unlocked tokens");
+
+        // update storage reset account unlocked balance
         accountData.unlocked = 0;
+
+        // either re-lock or send user their unlocked tokens
         if (_weeks > 0) {
             _lock(msg.sender, unlocked, _weeks);
         } else {
             lockToken.transfer(msg.sender, unlocked * lockToTokenRatio);
+            
             emit LocksWithdrawn(msg.sender, unlocked, 0);
         }
         return true;
@@ -1152,59 +1165,92 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         @dev Updates all data for a given account and returns the account's current weight and week
      */
     function _weeklyWeightWrite(address account) internal returns (uint256 weight) {
+        // get storage references to account lock, unlock & weight data
         AccountData storage accountData = accountLockData[account];
         uint32[65535] storage weeklyUnlocks = accountWeeklyUnlocks[account];
         uint40[65535] storage weeklyWeights = accountWeeklyWeights[account];
 
+        // get current system week
         uint256 systemWeek = getWeek();
+
+        // cache current account week
         uint256 accountWeek = accountData.week;
+
+        // output account weight from last processed account week
         weight = weeklyWeights[accountWeek];
-        if (accountWeek == systemWeek) return weight;
+        
+        // if the last processed account week is this week
+        // then return as nothing else to do
+        if (accountWeek != systemWeek) {
+            // if account is frozen
+            if (accountData.frozen > 0) {
+                // then iterate through every week until current one,
+                // setting the account's weight for every week to their
+                // frozen weight amount
+                while (systemWeek > accountWeek) {
+                    accountWeek++;
+                    weeklyWeights[accountWeek] = SafeCast.toUint40(weight);
+                }
 
-        if (accountData.frozen > 0) {
-            while (systemWeek > accountWeek) {
-                accountWeek++;
-                weeklyWeights[accountWeek] = SafeCast.toUint40(weight);
-            }
-            accountData.week = SafeCast.toUint16(systemWeek);
-            return weight;
-        }
-
-        // if account is not frozen and locked balance is 0, we only need to update the account week
-        uint256 locked = accountData.locked;
-        if (locked == 0) {
-            if (accountWeek < systemWeek) {
+                // then update the account's processed week to current
+                // and return as nothing else to do
                 accountData.week = SafeCast.toUint16(systemWeek);
+                return weight;
             }
-            return 0;
-        }
 
-        uint256 unlocked;
-        uint256 bitfield = accountData.updateWeeks[accountWeek / 256] >> (accountWeek % 256);
+            // if account is not frozen and locked balance is 0
+            // we only need to update the account week then return 0
+            // since nothing locked means no weight
+            uint32 locked = accountData.locked;
 
-        while (accountWeek < systemWeek) {
-            accountWeek++;
-            weight -= locked;
-            weeklyWeights[accountWeek] = SafeCast.toUint40(weight);
-            if (accountWeek % 256 == 0) {
-                bitfield = accountData.updateWeeks[accountWeek / 256];
-            } else {
-                bitfield = bitfield >> 1;
+            if (locked == 0) {
+                if (accountWeek < systemWeek) {
+                    accountData.week = SafeCast.toUint16(systemWeek);
+                }
+                return 0;
             }
-            if (bitfield & uint256(1) == 1) {
-                uint32 amount = weeklyUnlocks[accountWeek];
-                locked -= amount;
-                unlocked += amount;
-                if (locked == 0) {
-                    // if locked balance hits 0, there are no further tokens to unlock
-                    accountWeek = systemWeek;
-                    break;
+
+            // otherwise account is not frozen and has tokens locked
+            uint32 unlocked;
+            uint256 bitfield = accountData.updateWeeks[accountWeek / 256] >> (accountWeek % 256);
+
+            // iterate through every week until current one
+            while (accountWeek < systemWeek) {
+                accountWeek++;
+
+                // deduct locked tokens from account weight
+                weight -= locked;
+
+                // update storage for account's weekly weight
+                weeklyWeights[accountWeek] = SafeCast.toUint40(weight);
+                
+                if (accountWeek % 256 == 0) {
+                    bitfield = accountData.updateWeeks[accountWeek / 256];
+                } else {
+                    bitfield = bitfield >> 1;
+                }
+                if (bitfield & uint256(1) == 1) {
+                    // as unlocks happen, modify the locked/unlocked
+                    // memory variables for each week
+                    uint32 amount = weeklyUnlocks[accountWeek];
+                    
+                    locked -= amount;
+                    unlocked += amount;
+
+                    if (locked == 0) {
+                        // if locked balance hits 0, there are no further tokens to unlock
+                        accountWeek = systemWeek;
+                        break;
+                    }
                 }
             }
-        }
 
-        accountData.unlocked = SafeCast.toUint32(accountData.unlocked + unlocked);
-        accountData.locked = SafeCast.toUint32(locked);
-        accountData.week = SafeCast.toUint16(accountWeek);
+            // finally the account has processed all missing weeks
+            // up to the current system week, so update storage to record
+            // new unlocked, locked values and system week as latest processed week
+            accountData.unlocked = accountData.unlocked + unlocked;
+            accountData.locked = locked;
+            accountData.week = SafeCast.toUint16(accountWeek);
+        }
     }
 }
