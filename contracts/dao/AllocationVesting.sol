@@ -44,7 +44,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
     // This number should allow a good precision in allocation fractions
     uint256 private constant TOTAL_POINTS = 100000;
     // Users allocations
-    mapping(address => AllocationState) public allocations;
+    mapping(address recipient => AllocationState) public allocations;
     // max percentage of one's vest that can be preclaimed in total
     uint256 public immutable maxTotalPreclaimPct;
     // Total allocation expressed in tokens
