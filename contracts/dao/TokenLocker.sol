@@ -754,11 +754,14 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                               to extend the lock until.
      */
     function extendMany(ExtendLockData[] calldata newExtendLocks) external notFrozen(msg.sender) returns (bool) {
+        // get storage references for account lock & unlock data
         AccountData storage accountData = accountLockData[msg.sender];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
 
         // update account weight
         uint256 accountWeight = _weeklyWeightWrite(msg.sender);
+
+        // get current system week
         uint256 systemWeek = getWeek();
 
         // copy maybe-updated bitfield entries to memory
@@ -766,28 +769,32 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             accountData.updateWeeks[systemWeek / 256],
             accountData.updateWeeks[(systemWeek / 256) + 1]
         ];
+
+        // cumulative data
         uint256 increasedWeight;
 
         // iterate extended locks and store intermediate values in memory where possible
-        uint256 length = newExtendLocks.length;
-        for (uint256 i; i < length; i++) {
-            uint256 amount = newExtendLocks[i].amount;
+        for (uint256 i; i < newExtendLocks.length; i++) {
             uint256 oldWeeks = newExtendLocks[i].currentWeeks;
             uint256 newWeeks = newExtendLocks[i].newWeeks;
 
+            // sanity checks for amount & week min/max
             require(oldWeeks > 0, "Min 1 week");
             require(newWeeks <= MAX_LOCK_WEEKS, "Exceeds MAX_LOCK_WEEKS");
             require(oldWeeks < newWeeks, "newWeeks must be greater than weeks");
-            require(amount > 0, "Amount must be nonzero");
+            require(newExtendLocks[i].amount > 0, "Amount must be nonzero");
 
-            increasedWeight += (newWeeks - oldWeeks) * amount;
+            // update memory cumulative weight increase
+            increasedWeight += (newWeeks - oldWeeks) * newExtendLocks[i].amount;
 
             // reduce account weekly unlock for previous week and modify bitfield
             oldWeeks += systemWeek;
             uint256 previous = unlocks[oldWeeks];
-            unlocks[oldWeeks] = SafeCast.toUint32(previous - amount);
-            totalWeeklyUnlocks[oldWeeks] -= SafeCast.toUint32(amount);
-            if (previous == amount) {
+
+            unlocks[oldWeeks] = SafeCast.toUint32(previous - newExtendLocks[i].amount);
+            totalWeeklyUnlocks[oldWeeks] -= SafeCast.toUint32(newExtendLocks[i].amount);
+            
+            if (previous == newExtendLocks[i].amount) {
                 uint256 idx = (oldWeeks / 256) - (systemWeek / 256);
                 bitfield[idx] = bitfield[idx] & ~(uint256(1) << (oldWeeks % 256));
             }
@@ -795,8 +802,10 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             // increase account weekly unlock for new week and modify bitfield
             newWeeks += systemWeek;
             previous = unlocks[newWeeks];
-            unlocks[newWeeks] = SafeCast.toUint32(previous + amount);
-            totalWeeklyUnlocks[newWeeks] += SafeCast.toUint32(amount);
+
+            unlocks[newWeeks] = SafeCast.toUint32(previous + newExtendLocks[i].amount);
+            totalWeeklyUnlocks[newWeeks] += SafeCast.toUint32(newExtendLocks[i].amount);
+            
             if (previous == 0) {
                 uint256 idx = (newWeeks / 256) - (systemWeek / 256);
                 bitfield[idx] = bitfield[idx] | (uint256(1) << (newWeeks % 256));
@@ -807,8 +816,10 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         accountData.updateWeeks[systemWeek / 256] = bitfield[0];
         accountData.updateWeeks[(systemWeek / 256) + 1] = bitfield[1];
 
+        // update storage account and total weight for current system week
         accountWeeklyWeights[msg.sender][systemWeek] = SafeCast.toUint40(accountWeight + increasedWeight);
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() + increasedWeight);
+
         emit LocksExtended(msg.sender, newExtendLocks);
 
         return true;
