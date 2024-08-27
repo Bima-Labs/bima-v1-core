@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 // test setup
 import {TestSetup, IBabelVault, ITokenLocker} from "../TestSetup.sol";
 
-import {console} from "forge-std/console.sol";
+import {stdError} from "forge-std/Test.sol";
 
 contract TokenLockerTest is TestSetup {
 
@@ -79,12 +79,18 @@ contract TokenLockerTest is TestSetup {
         assertEq(frozenAmount, 0);
         assertEq(activeLockData[0].amount, lockedAmount);
 
-        // this behavior is weird and not sure if it is correct;
-        // if user locks for   1 week, activeLockData[0].weeksToUnlock == weeksToLockFor + 1 == 2
-        // if user locks for > 1 week, activeLockData[0].weeksToUnlock == weeksToLockFor
+        // 1 week lock gets changed into 2 week lock if the lock occurs
+        // during the final 3 days of the week which occurs due to the
+        // timestamp test setup warps to
         assertEq(activeLockData[0].weeksToUnlock, weeksToLockFor == 1 ? 2 : weeksToLockFor);
 
         weeksLockedFor = activeLockData[0].weeksToUnlock;
+
+        // verify future total weekly unlocks updated for locked amount
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+weeksLockedFor), lockedAmount);
+
+        // verify future account weekly unlocks updated for locked amount
+        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+weeksLockedFor), lockedAmount);
     }
 
     function test_lock(uint256 amountToLock, uint256 weeksToLockFor) public
@@ -95,9 +101,10 @@ contract TokenLockerTest is TestSetup {
         // lock function since the token transfer multiplies by lockToTokenRatio
         amountToLock = bound(amountToLock, 1, babelToken.balanceOf(users.user1)/INIT_LOCK_TO_TOKEN_RATIO);
 
-        // using -1 week since withdrawing early penalties doesn't reach to tokens
-        // locked in the last week
-        weeksToLockFor = bound(weeksToLockFor, 1, tokenLocker.MAX_LOCK_WEEKS() - 1);
+        // using -2 week since withdrawing early penalties doesn't reach to tokens
+        // locked in the last week and this makes some tests easier to write for checking
+        // error cases
+        weeksToLockFor = bound(weeksToLockFor, 1, tokenLocker.MAX_LOCK_WEEKS() - 2);
 
         return _lock(amountToLock, weeksToLockFor);
     }
@@ -122,7 +129,9 @@ contract TokenLockerTest is TestSetup {
         // perform the lock
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
-        // see note about weird behavior at the end of test_lock
+        // 1 week lock gets changed into 2 week lock if the lock occurs
+        // during the final 3 days of the week which occurs due to the
+        // timestamp test setup warps to
         uint256 weeksToWarp = weeksLockedFor == 1 ? 2 : weeksLockedFor;
 
         // warp time forward so the lock elapses
@@ -193,11 +202,135 @@ contract TokenLockerTest is TestSetup {
             assertEq(frozenAmount, 0);
             assertEq(activeLockData[0].amount, lockedAmount);
 
-            // this behavior is weird and not sure if it is correct;
-            // if user locks for   1 week, activeLockData[0].weeksToUnlock == weeksToLockFor + 1 == 2
-            // if user locks for > 1 week, activeLockData[0].weeksToUnlock == weeksToLockFor
+            // 1 week lock gets changed into 2 week lock if the lock occurs
+            // during the final 3 days of the week which occurs due to the
+            // timestamp test setup warps to
             assertEq(activeLockData[0].weeksToUnlock, relockFor == 1 ? 2 : relockFor);
         }
+    }
+
+    function test_extendLock(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        // bound fuzz input
+        extendFor = bound(extendFor, weeksLockedFor+1, tokenLocker.MAX_LOCK_WEEKS());
+
+        // save previous state
+        uint256 systemWeek = tokenLocker.getWeek();
+        uint256 accountWeightPre = tokenLocker.getAccountWeightAt(users.user1, systemWeek);
+        uint256 totalWeightPre = tokenLocker.getTotalWeightAt(systemWeek);
+
+        uint256 accountWeeklyUnlocksOrigWeekPre = tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor);
+        uint256 accountWeeklyUnlocksExtendWeekPre = tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + extendFor);
+        uint256 totalWeeklyUnlocksOrigWeekPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor);
+        uint256 totalWeeklyUnlocksExtendWeekPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek + extendFor);
+
+        // extend the lock
+        vm.prank(users.user1);
+        assertTrue(tokenLocker.extendLock(lockedAmount, weeksLockedFor, extendFor));
+        
+        // compare to previous state
+        uint256 expectedIncrease = (extendFor - weeksLockedFor) * lockedAmount;
+
+        // verify account weight increased in current system week
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek),
+                 accountWeightPre + expectedIncrease);
+
+        // verify total weight increased in current system week
+        assertEq(tokenLocker.getTotalWeightAt(systemWeek),
+                 totalWeightPre + expectedIncrease);
+
+        // verify account weekly unlocks decreased in future original lock week
+        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor),
+                 accountWeeklyUnlocksOrigWeekPre - lockedAmount);
+
+        // verify account weekly unlocks increased in future extended lock week
+        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + extendFor),
+                 accountWeeklyUnlocksExtendWeekPre + lockedAmount);
+
+        // verify total weekly unlocks decreased in future original lock week
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor),
+                 totalWeeklyUnlocksOrigWeekPre - lockedAmount);
+
+        // verify total weekly unlocks increased in future extended lock week
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + extendFor),
+                 totalWeeklyUnlocksExtendWeekPre + lockedAmount);
+
+    }
+
+    function test_extendLock_failMin1Week(uint256 amountToLock, uint256 weeksToLockFor) external {
+        // perform the lock
+        (uint256 lockedAmount, ) = test_lock(amountToLock, weeksToLockFor);
+
+        // extend the lock
+        vm.expectRevert("Min 1 week");
+        vm.prank(users.user1);
+        tokenLocker.extendLock(lockedAmount, 0, 1);
+    }
+
+    function test_extendLock_failMaxLockTime(uint256 amountToLock, uint256 weeksToLockFor) external {
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        uint256 extendTooBig = tokenLocker.MAX_LOCK_WEEKS()+1;
+
+        // extend the lock
+        vm.expectRevert("Exceeds MAX_LOCK_WEEKS");
+        vm.prank(users.user1);
+        tokenLocker.extendLock(lockedAmount, weeksLockedFor, extendTooBig);
+    }
+
+    function test_extendLock_failExtendTimeNotGreater(uint256 amountToLock, uint256 weeksToLockFor) external {
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        // bound fuzz input
+        uint256 extendFor = bound(weeksLockedFor, 1, weeksLockedFor);
+
+        // extend the lock
+        vm.expectRevert("newWeeks must be greater than weeks");
+        vm.prank(users.user1);
+        tokenLocker.extendLock(lockedAmount, weeksLockedFor, extendFor);
+    }
+
+    function test_extendLock_failZeroExtendAmount(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+        // perform the lock
+        (, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        // bound fuzz input
+        extendFor = bound(extendFor, weeksLockedFor+1, tokenLocker.MAX_LOCK_WEEKS());
+
+        // extend the lock
+        vm.expectRevert("Amount must be nonzero");
+        vm.prank(users.user1);
+        tokenLocker.extendLock(0, weeksLockedFor, extendFor);
+    }
+
+    function test_extendLock_failInputWeekNoTokensLocked(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        // bound fuzz input
+        extendFor = bound(extendFor, weeksLockedFor+2, tokenLocker.MAX_LOCK_WEEKS());
+
+        // extend the lock
+        vm.expectRevert(stdError.arithmeticError);
+        vm.prank(users.user1);
+        tokenLocker.extendLock(lockedAmount, weeksLockedFor+1, extendFor);
+    }
+
+    function test_extendLock_failGreaterAmountThanLocked(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+
+        // bound fuzz input
+        extendFor = bound(extendFor, weeksLockedFor+1, tokenLocker.MAX_LOCK_WEEKS());
+
+        // extend the lock
+        vm.expectRevert(stdError.arithmeticError);
+        vm.prank(users.user1);
+        tokenLocker.extendLock(lockedAmount+1, weeksLockedFor, extendFor);
     }
 
     // returns a valid penalty start time
@@ -298,7 +431,7 @@ contract TokenLockerTest is TestSetup {
         tokenLocker.withdrawWithPenalty(type(uint256).max);
     }
 
-    function test_withdrawWithPenalty(uint256 amountToLock, uint256 weeksToLockFor) external {
+    function test_withdrawWithPenalty_withdrawMax(uint256 amountToLock, uint256 weeksToLockFor) external {
         // first enable penalty withdrawals
         test_setPenaltyWithdrawalsEnabled(0, true);
 
