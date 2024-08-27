@@ -45,7 +45,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
     }
 
     // This number should allow a good precision in allocation fractions
-    uint256 private constant TOTAL_POINTS = 100000;
+    uint24 private constant TOTAL_POINTS = 100000;
     // Users allocations
     mapping(address recipient => AllocationState) public allocations;
     // max percentage of one's vest that can be preclaimed in total
@@ -94,13 +94,13 @@ contract AllocationVesting is DelegatedOps, Ownable {
         vestingStart = vestingStart_;
 
         // cumulative data
-        uint256 totalPoints;
+        uint24 totalPoints;
 
         // more efficient to not cache loop length since calldata
         for (uint256 i; i < allocationSplits.length; ) {
             address recipient = allocationSplits[i].recipient;
             uint8 numberOfWeeks = allocationSplits[i].numberOfWeeks;
-            uint256 points = allocationSplits[i].points;
+            uint24 points = allocationSplits[i].points;
 
             // sanity checks on allocation inputs
             if (points == 0) revert ZeroAllocation();
@@ -111,7 +111,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
             totalPoints += points;
 
             // set allocation state for recipient
-            allocations[recipient].points = uint24(points);
+            allocations[recipient].points = points;
             allocations[recipient].numberOfWeeks = numberOfWeeks;
 
             unchecked {
@@ -130,7 +130,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
      * @param to Recipient
      * @param points Number of points to transfer
      */
-    function transferPoints(address from, address to, uint256 points) external callerOrDelegated(from) {
+    function transferPoints(address from, address to, uint24 points) external callerOrDelegated(from) {
         // revert on self-transfer to prevent infinite points exploit
         if(from == to) revert SelfTransfer();
 
@@ -164,14 +164,14 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint128 claimedAdjustment = SafeCast.toUint128((claimed * points) / fromAllocation.points);
         
         // update storage - deduct points from `from` using memory cache
-        allocations[from].points = uint24(fromAllocation.points - points);
+        allocations[from].points = fromAllocation.points - points;
 
         // we don't use fromAllocation as it's been modified with _claim()
         allocations[from].claimed = allocations[from].claimed - claimedAdjustment;
 
         // update storage - increase points to `to` using memory cache
         // self-transfer prevented at start of the function so this is safe
-        allocations[to].points = toAllocation.points + uint24(points);
+        allocations[to].points = toAllocation.points + points;
 
         // update storage - increase `to` for claim adjustment
         allocations[to].claimed = toAllocation.claimed + claimedAdjustment;
@@ -251,8 +251,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
         allocations[account].claimed = uint128(claimedUpdated);
         // We send to delegate for possible zaps
 
-        // @audit commented out for PoC
-        //vestingToken.transferFrom(vault, msg.sender, claimable);
+        vestingToken.transferFrom(vault, msg.sender, claimable);
     }
 
     /**
