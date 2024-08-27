@@ -671,11 +671,14 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                         All tokens to be locked are transferred from the caller.
      */
     function lockMany(address _account, LockData[] calldata newLocks) external notFrozen(_account) returns (bool) {
+        // get storage references to account lock & unlock data
         AccountData storage accountData = accountLockData[_account];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[_account];
 
         // update account weight
         uint256 accountWeight = _weeklyWeightWrite(_account);
+
+        // get current system week
         uint256 systemWeek = getWeek();
 
         // copy maybe-updated bitfield entries to memory
@@ -684,29 +687,39 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             accountData.updateWeeks[(systemWeek / 256) + 1]
         ];
 
+        // cumulative amounts
         uint256 increasedAmount;
         uint256 increasedWeight;
 
         // iterate new locks and store intermediate values in memory where possible
-        uint256 length = newLocks.length;
-        for (uint256 i; i < length; i++) {
-            uint256 amount = newLocks[i].amount;
+        // note: cheaper not to cache length for calldata input
+        for (uint256 i; i < newLocks.length; i++) {
+            // read week into memory from calldata since it may need to be changed
             uint256 week = newLocks[i].weeksToUnlock;
-            require(amount > 0, "Amount must be nonzero");
+
+            // sanity checks for positive amount, lock week min/max
+            require(newLocks[i].amount > 0, "Amount must be nonzero");
             require(week > 0, "Min 1 week");
             require(week <= MAX_LOCK_WEEKS, "Exceeds MAX_LOCK_WEEKS");
 
-            // disallow a 1 week lock in the final 3 days of the week
+            // change 1 week lock into 2 week lock if the lock occurs
+            // during the final 3 days of the week
             if (week == 1 && block.timestamp % 1 weeks > 4 days) week = 2;
 
-            increasedAmount += amount;
-            increasedWeight += amount * week;
+            // update memory cumulative amounts
+            increasedAmount += newLocks[i].amount;
+            increasedWeight += newLocks[i].amount * week;
 
+            // calculate week when unlock will occur
             uint256 unlockWeek = systemWeek + week;
-            uint256 previous = unlocks[unlockWeek];
-            unlocks[unlockWeek] = SafeCast.toUint32(previous + amount);
-            totalWeeklyUnlocks[unlockWeek] += SafeCast.toUint32(amount);
 
+            // update storage account & total unlock for week when unlock will occur
+            uint256 previous = unlocks[unlockWeek];
+
+            unlocks[unlockWeek] = SafeCast.toUint32(previous + newLocks[i].amount);
+            totalWeeklyUnlocks[unlockWeek] += SafeCast.toUint32(newLocks[i].amount);
+
+            // update bitfield if future unlock week had no unlocks and now does
             if (previous == 0) {
                 uint256 idx = (unlockWeek / 256) - (systemWeek / 256);
                 bitfield[idx] = bitfield[idx] | (uint256(1) << (unlockWeek % 256));
@@ -717,14 +730,17 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         accountData.updateWeeks[systemWeek / 256] = bitfield[0];
         accountData.updateWeeks[(systemWeek / 256) + 1] = bitfield[1];
 
-        lockToken.transferToLocker(msg.sender, increasedAmount * lockToTokenRatio);
-
-        // update account and total weight / decay storage values
+        // update storage account and total weight for current system week
         accountWeeklyWeights[_account][systemWeek] = SafeCast.toUint40(accountWeight + increasedWeight);
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() + increasedWeight);
 
+        // update storage account total locked and total decay rate
         accountData.locked = SafeCast.toUint32(accountData.locked + increasedAmount);
         totalDecayRate = SafeCast.toUint32(totalDecayRate + increasedAmount);
+
+        // finally transfer tokens being locked after all storage updates are complete
+        lockToken.transferToLocker(msg.sender, increasedAmount * lockToTokenRatio);
+
         emit LocksCreated(_account, newLocks);
 
         return true;
