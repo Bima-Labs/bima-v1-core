@@ -162,6 +162,14 @@ contract AllocationVesting is DelegatedOps, Ownable {
 
         // passive balance to transfer
         uint128 claimedAdjustment = SafeCast.toUint128((claimed * points) / fromAllocation.points);
+
+        // update storage - transfer preclaimed amounts to prevent point transfers
+        // being used to bypass the maximum preclaim limit
+        uint96 preclaimedToTransfer = SafeCast.toUint96((uint256(fromAllocation.preclaimed) * points) /
+                                                        fromAllocation.points);
+
+        allocations[to].preclaimed = toAllocation.preclaimed + preclaimedToTransfer;
+        allocations[from].preclaimed = fromAllocation.preclaimed - preclaimedToTransfer;
         
         // update storage - deduct points from `from` using memory cache
         allocations[from].points = fromAllocation.points - points;
