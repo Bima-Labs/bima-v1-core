@@ -1,6 +1,5 @@
 node_modules
 .env
-temp.txt
 
 # Foundry files
 /out
