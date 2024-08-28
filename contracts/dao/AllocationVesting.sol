@@ -168,8 +168,10 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint96 preclaimedToTransfer = SafeCast.toUint96((uint256(fromAllocation.preclaimed) * points) /
                                                         fromAllocation.points);
 
-        allocations[to].preclaimed = toAllocation.preclaimed + preclaimedToTransfer;
-        allocations[from].preclaimed = fromAllocation.preclaimed - preclaimedToTransfer;
+        if(preclaimedToTransfer > 0) {
+            allocations[to].preclaimed = toAllocation.preclaimed + preclaimedToTransfer;
+            allocations[from].preclaimed = fromAllocation.preclaimed - preclaimedToTransfer;
+        }
         
         // update storage - deduct points from `from` using memory cache
         allocations[from].points = fromAllocation.points - points;
