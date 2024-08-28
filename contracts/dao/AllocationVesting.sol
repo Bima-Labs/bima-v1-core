@@ -47,6 +47,8 @@ contract AllocationVesting is DelegatedOps, Ownable {
 
     // This number should allow a good precision in allocation fractions
     uint24 private constant TOTAL_POINTS = 100000;
+    // used as denominator for preclaim % calculations
+    uint256 private constant TOTAL_PRECLAIM = 100;
     // Users allocations
     mapping(address recipient => AllocationState) public allocations;
     // max percentage of one's vest that can be preclaimed in total
@@ -246,7 +248,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint256 preclaimed = allocation.preclaimed;
 
         // calculate max user can preclaim from their allocation
-        uint256 maxTotalPreclaim = (maxTotalPreclaimPct * userAllocation) / 100;
+        uint256 maxTotalPreclaim = (maxTotalPreclaimPct * userAllocation) / TOTAL_PRECLAIM;
 
         // calculate how much remaining user can preclaim
         uint256 leftToPreclaim = maxTotalPreclaim - preclaimed;
@@ -368,5 +370,30 @@ contract AllocationVesting is DelegatedOps, Ownable {
 
         // unclaimed amount is account allocation minus what they've already claimed        
         accountUnclaimed = accountAllocation - allocation.claimed;
+    }
+
+    /**
+     * @notice Calculates the total number of tokens left to preclaim
+     * @param account Account to calculate for
+     * @return accountPreclaimable tokens
+     */
+    function preclaimable(address account) external view returns (uint256 accountPreclaimable) {
+        AllocationState memory allocation = allocations[account];
+
+        // if account has no points or vesting hasn't started,
+        // nothing can be preclaimed
+        if (allocation.points == 0 || vestingStart == 0) {
+            accountPreclaimable = 0;
+        }
+        else {
+            // calculate account's total token allocation
+            uint256 accountAllocation = (totalAllocation * allocation.points) / TOTAL_POINTS;
+
+            // calculate max user can preclaim from their allocation
+            uint256 maxTotalPreclaim = (maxTotalPreclaimPct * accountAllocation) / TOTAL_PRECLAIM;
+
+            // return max user can preclaim minus what user has already preclaimed
+            accountPreclaimable = maxTotalPreclaim - allocation.preclaimed;
+        }
     }
 }
