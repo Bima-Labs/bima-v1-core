@@ -439,7 +439,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(msg.sender == address(this), "Only callable via proposal");
 
         // restrict max value
-        require(pct <= MAX_PCT, "Invalid value");
+        require(pct <= MAX_PCT && pct > 0, "Invalid value");
 
         // update to new value
         passingPct = pct;
