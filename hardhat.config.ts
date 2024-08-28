@@ -300,6 +300,15 @@ const config: HardhatUserConfig = {
         },
 
       },
+      {
+        network:"ethereum_holesky_testnet",
+        chainId:17000,
+        urls:{
+          browserURL:"https://holesky.etherscan.io/",
+          apiURL: "https://l1rpc.hekla.taiko.xyz"
+        }
+
+      },
     ],
   },
   networks: {
@@ -426,7 +435,13 @@ const config: HardhatUserConfig = {
     minato_testnet: {
       url: "https://rpc.minato.soneium.org/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    }
+    },
+    ethereum_holesky_testnet:{
+      url:"https://l1rpc.hekla.taiko.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    
+
   },
   solidity: {
     compilers: [
