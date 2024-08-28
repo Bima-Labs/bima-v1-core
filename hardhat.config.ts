@@ -295,7 +295,7 @@ const config: HardhatUserConfig = {
         network:"minato_testnet",
         chainId:1946,
         urls: {
-          browserURL: "	https://rpc.minato.soneium.org/",
+          browserURL: "https://explorer-testnet.soneium.org/",
           apiURL: "https://rpc.minato.soneium.org/",
         },
 
