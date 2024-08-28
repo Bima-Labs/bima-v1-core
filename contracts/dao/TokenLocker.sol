@@ -868,6 +868,9 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         accountWeeklyWeights[msg.sender][systemWeek] = SafeCast.toUint40(locked * MAX_LOCK_WEEKS);
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(totalWeight - accountWeight + locked * MAX_LOCK_WEEKS);
 
+        // emit event first as locked will be decreased in the while loop
+        emit LocksFrozen(msg.sender, locked);
+
         // use bitfield to iterate acount unlocks and subtract them from the total unlocks
         uint256 bitfield = accountData.updateWeeks[systemWeek / 256] >> (systemWeek % 256);
         while (locked > 0) {
@@ -886,7 +889,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             }
         }
         accountData.updateWeeks[systemWeek / 256] = 0;
-        emit LocksFrozen(msg.sender, locked);
     }
 
     /**
