@@ -18,6 +18,8 @@ import {IDelegatedOps} from "../interfaces/IDelegatedOps.sol";
             minted tokens to the caller.
  */
 contract DelegatedOps is IDelegatedOps {
+    event DelegateApprovalSet(address indexed caller, address indexed delegate, bool isApproved);
+
     mapping(address owner => mapping(address caller => bool isApproved)) public isApprovedDelegate;
 
     modifier callerOrDelegated(address _account) {
@@ -27,5 +29,6 @@ contract DelegatedOps is IDelegatedOps {
 
     function setDelegateApproval(address _delegate, bool _isApproved) external {
         isApprovedDelegate[msg.sender][_delegate] = _isApproved;
+        emit DelegateApprovalSet(msg.sender, _delegate, _isApproved);
     }
 }
