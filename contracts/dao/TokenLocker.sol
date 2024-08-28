@@ -419,7 +419,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         uint256 systemWeek = getWeek();
         if (week > systemWeek) return 0;
 
-        // if weekly write has already occured for the input week
+        // if weekly write has already occurred for the input week
         // then just return the weight already calculated
         uint32 updatedWeek = totalUpdatedWeek;
         if (week <= updatedWeek) return totalWeeklyWeights[week];
@@ -431,14 +431,16 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         weight = totalWeeklyWeights[updatedWeek];
 
         // if no decay return weight from last calculated week
-        // second condition here seems strange
+        // second condition here seems strange and likely to never trigger
         if (rate == 0 || updatedWeek >= systemWeek) {
             return weight;
         }
 
-        // if here weekly write hasn't occurred for passed week(s)
-        // so iterate through and adjust weight for the decay rate
-        while (updatedWeek < systemWeek) {
+        // weekly write hasn't occurred for passed week(s)
+        // so iterate through until the input week adjusting
+        // the output weight for the decay rate and the decay
+        // rate for the weekly unlocks
+        while (updatedWeek < week) {
             updatedWeek++;
             weight -= rate;
             rate -= totalWeeklyUnlocks[updatedWeek];
