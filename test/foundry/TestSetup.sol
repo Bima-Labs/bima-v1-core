@@ -310,4 +310,38 @@ contract TestSetup is Test {
         // verify we are in the first week
         assertEq(tokenLocker.getWeek(), 0);
     }
+
+    // common helper functions used in tests
+    function _vaultSetDefaultInitialParameters() internal {
+        uint128[] memory _fixedInitialAmounts;
+        IBabelVault.InitialAllowance[] memory initialAllowances;
+
+        vm.prank(users.owner);
+        babelVault.setInitialParameters(emissionSchedule,
+                                        boostCalc,
+                                        INIT_BAB_TKN_TOTAL_SUPPLY,
+                                        INIT_VLT_LOCK_WEEKS,
+                                        _fixedInitialAmounts,
+                                        initialAllowances);
+
+        // addresses correctly set
+        assertEq(address(babelVault.emissionSchedule()), address(emissionSchedule));
+        assertEq(address(babelVault.boostCalculator()), address(boostCalc));
+
+        // BabelToken supply correct
+        assertEq(babelToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(babelToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelToken supply minted to BabelVault
+        assertEq(babelToken.balanceOf(address(babelVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelVault::unallocatedTotal correct (no initial allowances)
+        assertEq(babelVault.unallocatedTotal(), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelVault::totalUpdateWeek correct
+        assertEq(babelVault.totalUpdateWeek(), _fixedInitialAmounts.length + babelVault.getWeek());
+
+        // BabelVault::lockWeeks correct
+        assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+    }
 }
