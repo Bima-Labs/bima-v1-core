@@ -193,7 +193,9 @@ contract AllocationVesting is DelegatedOps, Ownable {
     }
 
     /**
-     * @notice Lock future claimable tokens tokens
+     * @notice Lock future claimable tokens. This function allows entities
+     * who receive token allocations to get voting power by locking their
+     * future claims
      * @dev Can be delegated
      * @param account Account to lock for
      * @param receiver Receiver of the lock
@@ -207,23 +209,50 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // cache allocation state of account
         AllocationState memory allocation = allocations[account];
 
+        // revert if account has no points or vesting hasn't started
         if (allocation.points == 0 || vestingStart == 0) revert CannotLock();
+
+        // copy currently claimed amount
         uint256 claimedUpdated = allocation.claimed;
+
+        // claim prior to locking if possible
         if (_claimableAt(block.timestamp, allocation.points, allocation.claimed, allocation.numberOfWeeks) > 0) {
             claimedUpdated = _claim(account, allocation.points, allocation.claimed, allocation.numberOfWeeks);
         }
+
+        // calculate user share of allocation
         uint256 userAllocation = (allocation.points * totalAllocation) / TOTAL_POINTS;
+
+        // calculate unclaimed amount accounting for possible claim that just happened
         uint256 _unclaimed = userAllocation - claimedUpdated;
+
+        // copy user preclaim amount
         uint256 preclaimed = allocation.preclaimed;
+
+        // calculate max user can preclaim from their allocation
         uint256 maxTotalPreclaim = (maxTotalPreclaimPct * userAllocation) / 100;
+
+        // calculate how much remaining user can preclaim
         uint256 leftToPreclaim = maxTotalPreclaim - preclaimed;
+
+        // if input amount 0, use min(leftToPreclaim, _unclaimed)
         if (amount == 0) amount = leftToPreclaim > _unclaimed ? _unclaimed : leftToPreclaim;
+
+        // otherwise revert if attempting to preclaim more than max preclaimed or remaining unclaimed
         else if (preclaimed + amount > maxTotalPreclaim || amount > _unclaimed) revert PreclaimTooLarge();
-        amount = (amount / lockToTokenRatio) * lockToTokenRatio; // truncating the dust
-        allocations[account].claimed = uint128(claimedUpdated + amount);
-        allocations[account].preclaimed = uint96(preclaimed + amount);
+
+        // truncate any dust
+        amount = (amount / lockToTokenRatio) * lockToTokenRatio;
+
+        // update storage account claimed & preclaimed amounts
+        allocations[account].claimed = SafeCast.toUint128(claimedUpdated + amount);
+        allocations[account].preclaimed = SafeCast.toUint96(preclaimed + amount);
+
+        // transfer tokens from vault into this contract
         vestingToken.transferFrom(vault, address(this), amount);
-        tokenLocker.lock(receiver, amount / lockToTokenRatio, 52);
+
+        // lock the tokens in the TokenLocker for max length
+        tokenLocker.lock(receiver, amount / lockToTokenRatio, tokenLocker.MAX_LOCK_WEEKS());
     }
 
     /**
@@ -244,13 +273,21 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint256 claimed,
         uint256 numberOfWeeks
     ) private returns (uint256 claimedUpdated) {
+        // revert if nothing to claim
         if (points == 0) revert NothingToClaim();
+
         uint256 claimable = _claimableAt(block.timestamp, points, claimed, numberOfWeeks);
         if (claimable == 0) revert NothingToClaim();
-        claimedUpdated = claimed + claimable;
-        allocations[account].claimed = uint128(claimedUpdated);
-        // We send to delegate for possible zaps
 
+        // output updated account claimed amount
+        claimedUpdated = claimed + claimable;
+
+        // update storage claimed amount
+        allocations[account].claimed = SafeCast.toUint128(claimedUpdated);
+
+        // transfer tokens from vault to the sender
+        // note: it is intentional that if claim() is called by a delegate,
+        // the tokens will be sent to the delegate instead of the account
         vestingToken.transferFrom(vault, msg.sender, claimable);
     }
 
@@ -269,28 +306,51 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint256 points,
         uint256 claimed,
         uint256 numberOfWeeks
-    ) private view returns (uint256) {
+    ) private view returns (uint256 claimable) {
         uint256 totalVested = _vestedAt(when, points, numberOfWeeks);
-        return totalVested > claimed ? totalVested - claimed : 0;
+
+        // tokens are only claimable if the total vested amount
+        // is greater than the already claimed amount
+        claimable = totalVested > claimed ? totalVested - claimed : 0;
     }
 
     function _vestedAt(uint256 when, uint256 points, uint256 numberOfWeeks) private view returns (uint256 vested) {
-        if (vestingStart == 0 || numberOfWeeks == 0) return 0;
+        // cache vesting start time into memory saving 2 redundant storage reads
+        uint256 vestingStartCache = vestingStart;
+
+        // revert if vesting hasn't started or account has no vesting period
+        if (vestingStartCache == 0 || numberOfWeeks == 0) return 0;
+
+        // convert vesting weeks into timestamp
         uint256 vestingWeeks = numberOfWeeks * 1 weeks;
-        uint256 vestingEnd = vestingStart + vestingWeeks;
+
+        // calculate vesting end time as a timestamp
+        uint256 vestingEnd = vestingStartCache + vestingWeeks;
+
+        // end time for vesting calculation = min(when, vestingEnd)
+        // this prevents incorrectly giving more tokens if called
+        // prior to or after vestingEnd
         uint256 endTime = when >= vestingEnd ? vestingEnd : when;
-        uint256 timeSinceStart = endTime - vestingStart;
+
+        // calculate how much time has elapsed for the vesting calculation
+        uint256 timeSinceStart = endTime - vestingStartCache;
+
+        // finally perform the vesting calculation
         vested = (totalAllocation * timeSinceStart * points) / (TOTAL_POINTS * vestingWeeks);
     }
 
     /**
      * @notice Calculates the total number of tokens left unclaimed by the user including unvested ones
      * @param account Account to calculate for
-     * @return Unclaimed tokens
+     * @return accountUnclaimed tokens
      */
-    function unclaimed(address account) external view returns (uint256) {
+    function unclaimed(address account) external view returns (uint256 accountUnclaimed) {
         AllocationState memory allocation = allocations[account];
+
+        // calculate account's total token allocation
         uint256 accountAllocation = (totalAllocation * allocation.points) / TOTAL_POINTS;
-        return accountAllocation - allocation.claimed;
+
+        // unclaimed amount is account allocation minus what they've already claimed        
+        accountUnclaimed = accountAllocation - allocation.claimed;
     }
 }
