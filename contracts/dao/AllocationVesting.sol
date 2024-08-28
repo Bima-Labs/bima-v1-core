@@ -30,6 +30,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
     error VestingAlreadyStarted();
     error SelfTransfer();
     error IncompatibleVestingPeriod(uint256 numberOfWeeksFrom, uint256 numberOfWeeksTo);
+    error PositivePreclaimButZeroTransfer();
 
     struct AllocationSplit {
         address recipient;
@@ -163,12 +164,17 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // passive balance to transfer
         uint128 claimedAdjustment = SafeCast.toUint128((claimed * points) / fromAllocation.points);
 
-        // update storage - transfer preclaimed amounts to prevent point transfers
-        // being used to bypass the maximum preclaim limit
-        uint96 preclaimedToTransfer = SafeCast.toUint96((uint256(fromAllocation.preclaimed) * points) /
-                                                        fromAllocation.points);
+        // update storage - if `from` has a positive preclaimed balance,
+        // transfer preclaimed amount in proportion to points tranferred
+        // to prevent point transfers being used to bypass the maximum preclaim limit
+        if(fromAllocation.preclaimed > 0) {
+            uint96 preclaimedToTransfer = SafeCast.toUint96((uint256(fromAllocation.preclaimed) * points) /
+                                                            fromAllocation.points);
 
-        if(preclaimedToTransfer > 0) {
+            // this should never happen but sneaky users may try to preclaiming and
+            // point transferring using very small amounts so prevent this
+            if(preclaimedToTransfer == 0) revert PositivePreclaimButZeroTransfer();
+
             allocations[to].preclaimed = toAllocation.preclaimed + preclaimedToTransfer;
             allocations[from].preclaimed = fromAllocation.preclaimed - preclaimedToTransfer;
         }
