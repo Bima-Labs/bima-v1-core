@@ -41,7 +41,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         uint8[MAX_LOCK_WEEKS] weeksToUnlock;
     }
 
-    mapping(address => AccountData) accountLockData;
+    mapping(address account => AccountData lockData) accountLockData;
 
     uint256 public receiverCount;
     // id -> receiver data
