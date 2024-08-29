@@ -180,7 +180,11 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         vars.netDebt = _debtAmount;
 
         if (!isRecoveryMode) {
-            vars.netDebt = vars.netDebt + _triggerBorrowingFee(troveManager, account, _maxFeePercentage, _debtAmount);
+            vars.netDebt = vars.netDebt + _triggerBorrowingFee(troveManager,
+                                                               collateralToken,
+                                                               account,
+                                                               _maxFeePercentage,
+                                                               _debtAmount);
         }
         _requireAtLeastMinNetDebt(vars.netDebt);
 
@@ -339,7 +343,11 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             _requireValidMaxFeePercentage(_maxFeePercentage);
             if (!isRecoveryMode) {
                 // If the adjustment incorporates a debt increase and system is in Normal Mode, trigger a borrowing fee
-                vars.netDebtChange += _triggerBorrowingFee(troveManager, msg.sender, _maxFeePercentage, _debtChange);
+                vars.netDebtChange += _triggerBorrowingFee(troveManager,
+                                                           collateralToken,
+                                                           msg.sender,
+                                                           _maxFeePercentage,
+                                                           _debtChange);
             }
         }
 
@@ -406,6 +414,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
     function _triggerBorrowingFee(
         ITroveManager _troveManager,
+        IERC20 collateralToken,
         address _caller,
         uint256 _maxFeePercentage,
         uint256 _debtAmount
@@ -416,7 +425,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
         debtToken.mint(BABEL_CORE.feeReceiver(), debtFee);
 
-        emit BorrowingFeePaid(_caller, debtFee);
+        emit BorrowingFeePaid(_caller, collateralToken, debtFee);
 
         return debtFee;
     }
