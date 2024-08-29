@@ -300,6 +300,14 @@ const config: HardhatUserConfig = {
         },
 
       },
+      {
+        network:"rootstock_testnet",
+        chainId:31,
+        urls: {
+          browserURL: "https://explorer.testnet.rootstock.io/",
+          apiURL: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
+        },
+      },
     ],
   },
   networks: {
@@ -425,6 +433,10 @@ const config: HardhatUserConfig = {
     },
     minato_testnet: {
       url: "https://rpc.minato.soneium.org/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    rootstock_testnet: {
+      url: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
