@@ -302,7 +302,7 @@ const config: HardhatUserConfig = {
       },
       {
         network:"rootstock_testnet",
-        chainId:1946,
+        chainId:31,
         urls: {
           browserURL: "https://explorer.testnet.rootstock.io/",
           apiURL: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
