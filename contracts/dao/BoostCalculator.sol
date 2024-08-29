@@ -57,7 +57,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
     // tracked locally to avoid repeated external calls
     uint40[65535] totalWeeklyWeights;
     // account -> week -> % of lock weight (where 1e9 represents 100%)
-    mapping(address account => uint32[65535]) accountWeeklyLockPct;
+    mapping(address account => uint32[65535] weeklyLockPercent) accountWeeklyLockPct;
 
     constructor(address _babelCore, ITokenLocker _locker, uint256 _graceWeeks) SystemStart(_babelCore) {
         require(_graceWeeks > 0, "Grace weeks cannot be 0");
