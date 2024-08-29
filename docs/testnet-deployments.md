@@ -29,7 +29,8 @@
 - [Godwoken Testnet](#Godwoken-testnet)
 - [Morph Testnet](#morph-testnet)
 - [Aurora Testnet](#Aurora-Testnet)
-- [Soneium Minato Testnet] (#Soneium-Minato-Testnet)
+- [Soneium Minato Testnet](#Soneium-Minato-Testnet)
+- [Rootstock Testnet](#rootstock-testnet)
 
 
 ## Arbitrum Sepolia Testnet
