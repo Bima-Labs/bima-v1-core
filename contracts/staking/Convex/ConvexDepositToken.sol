@@ -112,7 +112,7 @@ contract ConvexDepositToken {
         periodFinish = uint32(block.timestamp - 1);
     }
 
-    function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool) {
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool) {
         require(msg.sender == address(vault));
         require(emissionId == 0, "Already registered");
         require(assignedIds.length == 1, "Incorrect ID count");

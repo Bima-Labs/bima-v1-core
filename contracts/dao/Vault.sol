@@ -10,7 +10,7 @@ import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSched
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface IEmissionReceiver {
-    function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool);
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool);
 }
 
 /**

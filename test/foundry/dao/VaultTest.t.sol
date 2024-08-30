@@ -11,10 +11,10 @@ contract MockEmissionReceiver {
     bool public notifyRegisteredIdCalled;
     uint256[] public lastAssignedIds;
 
-    function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool) {
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
         notifyRegisteredIdCalled = true;
         lastAssignedIds = assignedIds;
-        return true;
+        success = true;
     }
 
     /**
