@@ -470,23 +470,46 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         address boostDelegate,
         uint256 amount
     ) internal {
+        // nothing to do for 0 amount
         if (amount > 0) {
+            // get current system week
             uint256 week = getWeek();
+
+            // cache weekly emission for current system week
             uint256 totalWeekly = weeklyEmissions[week];
+
             address claimant = boostDelegate == address(0) ? account : boostDelegate;
+
+            // weekly amount claimed so far
             uint256 previousAmount = accountWeeklyEarned[claimant][week];
 
-            // if boost delegation is active, get the fee and optional callback address
+            // working data
             uint256 fee;
             IBoostDelegate delegateCallback;
+
+            // if boost delegation is active, get the fee and optional callback address
             if (boostDelegate != address(0)) {
+                // cache delegation data from storage
                 Delegation memory data = boostDelegation[boostDelegate];
-                delegateCallback = data.callback;
+
+                // revert if delegation is not enabled
                 require(data.isEnabled, "Invalid delegate");
+
+                // copy callback address to working data
+                delegateCallback = data.callback;
+
+                // if fee in delegation data is max(uint16) then execute callback
+                // to get actual fee percent
                 if (data.feePct == type(uint16).max) {
                     fee = delegateCallback.getFeePct(account, receiver, amount, previousAmount, totalWeekly);
+
+                    // enforce callback fee can't be greater than constant max fee
                     require(fee <= MAX_FEE_PCT, "Invalid delegate fee");
-                } else fee = data.feePct;
+                }
+                // otherwise use fee percent in delegation data
+                else fee = data.feePct;
+
+                // enforce fee percent can't be greater than input max fee
                 require(fee <= maxFeePct, "fee exceeds maxFeePct");
             }
 
@@ -501,17 +524,25 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                 // remaining tokens from unboosted claims are added to the unallocated total
                 // context avoids stack-too-deep
                 uint256 boostUnclaimed = amount - adjustedAmount;
+
                 if (boostUnclaimed > 0) {
                     uint256 unallocated = unallocatedTotal + boostUnclaimed;
-                    unallocatedTotal = uint128(unallocated);
+
+                    unallocatedTotal = SafeCast.toUint128(unallocated);
+
                     emit UnallocatedSupplyIncreased(boostUnclaimed, unallocated);
                 }
             }
-            accountWeeklyEarned[claimant][week] = uint128(previousAmount + amount);
 
-            // apply boost delegation fee
+            // update storage weekly amount claimed so far for newly claimed amount
+            accountWeeklyEarned[claimant][week] = SafeCast.toUint128(previousAmount + amount);
+
+            // apply boost delegation fee; `fee` currently = fee percent
             if (fee != 0) {
+                // calculate actual fee amount using fee percent
                 fee = (adjustedAmount * fee) / MAX_FEE_PCT;
+
+                // deduced fee from adjusted amount
                 adjustedAmount -= fee;
             }
 
@@ -520,10 +551,14 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             // these effects were already applied to the stored value
             adjustedAmount += storedPendingReward[account];
 
+            // either transfer or lock amount based on
+            // value of storage `lockWeeks`
             _transferOrLock(account, receiver, adjustedAmount);
 
-            // apply delegate fee and optionally perform callback
+            // apply delegate fee
             if (fee != 0) storedPendingReward[boostDelegate] += fee;
+
+            // optionally perform callback
             if (address(delegateCallback) != address(0)) {
                 require(
                     delegateCallback.delegatedBoostCallback(
@@ -542,21 +577,36 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     function _transferOrLock(address claimant, address receiver, uint256 amount) internal {
-        uint256 _lockWeeks = lockWeeks;
-        if (_lockWeeks == 0) {
+        // cache number of weeks allocated tokens are locked for
+        uint256 lockWeekCache = lockWeeks;
+
+        // if no forced lock, reset pending rewards and transfer claimed tokens
+        if (lockWeekCache == 0) {
             storedPendingReward[claimant] = 0;
             babelToken.transfer(receiver, amount);
-        } else {
+        }
+        // otherwise perform a forced lock
+        else {
             // lock for receiver and store remaining balance in `storedPendingReward`
+
+            // calculate lock amount accounting for lock to token ratio
             uint256 lockAmount = amount / lockToTokenRatio;
+
+            // @audit is this correct?
+            // amount - lockAmount * lockToTokenRatio
+            // amount - (amount / lockToTokenRatio) * lockToTokenRatio
+            // amount - amount
+            // = 0 ?
             storedPendingReward[claimant] = amount - lockAmount * lockToTokenRatio;
-            if (lockAmount > 0) locker.lock(receiver, lockAmount, _lockWeeks);
+
+            // perform the lock
+            if (lockAmount > 0) locker.lock(receiver, lockAmount, lockWeekCache);
         }
     }
 
     /**
         @notice Claimable BABEL amount for `account` in `rewardContract` after applying boost
-        @dev Returns (0, 0) if the boost delegate is invalid, or the delgate's callback fee
+        @dev Returns (0, 0) if the boost delegate is invalid, or the delegate's callback fee
              function is incorrectly configured.
         @param account Address claiming rewards
         @param boostDelegate Address to delegate boost from when claiming. Set as
@@ -572,18 +622,33 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         address boostDelegate,
         IRewards rewardContract
     ) external view returns (uint256 adjustedAmount, uint256 feeToDelegate) {
+        // get claimable reward amount from reward contract
         uint256 amount = rewardContract.claimableReward(account);
+
+        // get current system week
         uint256 week = getWeek();
+
+        // cache weekly emissions for current systme week
         uint256 totalWeekly = weeklyEmissions[week];
+
         address claimant = boostDelegate == address(0) ? account : boostDelegate;
+
+        // cache previous amount claimed this week by claimant
         uint256 previousAmount = accountWeeklyEarned[claimant][week];
 
+        // working data
         uint256 fee;
+
         if (boostDelegate != address(0)) {
+            // cache delegate data from storage
             Delegation memory data = boostDelegation[boostDelegate];
+
+            // return 0 if delegate not enabled
             if (!data.isEnabled) return (0, 0);
-            fee = data.feePct;
-            if (fee == type(uint16).max) {
+
+            // if fee in delegation data is max(uint16) then execute callback
+            // to get actual fee percent
+            if (data.feePct == type(uint16).max) {
                 try data.callback.getFeePct(claimant, receiver, amount, previousAmount, totalWeekly) returns (
                     uint256 _fee
                 ) {
@@ -592,13 +657,17 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                     return (0, 0);
                 }
             }
+            // otherwise use fee percent in delegation data
+            else fee = data.feePct;
+
+            // enforce fee can't be greater than constant max fee
             if (fee > MAX_FEE_PCT) return (0, 0);
         }
 
         adjustedAmount = boostCalculator.getBoostedAmount(claimant, amount, previousAmount, totalWeekly);
-        fee = (adjustedAmount * fee) / MAX_FEE_PCT;
 
-        return (adjustedAmount, fee);
+        // calculate actual fee amount using fee percent (`fee` currently = fee percent)
+        fee = (adjustedAmount * fee) / MAX_FEE_PCT;
     }
 
     /**
@@ -610,23 +679,30 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param callback Optional contract address to receive a callback each time a claim is
                         made which delegates to the caller's boost.
      */
-    function setBoostDelegationParams(bool isEnabled, uint256 feePct, address callback) external returns (bool) {
+    function setBoostDelegationParams(bool isEnabled, uint16 feePct, address callback) external returns (bool success) {
         if (isEnabled) {
+            // enforce fee percent is either max(uint16) or <= constant max fee
             require(feePct <= MAX_FEE_PCT || feePct == type(uint16).max, "Invalid feePct");
+
+            // enforce callback address is a contract
             if (callback != address(0) || feePct == type(uint16).max) {
                 require(callback.isContract(), "Callback must be a contract");
             }
+
+            // save delegation data to storage
             boostDelegation[msg.sender] = Delegation({
                 isEnabled: true,
-                feePct: uint16(feePct),
+                feePct: feePct,
                 callback: IBoostDelegate(callback)
             });
-        } else {
+        }
+        else {
             delete boostDelegation[msg.sender];
         }
+
         emit BoostDelegationSet(msg.sender, isEnabled, feePct, callback);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -636,18 +712,26 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @return boosted remaining claimable amount that will receive some amount of boost (including max boost)
      */
     function getClaimableWithBoost(address claimant) external view returns (uint256 maxBoosted, uint256 boosted) {
+        // get current system week
         uint256 week = getWeek();
+
+        // cache total weekly emissions for current system week
         uint256 totalWeekly = weeklyEmissions[week];
+
+        // cache previous amount account claimed for current system week
         uint256 previousAmount = accountWeeklyEarned[claimant][week];
-        return boostCalculator.getClaimableWithBoost(claimant, previousAmount, totalWeekly);
+
+        (maxBoosted, boosted) = boostCalculator.getClaimableWithBoost(claimant, previousAmount, totalWeekly);
     }
 
     /**
         @notice Get the claimable amount that `claimant` has earned boost delegation fees
      */
     function claimableBoostDelegationFees(address claimant) external view returns (uint256 amount) {
+        // output pending rewards for claimant
         amount = storedPendingReward[claimant];
-        // only return values `>= lockToTokenRatio` so we do not report "dust" stored for normal users
-        return amount >= lockToTokenRatio ? amount : 0;
+
+        // if smaller than lock to token ratio, return 0
+        if(amount < lockToTokenRatio) amount = 0;
     }
 }

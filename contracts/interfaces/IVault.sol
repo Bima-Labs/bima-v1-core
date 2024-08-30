@@ -47,7 +47,7 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
 
     function setBoostCalculator(IBoostCalculator _boostCalculator) external returns (bool);
 
-    function setBoostDelegationParams(bool isEnabled, uint256 feePct, address callback) external returns (bool);
+    function setBoostDelegationParams(bool isEnabled, uint16 feePct, address callback) external returns (bool);
 
     function setEmissionSchedule(IEmissionSchedule _emissionSchedule) external returns (bool);
 
