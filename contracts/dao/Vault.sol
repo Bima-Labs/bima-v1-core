@@ -316,47 +316,70 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @notice Allocate additional `babelToken` allowance to an emission receiver
                 based on the emission schedule
         @param id Receiver ID. The caller must be the receiver mapped to this ID.
-        @return uint256 Additional `babelToken` allowance for the receiver. The receiver
-                        accesses the tokens using `Vault.transferAllocatedTokens`
+        @return amount Additional `babelToken` allowance for the receiver. The receiver
+                       accesses the tokens using `Vault.transferAllocatedTokens`
      */
-    function allocateNewEmissions(uint256 id) external returns (uint256) {
+    function allocateNewEmissions(uint256 id) external returns (uint256 amount) {
         // cache receiver data from storage
         Receiver memory receiver = idToReceiver[id];
 
         // only account linked to receiver can call this function
         require(receiver.account == msg.sender, "Not receiver account");
 
-        uint256 week = receiver.updatedWeek;
-
+        // get current system week
         uint256 currentWeek = getWeek();
-        if (week == currentWeek) return 0;
 
-        IEmissionSchedule _emissionSchedule = emissionSchedule;
-        _allocateTotalWeekly(_emissionSchedule, currentWeek);
+        // nothing to do if the receiver was last processed
+        // on same week as current system week; just return
+        // default 0
+        if (receiver.updatedWeek != currentWeek) {
+            // otherwise ensure weekly totals have been processed
+            // up to the current system week
+            IEmissionSchedule _emissionSchedule = emissionSchedule;
 
-        if (address(_emissionSchedule) == address(0)) {
+            // note: even if no valid emission schedule exists, this
+            // call is still required to update storage totalUpdateWeek
+            // to current system week
+            _allocateTotalWeekly(_emissionSchedule, currentWeek);
+
+            // update storage receiver last processed week to
+            // current system week
             idToReceiver[id].updatedWeek = SafeCast.toUint16(currentWeek);
-            return 0;
-        }
+        
+            // if a valid emission schedule exists perform additional
+            // processing otherwise return default 0
+            if (address(_emissionSchedule) != address(0)) {
+                // iterate through unprocessed weeks for receiver
+                // using original cached last updated week since storage
+                // was just updated to current system week
+                while (receiver.updatedWeek < currentWeek) {
+                    ++receiver.updatedWeek;
 
-        uint256 amount;
-        while (week < currentWeek) {
-            ++week;
-            amount = amount + _emissionSchedule.getReceiverWeeklyEmissions(id, week, weeklyEmissions[week]);
-        }
+                    // update output with emissions for previous week being processed
+                    amount += _emissionSchedule.getReceiverWeeklyEmissions(id,
+                                                                           receiver.updatedWeek,
+                                                                           weeklyEmissions[receiver.updatedWeek]);
+                }
 
-        idToReceiver[id].updatedWeek = SafeCast.toUint16(currentWeek);
+                // if receiver is active, update storage allocated amount
+                // with the newly emitted total amount
+                if (receiver.isActive) {
+                    allocated[msg.sender] += amount;
 
-        if (receiver.isActive) {
-            allocated[msg.sender] = allocated[msg.sender] + amount;
-            emit IncreasedAllocation(msg.sender, amount);
-            return amount;
-        } else {
-            // if receiver is not active, return allocation to the unallocated supply
-            uint256 unallocated = unallocatedTotal + amount;
-            unallocatedTotal = uint128(unallocated);
-            emit UnallocatedSupplyIncreased(amount, unallocated);
-            return 0;
+                    emit IncreasedAllocation(msg.sender, amount);
+                } 
+                // otherwise return allocation to the unallocated supply
+                else {
+                    uint256 unallocated = unallocatedTotal + amount;
+                    unallocatedTotal = SafeCast.toUint128(unallocated);
+
+                    emit UnallocatedSupplyIncreased(amount, unallocated);
+
+                    // set output to 0 since inactive receiver doesn't receive
+                    // emissions but they are added to unallocated supply
+                    amount = 0;
+                }
+            }
         }
     }
 
