@@ -24,6 +24,8 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     using Address for address;
     using SafeERC20 for IERC20;
 
+    uint256 constant MAX_FEE_PCT = 10000;
+
     IBabelToken public immutable babelToken;
     ITokenLocker public immutable locker;
     IIncentiveVoting public immutable voter;
@@ -390,14 +392,15 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param claimant Address that is claiming the tokens
         @param receiver Address to transfer tokens to
         @param amount Desired amount of tokens to transfer. This value always assumes max boost.
-        @return bool success
+        @return success bool
      */
-    function transferAllocatedTokens(address claimant, address receiver, uint256 amount) external returns (bool) {
+    function transferAllocatedTokens(address claimant, address receiver, uint256 amount) external returns (bool success) {
         if (amount > 0) {
             allocated[msg.sender] -= amount;
             _transferAllocated(0, claimant, receiver, address(0), amount);
         }
-        return true;
+
+        success = true;
     }
 
     /**
@@ -408,38 +411,56 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                              `address(0)` to use the boost of the claimer.
         @param rewardContracts Array of addresses of registered receiver contracts where
                                the caller has pending rewards to claim.
-        @param maxFeePct Maximum fee percent to pay to delegate, as a whole number out of 10000
-        @return bool success
+        @param maxFeePct Maximum fee percent to pay to delegate, as a whole number out of MAX_FEE_PCT
+        @return success bool
      */
     function batchClaimRewards(
         address receiver,
         address boostDelegate,
         IRewards[] calldata rewardContracts,
         uint256 maxFeePct
-    ) external returns (bool) {
-        require(maxFeePct <= 10000, "Invalid maxFeePct");
+    ) external returns (bool success) {
+        // enforce max fee
+        require(maxFeePct <= MAX_FEE_PCT, "Invalid maxFeePct");
 
+        // working data
         uint256 total;
-        uint256 length = rewardContracts.length;
-        for (uint256 i; i < length; i++) {
+
+        // more efficient not to cache length as calldata
+        for (uint256 i; i < rewardContracts.length; i++) {
             uint256 amount = rewardContracts[i].vaultClaimReward(msg.sender, receiver);
+
+            // update storage; decrease allocated for reward contract
+            // by the claimed amount
             allocated[address(rewardContracts[i])] -= amount;
+
+            // update working data
             total += amount;
         }
+
+        // transfer total claimed rewards to receiver
         _transferAllocated(maxFeePct, msg.sender, receiver, boostDelegate, total);
-        return true;
+        
+        success = true;
     }
 
     /**
         @notice Claim tokens earned from boost delegation fees
         @param receiver Address to transfer the tokens to
-        @return bool Success
+        @return success bool
      */
-    function claimBoostDelegationFees(address receiver) external returns (bool) {
+    function claimBoostDelegationFees(address receiver) external returns (bool success) {
+        // cache pending rewards for caller
         uint256 amount = storedPendingReward[msg.sender];
+
+        // enforce claim minimum
         require(amount >= lockToTokenRatio, "Nothing to claim");
+
+        // either transfer or lock the rewards based on
+        // value of storage `lockWeeks`
         _transferOrLock(msg.sender, receiver, amount);
-        return true;
+        
+        success = true;
     }
 
     function _transferAllocated(
@@ -464,7 +485,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                 require(data.isEnabled, "Invalid delegate");
                 if (data.feePct == type(uint16).max) {
                     fee = delegateCallback.getFeePct(account, receiver, amount, previousAmount, totalWeekly);
-                    require(fee <= 10000, "Invalid delegate fee");
+                    require(fee <= MAX_FEE_PCT, "Invalid delegate fee");
                 } else fee = data.feePct;
                 require(fee <= maxFeePct, "fee exceeds maxFeePct");
             }
@@ -490,7 +511,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
 
             // apply boost delegation fee
             if (fee != 0) {
-                fee = (adjustedAmount * fee) / 10000;
+                fee = (adjustedAmount * fee) / MAX_FEE_PCT;
                 adjustedAmount -= fee;
             }
 
@@ -571,11 +592,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                     return (0, 0);
                 }
             }
-            if (fee > 10000) return (0, 0);
+            if (fee > MAX_FEE_PCT) return (0, 0);
         }
 
         adjustedAmount = boostCalculator.getBoostedAmount(claimant, amount, previousAmount, totalWeekly);
-        fee = (adjustedAmount * fee) / 10000;
+        fee = (adjustedAmount * fee) / MAX_FEE_PCT;
 
         return (adjustedAmount, fee);
     }
@@ -584,14 +605,14 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @notice Enable or disable boost delegation, and set boost delegation parameters
         @param isEnabled is boost delegation enabled?
         @param feePct Fee % charged when claims are made that delegate to the caller's boost.
-                      Given as a whole number out of 10000. If set to type(uint16).max, the fee
+                      Given as a whole number out of MAX_FEE_PCT. If set to type(uint16).max, the fee
                       is set by calling `IBoostDelegate(callback).getFeePct` prior to each claim.
         @param callback Optional contract address to receive a callback each time a claim is
                         made which delegates to the caller's boost.
      */
     function setBoostDelegationParams(bool isEnabled, uint256 feePct, address callback) external returns (bool) {
         if (isEnabled) {
-            require(feePct <= 10000 || feePct == type(uint16).max, "Invalid feePct");
+            require(feePct <= MAX_FEE_PCT || feePct == type(uint16).max, "Invalid feePct");
             if (callback != address(0) || feePct == type(uint16).max) {
                 require(callback.isContract(), "Callback must be a contract");
             }
