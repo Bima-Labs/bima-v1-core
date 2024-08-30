@@ -291,6 +291,23 @@ const config: HardhatUserConfig = {
           apiURL: "https://rpc-holesky.morphl2.io",
         },
       },
+      { 
+        network:"minato_testnet",
+        chainId:1946,
+        urls: {
+          browserURL: "https://explorer-testnet.soneium.org/",
+          apiURL: "https://rpc.minato.soneium.org/",
+        },
+
+      },
+      {
+        network:"rootstock_testnet",
+        chainId:31,
+        urls: {
+          browserURL: "https://explorer.testnet.rootstock.io/",
+          apiURL: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
+        },
+      },
     ],
   },
   networks: {
@@ -414,6 +431,14 @@ const config: HardhatUserConfig = {
       url: "https://rpc.stratovm.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+    minato_testnet: {
+      url: "https://rpc.minato.soneium.org/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    rootstock_testnet: {
+      url: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    }
   },
   solidity: {
     compilers: [
