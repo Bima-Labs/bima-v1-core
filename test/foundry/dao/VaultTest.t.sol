@@ -3,11 +3,13 @@ pragma solidity 0.8.19;
 
 // test setup
 import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker} from "../TestSetup.sol";
+import {IEmissionReceiver} from "../../../contracts/dao/Vault.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-contract MockEmissionReceiver {
+contract MockEmissionReceiver is IEmissionReceiver {
     bool public notifyRegisteredIdCalled;
     uint256[] public lastAssignedIds;
 
@@ -32,7 +34,15 @@ contract MockEmissionReceiver {
 contract VaultTest is TestSetup {
 
     uint256 constant internal MAX_COUNT = 10;
+
+    MockEmissionReceiver internal mockEmissionReceiver;
     
+    function setUp() public virtual override {
+        super.setUp();
+
+        mockEmissionReceiver = new MockEmissionReceiver();
+    }
+
     function test_constructor() external view {
         // addresses correctly set
         assertEq(address(babelVault.babelToken()), address(babelToken));
@@ -112,41 +122,35 @@ contract VaultTest is TestSetup {
         babelVault.transferTokens(IERC20(address(babelToken)), receiver, excessiveAmount);
     }
 
-    /* todo - failing with out of gas
-    function test_registerReceiver(address receiver, uint256 count, uint256 weeksToAdd) public {
+    function test_registerReceiver(uint256 count, uint256 weeksToAdd) public {
         // bound fuzz inputs
-        vm.assume(receiver != address(0) && receiver != address(babelVault));
-        vm.assume(uint160(receiver) > 9); // Exclude precompile addresses (0x1 to 0x9)
         count = bound(count, 1, MAX_COUNT); // Limit count to avoid excessive gas usage or memory issues
-        weeksToAdd = bound(weeksToAdd, 0, type(uint64).max - 1);
-        vm.assume(weeksToAdd <= type(uint64).max - 1);
+        weeksToAdd = bound(weeksToAdd, 0, MAX_COUNT);
 
         // Set up week
         vm.warp(block.timestamp + weeksToAdd * 1 weeks);
-        uint256 currentWeek = babelVault.getWeek();
-
-        // Mock the IEmissionReceiver interface
-        MockEmissionReceiver mockReceiver = new MockEmissionReceiver();
-        vm.etch(receiver, address(mockReceiver).code);
+        uint16 currentWeek = SafeCast.toUint16(babelVault.getWeek());
 
         // Have owner register receiver
         vm.prank(users.owner);
-        assertTrue(babelVault.registerReceiver(receiver, count));
+        assertTrue(babelVault.registerReceiver(address(mockEmissionReceiver), count));
 
+        // start at 1 because 0 is always stability pool
         for (uint256 i = 1; i <= count; i++) {
-            (address registeredReceiver, bool isActive) = babelVault.idToReceiver(i);
-            assertEq(registeredReceiver, receiver);
+            (address registeredReceiver, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(i);
+            assertEq(registeredReceiver, address(mockEmissionReceiver));
             assertTrue(isActive);
-            assertEq(babelVault.receiverUpdatedWeek(i), uint16(currentWeek));
+            assertEq(updatedWeek, currentWeek);
+
+            assertEq(incentiveVoting.receiverUpdatedWeek(i), currentWeek);
         }
 
         // Verify IncentiveVoting state
         assertEq(incentiveVoting.receiverCount(), count + 1); // +1 because of the initial StabilityPool receiver
 
         // Verify MockEmissionReceiver state
-        MockEmissionReceiver(receiver).assertNotifyRegisteredIdCalled(count);
+        mockEmissionReceiver.assertNotifyRegisteredIdCalled(count);
     }
-    */
 
     function test_registerReceiver_zeroCount() public {
         vm.prank(users.owner);
@@ -172,21 +176,15 @@ contract VaultTest is TestSetup {
         babelVault.registerReceiver(address(1), 1);
     }
 
-    /* todo
-    function test_allocateNewEmissions(address receiver, uint256 count, uint256 weeksToAdd) public {
+    function test_allocateNewEmissions(uint256 count, uint256 weeksToAdd, bool disableReceiver) public {
         // bound fuzz inputs
-        vm.assume(receiver != address(0) && receiver != address(babelVault));
-        vm.assume(uint160(receiver) > 9); // Exclude precompile addresses (0x1 to 0x9)
-        count = bound(count, 1, 100); // Limit count to avoid excessive gas usage or memory issues
-        weeksToAdd = bound(weeksToAdd, 0, type(uint64).max - 1);
-        vm.assume(weeksToAdd <= type(uint64).max - 1);
+        count = bound(count, 1, MAX_COUNT); // Limit count to avoid excessive gas usage or memory issues
+        weeksToAdd = bound(weeksToAdd, 0, MAX_COUNT);
 
         // Set up week
         vm.warp(block.timestamp + weeksToAdd * 1 weeks);
 
-        // Mock the IEmissionReceiver interface
-        MockEmissionReceiver mockReceiver = new MockEmissionReceiver();
-        vm.etch(receiver, address(mockReceiver).code);
+        address receiver = address(mockEmissionReceiver);
 
         // Have owner register receiver
         vm.prank(users.owner);
@@ -195,16 +193,25 @@ contract VaultTest is TestSetup {
         // Simulate time passing some more
         vm.warp(block.timestamp + weeksToAdd * 1 weeks);
 
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
         uint256 initialUnallocated = babelVault.unallocatedTotal();
 
         // Call allocateNewEmissions
         uint256 id = 1;
+
+        if(disableReceiver) {
+            vm.prank(users.owner);
+            babelVault.setReceiverIsActive(id, false);
+        }
+
         vm.prank(receiver);
         uint256 allocated = babelVault.allocateNewEmissions(id);
 
         // Calculate expected unallocated total
         uint256 expectedUnallocated = initialUnallocated;
-        (, bool isActive) = babelVault.idToReceiver(id);
+        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(id);
+
+        assertEq(updatedWeek, systemWeek);
         if (!isActive) {
             // If receiver is inactive, unallocated total should remain the same as after _allocateTotalWeekly
             expectedUnallocated = babelVault.unallocatedTotal();
@@ -214,7 +221,5 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.unallocatedTotal(), expectedUnallocated, "Unallocated total not updated correctly");
         assertEq(allocated, 0, "Incorrect amount allocated");
         assertEq(babelVault.allocated(receiver), 0, "Allocated amount should be 0 for inactive receiver");
-        //assertEq(babelVault.receiverUpdatedWeek(id), babelVault.getWeek(), "Receiver week not updated correctly");
     }
-    */
 }
