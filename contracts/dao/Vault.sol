@@ -45,21 +45,21 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     uint16[65535] public receiverUpdatedWeek;
     // id -> address of receiver
     // not bi-directional, one receiver can have multiple ids
-    mapping(uint256 => Receiver) public idToReceiver;
+    mapping(uint256 receiverId => Receiver receiverData) public idToReceiver;
 
     // week -> total amount of tokens to be released in that week
     uint128[65535] public weeklyEmissions;
 
     // receiver -> remaining tokens which have been allocated but not yet distributed
-    mapping(address => uint256) public allocated;
+    mapping(address receiver => uint256 remainingAllocated) public allocated;
 
     // account -> week -> BABEL amount claimed in that week (used for calculating boost)
-    mapping(address => uint128[65535]) accountWeeklyEarned;
+    mapping(address account => uint128[65535] weeklyEarned) accountWeeklyEarned;
 
     // pending rewards for an address (dust after locking, fees from delegation)
-    mapping(address => uint256) private storedPendingReward;
+    mapping(address account => uint256 pendingRewards) private storedPendingReward;
 
-    mapping(address => Delegation) public boostDelegation;
+    mapping(address account => Delegation delegationData) public boostDelegation;
 
     struct Receiver {
         address account;
@@ -87,9 +87,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         deploymentManager = _manager;
 
         // ensure the stability pool is registered with receiver ID 0
-        _voter.registerNewReceiver();
-        idToReceiver[0] = Receiver({ account: _stabilityPool, isActive: true });
-        emit NewReceiverRegistered(_stabilityPool, 0);
+        uint256 id = _voter.registerNewReceiver();
+        require(id == 0, "Stability pool must have receiver ID 0");
+
+        idToReceiver[id] = Receiver({ account: _stabilityPool, isActive: true });
+        emit NewReceiverRegistered(_stabilityPool, id);
     }
 
     function setInitialParameters(
