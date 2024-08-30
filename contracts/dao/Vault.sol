@@ -162,21 +162,35 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param receiver Address of the receiver
         @param count Number of IDs to assign to the receiver
      */
-    function registerReceiver(address receiver, uint256 count) external onlyOwner returns (bool) {
+    function registerReceiver(address receiver, uint256 count) external onlyOwner returns (bool success) {
+        // allocate memory to save created receiver ids
         uint256[] memory assignedIds = new uint256[](count);
-        uint16 week = uint16(getWeek());
+
+        // get current system week
+        uint16 week = SafeCast.toUint16(getWeek());
+
         for (uint256 i; i < count; i++) {
+            // register new id with IncentiveVoting
             uint256 id = voter.registerNewReceiver();
+
+            // save new id to assigned ids
             assignedIds[i] = id;
+
+            // set current system week as last processed for new receiver id
             receiverUpdatedWeek[id] = week;
+
+            // set receiver data for new receiver id
             idToReceiver[id] = Receiver({ account: receiver, isActive: true });
+
             emit NewReceiverRegistered(receiver, id);
         }
+
         // notify the receiver contract of the newly registered ID
-        // also serves as a sanity check to ensure the contract is capable of receiving emissions
+        // also serves as a sanity check to ensure the contract
+        // is capable of receiving emissions
         IEmissionReceiver(receiver).notifyRegisteredId(assignedIds);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -187,14 +201,16 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param id ID of the receiver to modify the isActive status for
         @param isActive is this receiver eligible to receive emissions?
      */
-    function setReceiverIsActive(uint256 id, bool isActive) external onlyOwner returns (bool) {
-        Receiver memory receiver = idToReceiver[id];
-        require(receiver.account != address(0), "ID not set");
-        receiver.isActive = isActive;
-        idToReceiver[id] = receiver;
+    function setReceiverIsActive(uint256 id, bool isActive) external onlyOwner returns (bool success) {
+        // revert if receiver id not associated with an address
+        require(idToReceiver[id].account != address(0), "ID not set");
+
+        // update storage - isActive status, address remains the same
+        idToReceiver[id].isActive = isActive;
+
         emit ReceiverIsActiveStatusModified(id, isActive);
 
-        return true;
+        success = true;
     }
 
     /**
