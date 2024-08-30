@@ -7,6 +7,8 @@ import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 interface IEmissionReceiver {
     function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool);
 }
@@ -99,47 +101,58 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         IBoostCalculator _boostCalculator,
         uint256 totalSupply,
         uint64 initialLockWeeks,
-        uint128[] memory _fixedInitialAmounts,
-        InitialAllowance[] memory initialAllowances
+        uint128[] calldata _fixedInitialAmounts,
+        InitialAllowance[] calldata initialAllowances
     ) external {
         // enforce invariant described in TokenLocker to prevent overflows
         require(totalSupply <= type(uint32).max * locker.lockToTokenRatio(), 
                 "Total supply must be <= type(uint32).max * lockToTokenRatio");
 
+        // only deployment manager can set initial parameters
         require(msg.sender == deploymentManager, "!deploymentManager");
+
         emissionSchedule = _emissionSchedule;
         boostCalculator = _boostCalculator;
 
         // mint totalSupply to vault - this reverts after the first call
         babelToken.mintToVault(totalSupply);
 
-        // set initial fixed weekly emissions
+        // working data
         uint256 totalAllocated;
-        uint256 length = _fixedInitialAmounts.length;
+
+        // get one week after current system week
         uint256 offset = getWeek() + 1;
-        for (uint256 i; i < length; i++) {
-            uint128 amount = _fixedInitialAmounts[i];
-            weeklyEmissions[i + offset] = amount;
-            totalAllocated += amount;
+
+        // set initial fixed weekly emissions, starting in the future
+        // from next system week
+        for (uint256 i; i < _fixedInitialAmounts.length; i++) {
+            // update storage
+            weeklyEmissions[i + offset] = _fixedInitialAmounts[i];
+
+            // update working data
+            totalAllocated += _fixedInitialAmounts[i];
         }
 
         // set initial transfer allowances for airdrops, vests, bribes
-        length = initialAllowances.length;
-        for (uint256 i; i < length; i++) {
-            uint256 amount = initialAllowances[i].amount;
-            address receiver = initialAllowances[i].receiver;
-            totalAllocated += amount;
+        for (uint256 i; i < initialAllowances.length; i++) {
             // initial allocations are given as approvals
-            babelToken.increaseAllowance(receiver, amount);
+            babelToken.increaseAllowance(initialAllowances[i].receiver, initialAllowances[i].amount);
+
+            // update working data
+            totalAllocated += initialAllowances[i].amount;
         }
 
-        unallocatedTotal = uint128(totalSupply - totalAllocated);
-        totalUpdateWeek = uint64(_fixedInitialAmounts.length + offset - 1);
+        // cache here to save 1 storage read when emitting event
+        uint128 unallocatedAmount = SafeCast.toUint128(totalSupply - totalAllocated);
+
+        // update storage
+        unallocatedTotal = unallocatedAmount;
+        totalUpdateWeek = SafeCast.toUint64(_fixedInitialAmounts.length + offset - 1);
         lockWeeks = initialLockWeeks;
 
         emit EmissionScheduleSet(address(_emissionSchedule));
         emit BoostCalculatorSet(address(_boostCalculator));
-        emit UnallocatedSupplyReduced(totalAllocated, unallocatedTotal);
+        emit UnallocatedSupplyReduced(totalAllocated, unallocatedAmount);
     }
 
     /**
