@@ -190,7 +190,8 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // notify the receiver contract of the newly registered ID
         // also serves as a sanity check to ensure the contract
         // is capable of receiving emissions
-        IEmissionReceiver(receiver).notifyRegisteredId(assignedIds);
+        require(IEmissionReceiver(receiver).notifyRegisteredId(assignedIds),
+                "notifyRegisteredId must return true");
 
         success = true;
     }
