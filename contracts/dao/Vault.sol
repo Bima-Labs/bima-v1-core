@@ -44,8 +44,6 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     uint64 public lockWeeks;
 
     // id -> receiver data
-    uint16[65535] public receiverUpdatedWeek;
-    // id -> address of receiver
     // not bi-directional, one receiver can have multiple ids
     mapping(uint256 receiverId => Receiver receiverData) public idToReceiver;
 
@@ -66,6 +64,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     struct Receiver {
         address account;
         bool isActive;
+        uint16 updatedWeek;
     }
 
     struct Delegation {
@@ -92,7 +91,9 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         uint256 id = _voter.registerNewReceiver();
         require(id == 0, "Stability pool must have receiver ID 0");
 
-        idToReceiver[id] = Receiver({ account: _stabilityPool, isActive: true });
+        idToReceiver[id] = Receiver({ account: _stabilityPool,
+                                      isActive: true,
+                                      updatedWeek: 0 });
         emit NewReceiverRegistered(_stabilityPool, id);
     }
 
@@ -176,11 +177,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             // save new id to assigned ids
             assignedIds[i] = id;
 
-            // set current system week as last processed for new receiver id
-            receiverUpdatedWeek[id] = week;
-
             // set receiver data for new receiver id
-            idToReceiver[id] = Receiver({ account: receiver, isActive: true });
+            idToReceiver[id] = Receiver({ account: receiver,
+                                          isActive: true,
+                                          updatedWeek: week });
 
             emit NewReceiverRegistered(receiver, id);
         }
@@ -313,16 +313,21 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     /**
-        @notice Allocate additional `babelToken` allowance to an emission reciever
+        @notice Allocate additional `babelToken` allowance to an emission receiver
                 based on the emission schedule
         @param id Receiver ID. The caller must be the receiver mapped to this ID.
         @return uint256 Additional `babelToken` allowance for the receiver. The receiver
                         accesses the tokens using `Vault.transferAllocatedTokens`
      */
     function allocateNewEmissions(uint256 id) external returns (uint256) {
+        // cache receiver data from storage
         Receiver memory receiver = idToReceiver[id];
-        require(receiver.account == msg.sender, "Receiver not registered");
-        uint256 week = receiverUpdatedWeek[id];
+
+        // only account linked to receiver can call this function
+        require(receiver.account == msg.sender, "Not receiver account");
+
+        uint256 week = receiver.updatedWeek;
+
         uint256 currentWeek = getWeek();
         if (week == currentWeek) return 0;
 
@@ -330,7 +335,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         _allocateTotalWeekly(_emissionSchedule, currentWeek);
 
         if (address(_emissionSchedule) == address(0)) {
-            receiverUpdatedWeek[id] = uint16(currentWeek);
+            idToReceiver[id].updatedWeek = SafeCast.toUint16(currentWeek);
             return 0;
         }
 
@@ -340,7 +345,8 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             amount = amount + _emissionSchedule.getReceiverWeeklyEmissions(id, week, weeklyEmissions[week]);
         }
 
-        receiverUpdatedWeek[id] = uint16(currentWeek);
+        idToReceiver[id].updatedWeek = SafeCast.toUint16(currentWeek);
+
         if (receiver.isActive) {
             allocated[msg.sender] = allocated[msg.sender] + amount;
             emit IncreasedAllocation(msg.sender, amount);
