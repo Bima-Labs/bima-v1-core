@@ -218,72 +218,98 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @dev Callable only by the owner (the DAO admin voter, to change the emission schedule).
              The new schedule is applied from the start of the next epoch.
      */
-    function setEmissionSchedule(IEmissionSchedule _emissionSchedule) external onlyOwner returns (bool) {
+    function setEmissionSchedule(IEmissionSchedule _emissionSchedule) external onlyOwner returns (bool success) {
         _allocateTotalWeekly(emissionSchedule, getWeek());
         emissionSchedule = _emissionSchedule;
         emit EmissionScheduleSet(address(_emissionSchedule));
 
-        return true;
+        success = true;
     }
 
-    function setBoostCalculator(IBoostCalculator _boostCalculator) external onlyOwner returns (bool) {
+    function setBoostCalculator(IBoostCalculator _boostCalculator) external onlyOwner returns (bool success) {
         boostCalculator = _boostCalculator;
         emit BoostCalculatorSet(address(_boostCalculator));
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Transfer tokens out of the vault
      */
-    function transferTokens(IERC20 token, address receiver, uint256 amount) external onlyOwner returns (bool) {
+    function transferTokens(IERC20 token, address receiver, uint256 amount) external onlyOwner returns (bool success) {
+        // if token being transferred is the protocol's token,
+        // then prevent transfers into the vault via this function
+        // and update storage unallocated total
         if (address(token) == address(babelToken)) {
             require(receiver != address(this), "Self transfer denied");
+
             uint256 unallocated = unallocatedTotal - amount;
-            unallocatedTotal = uint128(unallocated);
+
+            unallocatedTotal = SafeCast.toUint128(unallocated);
             emit UnallocatedSupplyReduced(amount, unallocated);
         }
+
         token.safeTransfer(receiver, amount);
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Receive BABEL tokens and add them to the unallocated supply
      */
-    function increaseUnallocatedSupply(uint256 amount) external returns (bool) {
+    function increaseUnallocatedSupply(uint256 amount) external returns (bool success) {
+        // safe to use `transferFrom` here since it is the protocol's token
         babelToken.transferFrom(msg.sender, address(this), amount);
+
+        // update storage unallocated total
         uint256 unallocated = unallocatedTotal + amount;
-        unallocatedTotal = uint128(unallocated);
+        unallocatedTotal = SafeCast.toUint128(unallocated);
+
         emit UnallocatedSupplyIncreased(amount, unallocated);
 
-        return true;
+        success = true;
     }
 
     function _allocateTotalWeekly(IEmissionSchedule _emissionSchedule, uint256 currentWeek) internal {
+        // cache most recent total update week
         uint256 week = totalUpdateWeek;
+
+        // if same as system week, do nothing
         if (week >= currentWeek) return;
 
+        // if no emission schedule, just update storage to set
+        // total update week to current system week
         if (address(_emissionSchedule) == address(0)) {
-            totalUpdateWeek = uint64(currentWeek);
+            totalUpdateWeek = SafeCast.toUint64(currentWeek);
             return;
         }
 
-        uint256 lock;
+        // working data
+        uint64 lock;
         uint256 weeklyAmount;
         uint256 unallocated = unallocatedTotal;
+
+        // iterate through unprocessed weeks until current system week
         while (week < currentWeek) {
             ++week;
-            (weeklyAmount, lock) = _emissionSchedule.getTotalWeeklyEmissions(week, unallocated);
-            weeklyEmissions[week] = uint128(weeklyAmount);
 
+            // get weekly emissions and remaining lock weeks; this call
+            // modifies EmissionSchedule storage
+            (weeklyAmount, lock) = _emissionSchedule.getTotalWeeklyEmissions(week, unallocated);
+
+            // update storage weekly emission amount for processed week
+            weeklyEmissions[week] = SafeCast.toUint128(weeklyAmount);
+
+            // update working data
             unallocated = unallocated - weeklyAmount;
+            
             emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
         }
 
-        unallocatedTotal = uint128(unallocated);
-        totalUpdateWeek = uint64(currentWeek);
-        lockWeeks = uint64(lock);
+        // update storage
+        unallocatedTotal = SafeCast.toUint128(unallocated);
+        totalUpdateWeek = SafeCast.toUint64(currentWeek);
+        lockWeeks = lock;
     }
 
     /**
