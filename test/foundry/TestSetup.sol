@@ -291,6 +291,11 @@ contract TestSetup is Test {
                                                 INIT_ES_WEEKLY_PCT,
                                                 scheduledWeeklyPct);
 
+        // EmissionSchedule storage correctly set
+        assertEq(emissionSchedule.lockWeeks(), INIT_ES_LOCK_WEEKS);
+        assertEq(emissionSchedule.lockDecayWeeks(), INIT_ES_LOCK_DECAY_WEEKS);
+        assertEq(emissionSchedule.weeklyPct(), INIT_ES_WEEKLY_PCT);
+
         // create BoostCalculator
         boostCalc = new BoostCalculator(address(babelCore),
                                         ITokenLocker(address(tokenLocker)),
