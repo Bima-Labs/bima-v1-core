@@ -229,6 +229,25 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         }
     }
 
+    function getReceiverVoteInputs(uint256 id, uint256 week) external 
+    returns (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight) {
+        // lookback one week
+        week -= 1;
+
+        // update storage - id & total weights for any
+        // missing weeks up to current system week
+        getReceiverWeightWrite(id);
+        getTotalWeightWrite();
+
+        // output total weight for lookback week
+        totalWeeklyWeight = totalWeeklyWeights[week];
+
+        // if not zero, also output receiver weekly weight
+        if(totalWeeklyWeight != 0) {
+            receiverWeeklyWeight = receiverWeeklyWeights[id][week];
+        }
+    }
+
     function getReceiverVotePct(uint256 id, uint256 week) external returns (uint256 votePct) {
         // lookback one week
         week -= 1;

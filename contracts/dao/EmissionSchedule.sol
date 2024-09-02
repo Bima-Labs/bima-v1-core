@@ -88,10 +88,16 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         uint256 id,
         uint256 week,
         uint256 totalWeeklyEmissions
-    ) external returns (uint256) {
-        uint256 pct = voter.getReceiverVotePct(id, week);
+    ) external returns (uint256 amount) {
+        // get vote calculation inputs from IncentiveVoting
+        (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight)
+            = voter.getReceiverVoteInputs(id, week);
 
-        return (totalWeeklyEmissions * pct) / 1e18;
+        // if there was weekly weight, calculate the amount
+        // otherwise default returns 0
+        if(totalWeeklyWeight != 0) {
+            amount = totalWeeklyEmissions * receiverWeeklyWeight / totalWeeklyWeight;
+        }
     }
 
     function getTotalWeeklyEmissions(

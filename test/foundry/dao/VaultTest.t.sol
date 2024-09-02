@@ -207,7 +207,7 @@ contract VaultTest is TestSetup {
         // voting weight
     }
 
-    function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
+    function test_allocateNewEmissions_oneReceiverWithVotingWeight() external {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
@@ -259,7 +259,7 @@ contract VaultTest is TestSetup {
         assertEq(allocated, firstWeekEmissions);        
     }
 
-    function test_allocateNewEmissions_twoReceiversWithEqualVotingWeight() public {
+    function test_allocateNewEmissions_twoReceiversWithEqualVotingWeight() external {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
@@ -337,5 +337,86 @@ contract VaultTest is TestSetup {
         assertEq(allocated, firstWeekEmissions/2);
     }
 
+    function test_allocateNewEmissions_twoReceiversWithUnequalExtremeVotingWeight() external {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // helper registers receivers and performs all necessary checks
+        address receiver = address(mockEmissionReceiver);
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
+
+        // owner registers second emissions receiver
+        MockEmissionReceiver mockEmissionReceiver2 = new MockEmissionReceiver();
+        address receiver2 = address(mockEmissionReceiver2);
+        uint256 RECEIVER2_ID = _vaultRegisterReceiver(receiver2, 1);
+
+        // user votes for both receivers to get emissions but with
+        // extreme voting weights (1 and Max-1)
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](2);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = 1;
+        votes[1].id = RECEIVER2_ID;
+        votes[1].points = incentiveVoting.MAX_POINTS()-1;
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // cache state prior to allocateNewEmissions
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // receiver calls allocateNewEmissions
+        vm.prank(receiver);
+        uint256 allocated = babelVault.allocateNewEmissions(RECEIVER_ID);
+
+        // verify BabelVault::totalUpdateWeek current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+
+        // verify unallocated supply reduced by weekly emission percent
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        uint256 remainingUnallocated = initialUnallocated - firstWeekEmissions;
+        assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
+
+        // verify emissions correctly set for current week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // verify BabelVault::lockWeeks reduced correctly
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver active and last processed week = system week
+        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(RECEIVER_ID);
+        assertEq(isActive, true);
+        assertEq(updatedWeek, systemWeek);
+
+        // receiver2 calls allocateNewEmissions
+        vm.prank(receiver2);
+        uint256 allocated2 = babelVault.allocateNewEmissions(RECEIVER2_ID);
+        
+        // verify most things remain the same
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+        assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver2 active and last processed week = system week
+        (, isActive, updatedWeek) = babelVault.idToReceiver(RECEIVER2_ID);
+        assertEq(isActive, true);
+        assertEq(updatedWeek, systemWeek);
+
+        // due to rounding a small amount of tokens is lost as the recorded
+        // weekly emission is greater than the actual amounts allocated
+        // to the two receivers
+        assertEq(firstWeekEmissions,     536870911875000000000000000);
+        assertEq(allocated + allocated2, 536870911874999999999999999);
+
+        assertEq(allocated,  53687000037499936332460);
+        assertEq(allocated2, 536817224874962500063667539);
+    }
 
 }
