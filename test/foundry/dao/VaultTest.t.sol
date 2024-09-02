@@ -2,34 +2,10 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker} from "../TestSetup.sol";
-import {IEmissionReceiver} from "../../../contracts/dao/Vault.sol";
+import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker, IEmissionReceiver, MockEmissionReceiver, SafeCast} from "../TestSetup.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-contract MockEmissionReceiver is IEmissionReceiver {
-    bool public notifyRegisteredIdCalled;
-    uint256[] public lastAssignedIds;
-
-    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
-        notifyRegisteredIdCalled = true;
-        lastAssignedIds = assignedIds;
-        success = true;
-    }
-
-    /**
-     * @notice Asserts that notifyRegisteredId was called with the expected number of assigned IDs
-     * @dev Added this for testing purposes
-     * @param expectedCount The expected number of assigned IDs
-     */
-    function assertNotifyRegisteredIdCalled(uint256 expectedCount) external view {
-        require(notifyRegisteredIdCalled, "notifyRegisteredId was not called");
-        require(lastAssignedIds.length == expectedCount, "Unexpected number of assigned IDs");
-    }
-}
-
 
 contract VaultTest is TestSetup {
 
@@ -135,27 +111,9 @@ contract VaultTest is TestSetup {
 
         // Set up week
         vm.warp(block.timestamp + weeksToAdd * 1 weeks);
-        uint16 currentWeek = SafeCast.toUint16(babelVault.getWeek());
 
-        // Have owner register receiver
-        vm.prank(users.owner);
-        assertTrue(babelVault.registerReceiver(address(mockEmissionReceiver), count));
-
-        // start at 1 because 0 is always stability pool
-        for (uint256 i = 1; i <= count; i++) {
-            (address registeredReceiver, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(i);
-            assertEq(registeredReceiver, address(mockEmissionReceiver));
-            assertTrue(isActive);
-            assertEq(updatedWeek, currentWeek);
-
-            assertEq(incentiveVoting.receiverUpdatedWeek(i), currentWeek);
-        }
-
-        // Verify IncentiveVoting state
-        assertEq(incentiveVoting.receiverCount(), count + 1); // +1 because of the initial StabilityPool receiver
-
-        // Verify MockEmissionReceiver state
-        mockEmissionReceiver.assertNotifyRegisteredIdCalled(count);
+        // helper registers receivers and performs all necessary checks
+        _vaultRegisterReceiver(address(mockEmissionReceiver), count);
     }
 
     function test_registerReceiver_zeroCount() external {
@@ -197,14 +155,14 @@ contract VaultTest is TestSetup {
 
         // owner registers receiver
         address receiver = address(mockEmissionReceiver);
-        vm.prank(users.owner);
-        assertTrue(babelVault.registerReceiver(receiver, 1));
+
+        // helper registers receivers and performs all necessary checks
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
 
         // warp time by 1 week
         vm.warp(block.timestamp + 1 weeks);
 
         // cache state prior to allocateNewEmissions
-        uint256 RECEIVER_ID = 1;
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
         
         // entire supply still not allocated
@@ -250,50 +208,12 @@ contract VaultTest is TestSetup {
     }
 
     function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
-        // setup the vault to get BabelTokens which are used for voting
-        uint128[] memory _fixedInitialAmounts;
-        IBabelVault.InitialAllowance[] memory initialAllowances 
-            = new IBabelVault.InitialAllowance[](1);
-        
-        // give user1 initial allocation of half supply
-        initialAllowances[0].receiver = users.user1;
-        initialAllowances[0].amount = INIT_BAB_TKN_TOTAL_SUPPLY/2;
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
-        vm.prank(users.owner);
-        babelVault.setInitialParameters(emissionSchedule,
-                                        boostCalc,
-                                        INIT_BAB_TKN_TOTAL_SUPPLY,
-                                        INIT_VLT_LOCK_WEEKS,
-                                        _fixedInitialAmounts,
-                                        initialAllowances);
-
-        // transfer voting tokens to recipients
-        vm.prank(users.user1);
-        babelToken.transferFrom(address(babelVault), users.user1, INIT_BAB_TKN_TOTAL_SUPPLY/2);
-
-        // verify recipients have received voting tokens
-        assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY/2);
-
-        // verify half the supply is initially unallocated
-        uint256 initialUnallocated = babelVault.unallocatedTotal();
-        assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY/2);
-
-        // receiver locks up their tokens to get voting weight
-        vm.prank(users.user1);
-        tokenLocker.lock(users.user1, (INIT_BAB_TKN_TOTAL_SUPPLY/2)/INIT_LOCK_TO_TOKEN_RATIO, 52);
-
-        // verify receiver balance after lock; calculated this way because of how
-        // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
-        // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
-        uint256 users1TokensAfterLock = INIT_BAB_TKN_TOTAL_SUPPLY/2 -
-                                        ((INIT_BAB_TKN_TOTAL_SUPPLY/2)/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
-        assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
-
-        // owner registers emissions receiver
-        uint256 RECEIVER_ID = 1;
+        // helper registers receivers and performs all necessary checks
         address receiver = address(mockEmissionReceiver);
-        vm.prank(users.owner);
-        assertTrue(babelVault.registerReceiver(receiver, 1));
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
 
         // user votes for receiver to get emissions
         IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
@@ -338,4 +258,84 @@ contract VaultTest is TestSetup {
         // verify receiver was allocated the first week's emissions   
         assertEq(allocated, firstWeekEmissions);        
     }
+
+    function test_allocateNewEmissions_twoReceiversWithVotingWeight() public {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // helper registers receivers and performs all necessary checks
+        address receiver = address(mockEmissionReceiver);
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
+
+        // owner registers second emissions receiver
+        MockEmissionReceiver mockEmissionReceiver2 = new MockEmissionReceiver();
+        address receiver2 = address(mockEmissionReceiver2);
+        uint256 RECEIVER2_ID = _vaultRegisterReceiver(receiver2, 1);
+
+        // user votes equally for both receivers to get emissions
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](2);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS() / 2;
+        votes[1].id = RECEIVER2_ID;
+        votes[1].points = incentiveVoting.MAX_POINTS() / 2;
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // cache state prior to allocateNewEmissions
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // receiver calls allocateNewEmissions
+        vm.prank(receiver);
+        uint256 allocated = babelVault.allocateNewEmissions(RECEIVER_ID);
+
+        // verify BabelVault::totalUpdateWeek current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+
+        // verify unallocated supply reduced by weekly emission percent
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        uint256 remainingUnallocated = initialUnallocated - firstWeekEmissions;
+        assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
+
+        // verify emissions correctly set for current week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // verify BabelVault::lockWeeks reduced correctly
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver active and last processed week = system week
+        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(RECEIVER_ID);
+        assertEq(isActive, true);
+        assertEq(updatedWeek, systemWeek);
+
+        // verify receiver was allocated half of first week's emissions   
+        assertEq(allocated, firstWeekEmissions/2);
+
+        // receiver2 calls allocateNewEmissions
+        vm.prank(receiver2);
+        allocated = babelVault.allocateNewEmissions(RECEIVER2_ID);
+        
+        // verify most things remain the same
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+        assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver2 active and last processed week = system week
+        (, isActive, updatedWeek) = babelVault.idToReceiver(RECEIVER2_ID);
+        assertEq(isActive, true);
+        assertEq(updatedWeek, systemWeek);
+
+        // verify receiver2 was allocated half of first week's emissions   
+        assertEq(allocated, firstWeekEmissions/2);
+    }
+
+
 }

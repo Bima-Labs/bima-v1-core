@@ -34,9 +34,12 @@ import {InterimAdmin} from "../../contracts/dao/InterimAdmin.sol";
 import {TokenLocker} from "../../contracts/dao/TokenLocker.sol";
 import {IncentiveVoting} from "../../contracts/dao/IncentiveVoting.sol";
 import {BabelToken} from "../../contracts/dao/BabelToken.sol";
-import {BabelVault} from "../../contracts/dao/Vault.sol";
+import {BabelVault, IEmissionReceiver} from "../../contracts/dao/Vault.sol";
 import {EmissionSchedule} from "../../contracts/dao/EmissionSchedule.sol";
 import {BoostCalculator} from "../../contracts/dao/BoostCalculator.sol";
+
+// external
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // foundry
 import {Test} from "forge-std/Test.sol";
@@ -348,5 +351,93 @@ contract TestSetup is Test {
 
         // BabelVault::lockWeeks correct
         assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+    }
+
+    function _vaultSetupAndLockTokens(uint256 user1Allocation) internal returns (uint256 initialUnallocated) {
+        // setup the vault to get BabelTokens which are used for voting
+        uint128[] memory _fixedInitialAmounts;
+        IBabelVault.InitialAllowance[] memory initialAllowances 
+            = new IBabelVault.InitialAllowance[](1);
+        
+        // give user1 initial allocation of half supply
+        initialAllowances[0].receiver = users.user1;
+        initialAllowances[0].amount = user1Allocation;
+
+        vm.prank(users.owner);
+        babelVault.setInitialParameters(emissionSchedule,
+                                        boostCalc,
+                                        INIT_BAB_TKN_TOTAL_SUPPLY,
+                                        INIT_VLT_LOCK_WEEKS,
+                                        _fixedInitialAmounts,
+                                        initialAllowances);
+
+        // transfer voting tokens to recipients
+        vm.prank(users.user1);
+        babelToken.transferFrom(address(babelVault), users.user1, user1Allocation);
+
+        // verify recipients have received voting tokens
+        assertEq(babelToken.balanceOf(users.user1), user1Allocation);
+
+        // verify half the supply is initially unallocated
+        initialUnallocated = babelVault.unallocatedTotal();
+        assertEq(initialUnallocated, user1Allocation);
+
+        // receiver locks up their tokens to get voting weight
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, user1Allocation/INIT_LOCK_TO_TOKEN_RATIO, 52);
+
+        // verify receiver balance after lock; calculated this way because of how
+        // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
+        // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
+        uint256 users1TokensAfterLock = user1Allocation -
+                                        (user1Allocation/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
+        assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
+    }
+
+    function _vaultRegisterReceiver(address receiverAddr, uint256 count) internal returns(uint256 firstReceiverId) {
+        // cache next id and system week
+        firstReceiverId = incentiveVoting.receiverCount();
+        uint16 currentWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // owner registers receiver
+        vm.prank(users.owner);
+        assertTrue(babelVault.registerReceiver(receiverAddr, count));
+
+        // verify all receivers registered
+        for (uint256 i = firstReceiverId; i <= count; i++) {
+            (address registeredReceiver, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(i);
+            assertEq(registeredReceiver, receiverAddr);
+            assertTrue(isActive);
+            assertEq(updatedWeek, currentWeek);
+
+            assertEq(incentiveVoting.receiverUpdatedWeek(i), currentWeek);
+        }
+
+        // Verify IncentiveVoting state
+        assertEq(incentiveVoting.receiverCount(), firstReceiverId + count);
+
+        // Verify MockEmissionReceiver state
+        MockEmissionReceiver(receiverAddr).assertNotifyRegisteredIdCalled(count);
+    }
+}
+
+contract MockEmissionReceiver is IEmissionReceiver {
+    bool public notifyRegisteredIdCalled;
+    uint256[] public lastAssignedIds;
+
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
+        notifyRegisteredIdCalled = true;
+        lastAssignedIds = assignedIds;
+        success = true;
+    }
+
+    /**
+     * @notice Asserts that notifyRegisteredId was called with the expected number of assigned IDs
+     * @dev Added this for testing purposes
+     * @param expectedCount The expected number of assigned IDs
+     */
+    function assertNotifyRegisteredIdCalled(uint256 expectedCount) external view {
+        require(notifyRegisteredIdCalled, "notifyRegisteredId was not called");
+        require(lastAssignedIds.length == expectedCount, "Unexpected number of assigned IDs");
     }
 }
