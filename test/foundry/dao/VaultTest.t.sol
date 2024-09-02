@@ -256,7 +256,16 @@ contract VaultTest is TestSetup {
         assertEq(updatedWeek, systemWeek);
 
         // verify receiver was allocated the first week's emissions   
-        assertEq(allocated, firstWeekEmissions);        
+        assertEq(allocated, firstWeekEmissions);
+        assertEq(babelVault.allocated(receiver), firstWeekEmissions);
+
+        // receiver calls allocateNewEmissions again
+        vm.prank(receiver);
+        uint256 allocated2 = babelVault.allocateNewEmissions(RECEIVER_ID);
+
+        // doesn't return any more since already been called for current system week
+        assertEq(allocated2, 0);
+        assertEq(babelVault.allocated(receiver), firstWeekEmissions);
     }
 
     function test_allocateNewEmissions_twoReceiversWithEqualVotingWeight() external {
@@ -317,6 +326,7 @@ contract VaultTest is TestSetup {
 
         // verify receiver was allocated half of first week's emissions   
         assertEq(allocated, firstWeekEmissions/2);
+        assertEq(babelVault.allocated(receiver), firstWeekEmissions/2);
 
         // receiver2 calls allocateNewEmissions
         vm.prank(receiver2);
@@ -335,6 +345,7 @@ contract VaultTest is TestSetup {
 
         // verify receiver2 was allocated half of first week's emissions   
         assertEq(allocated, firstWeekEmissions/2);
+        assertEq(babelVault.allocated(receiver2), firstWeekEmissions/2);
     }
 
     function test_allocateNewEmissions_twoReceiversWithUnequalExtremeVotingWeight() external {
@@ -416,7 +427,9 @@ contract VaultTest is TestSetup {
         assertEq(allocated + allocated2, 536870911874999999999999999);
 
         assertEq(allocated,  53687000037499936332460);
+        assertEq(babelVault.allocated(receiver), 53687000037499936332460);
         assertEq(allocated2, 536817224874962500063667539);
+        assertEq(babelVault.allocated(receiver2), 536817224874962500063667539);
     }
 
 }
