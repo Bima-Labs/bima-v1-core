@@ -245,7 +245,97 @@ contract VaultTest is TestSetup {
         assertEq(incentiveVoting.getReceiverWeightAt(RECEIVER_ID, systemWeek-1), 0);
 
         // tokens were effectively lost since the vault's unallocated supply decreased
-        // but no tokens were not actually allocated to receivers since there was no
+        // but no tokens were actually allocated to receivers since there was no
         // voting weight
+    }
+
+    function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
+        // setup the vault to get BabelTokens which are used for voting
+        uint128[] memory _fixedInitialAmounts;
+        IBabelVault.InitialAllowance[] memory initialAllowances 
+            = new IBabelVault.InitialAllowance[](1);
+        
+        // give user1 initial allocation of half supply
+        initialAllowances[0].receiver = users.user1;
+        initialAllowances[0].amount = INIT_BAB_TKN_TOTAL_SUPPLY/2;
+
+        vm.prank(users.owner);
+        babelVault.setInitialParameters(emissionSchedule,
+                                        boostCalc,
+                                        INIT_BAB_TKN_TOTAL_SUPPLY,
+                                        INIT_VLT_LOCK_WEEKS,
+                                        _fixedInitialAmounts,
+                                        initialAllowances);
+
+        // transfer voting tokens to recipients
+        vm.prank(users.user1);
+        babelToken.transferFrom(address(babelVault), users.user1, INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // verify recipients have received voting tokens
+        assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // verify half the supply is initially unallocated
+        uint256 initialUnallocated = babelVault.unallocatedTotal();
+        assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // receiver locks up their tokens to get voting weight
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, (INIT_BAB_TKN_TOTAL_SUPPLY/2)/INIT_LOCK_TO_TOKEN_RATIO, 52);
+
+        // verify receiver balance after lock; calculated this way because of how
+        // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
+        // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
+        uint256 users1TokensAfterLock = INIT_BAB_TKN_TOTAL_SUPPLY/2 -
+                                        ((INIT_BAB_TKN_TOTAL_SUPPLY/2)/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
+        assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
+
+        // owner registers emissions receiver
+        uint256 RECEIVER_ID = 1;
+        address receiver = address(mockEmissionReceiver);
+        vm.prank(users.owner);
+        assertTrue(babelVault.registerReceiver(receiver, 1));
+
+        // user votes for receiver to get emissions
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // cache state prior to allocateNewEmissions
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // receiver calls allocateNewEmissions
+        vm.prank(receiver);
+        uint256 allocated = babelVault.allocateNewEmissions(RECEIVER_ID);
+
+        // verify BabelVault::totalUpdateWeek current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+
+        // verify unallocated supply reduced by weekly emission percent
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
+
+        // verify emissions correctly set for current week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // verify BabelVault::lockWeeks reduced correctly
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver active and last processed week = system week
+        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(RECEIVER_ID);
+        assertEq(isActive, true);
+        assertEq(updatedWeek, systemWeek);
+
+        // verify receiver was allocated the first week's emissions   
+        assertEq(allocated, firstWeekEmissions);        
     }
 }
