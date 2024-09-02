@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 
-const STORK_CONTRACT_ADDRESS = "0xacc0a0cf13571d30b4b8637996f5d6d774d4fd62"; // address for Stork contract
+const STORK_CONTRACT_ADDRESS = ""; // address for Stork contract
 const ENCODED_ASSET_ID = "0x7404e3d104ea7841c3d9e6fd20adfe99b4ad586bc08d8f3bd3afef894cf184de"; // id for BTCUSD
 
 async function main() {
