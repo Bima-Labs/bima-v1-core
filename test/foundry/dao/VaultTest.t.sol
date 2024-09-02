@@ -259,7 +259,7 @@ contract VaultTest is TestSetup {
         assertEq(allocated, firstWeekEmissions);        
     }
 
-    function test_allocateNewEmissions_twoReceiversWithVotingWeight() public {
+    function test_allocateNewEmissions_twoReceiversWithEqualVotingWeight() public {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
