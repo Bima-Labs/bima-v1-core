@@ -182,56 +182,70 @@ contract VaultTest is TestSetup {
         babelVault.registerReceiver(address(1), 1);
     }
 
-    /* this test is not quite right, commenting out for now
-    function test_allocateNewEmissions(uint256 count, uint256 weeksToAdd, bool disableReceiver) external {
+    function test_claimBoostDelegationFees_failNothingToClaim() external {
         // first need to fund vault with tokens
         test_setInitialParameters();
 
-        // bound fuzz inputs
-        count = bound(count, 1, MAX_COUNT); // Limit count to avoid excessive gas usage or memory issues
-        weeksToAdd = bound(weeksToAdd, 0, MAX_COUNT);
+        vm.expectRevert("Nothing to claim");
+        vm.prank(users.user1);
+        babelVault.claimBoostDelegationFees(users.user1);
+    }
 
-        // Set up week
-        vm.warp(block.timestamp + weeksToAdd * 1 weeks);
+    function test_allocateNewEmissions_unallocatedTokensDecreasedButZeroAllocated() external {
+        // first need to fund vault with tokens
+        test_setInitialParameters();
 
+        // owner registers receiver
         address receiver = address(mockEmissionReceiver);
-
-        // Have owner register receiver
         vm.prank(users.owner);
-        assertTrue(babelVault.registerReceiver(receiver, count));
+        assertTrue(babelVault.registerReceiver(receiver, 1));
 
-        // Simulate time passing some more
-        vm.warp(block.timestamp + weeksToAdd * 1 weeks);
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
 
+        // cache state prior to allocateNewEmissions
+        uint256 RECEIVER_ID = 1;
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        
+        // entire supply still not allocated
         uint256 initialUnallocated = babelVault.unallocatedTotal();
+        assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY);
 
-        // Call allocateNewEmissions
-        uint256 id = 1;
-
-        if(disableReceiver) {
-            vm.prank(users.owner);
-            babelVault.setReceiverIsActive(id, false);
-        }
-
+        // receiver calls allocateNewEmissions
         vm.prank(receiver);
-        uint256 allocated = babelVault.allocateNewEmissions(id);
+        uint256 allocated = babelVault.allocateNewEmissions(RECEIVER_ID);
 
-        // Calculate expected unallocated total
-        uint256 expectedUnallocated = initialUnallocated;
-        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(id);
+        // verify BabelVault::totalUpdateWeek current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
+        // verify unallocated supply reduced by weekly emission percent
+        uint256 firstWeekEmissions = INIT_BAB_TKN_TOTAL_SUPPLY*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
+
+        // verify emissions correctly set for current week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // verify BabelVault::lockWeeks reduced correctly
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver active and last processed week = system week
+        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(RECEIVER_ID);
+        assertEq(isActive, true);
         assertEq(updatedWeek, systemWeek);
 
-        if (!isActive) {
-            // If receiver is inactive, unallocated total should remain the same as after _allocateTotalWeekly
-            expectedUnallocated = babelVault.unallocatedTotal();
-            assertEq(babelVault.unallocatedTotal(), initialUnallocated);
-        }
+        // however even though BabelVault::unallocatedTotal was reduced by the
+        // first week emissions, nothing was allocated to the receiver
+        assertEq(allocated, 0);
 
-        // Assertions
-        //assertTrue(babelVault.unallocatedTotal() < initialUnallocated);
-        assertEq(allocated, 0, "Incorrect amount allocated");
-        assertEq(babelVault.allocated(receiver), 0, "Allocated amount should be 0 for inactive receiver");
-    }*/
+        // this is because EmissionSchedule::getReceiverWeeklyEmissions calls
+        // IncentiveVoting::getReceiverVotePct which looks back 1 week, and receiver
+        // had no voting weight and there was no total voting weight at all in that week
+        assertEq(incentiveVoting.getTotalWeightAt(systemWeek-1), 0);
+        assertEq(incentiveVoting.getReceiverWeightAt(RECEIVER_ID, systemWeek-1), 0);
+
+        // tokens were effectively lost since the vault's unallocated supply decreased
+        // but no tokens were not actually allocated to receivers since there was no
+        // voting weight
+    }
 }
