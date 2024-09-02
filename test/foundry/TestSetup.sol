@@ -359,7 +359,7 @@ contract TestSetup is Test {
         IBabelVault.InitialAllowance[] memory initialAllowances 
             = new IBabelVault.InitialAllowance[](1);
         
-        // give user1 initial allocation of half supply
+        // give user1 initial allocation
         initialAllowances[0].receiver = users.user1;
         initialAllowances[0].amount = user1Allocation;
 
@@ -378,9 +378,9 @@ contract TestSetup is Test {
         // verify recipients have received voting tokens
         assertEq(babelToken.balanceOf(users.user1), user1Allocation);
 
-        // verify half the supply is initially unallocated
+        // verify remaining supply is unallocated
         initialUnallocated = babelVault.unallocatedTotal();
-        assertEq(initialUnallocated, user1Allocation);
+        assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY - user1Allocation);
 
         // receiver locks up their tokens to get voting weight
         vm.prank(users.user1);
