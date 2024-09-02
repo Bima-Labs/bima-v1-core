@@ -371,6 +371,23 @@ contract TestSetup is Test {
                                         _fixedInitialAmounts,
                                         initialAllowances);
 
+        // addresses correctly set
+        assertEq(address(babelVault.emissionSchedule()), address(emissionSchedule));
+        assertEq(address(babelVault.boostCalculator()), address(boostCalc));
+
+        // BabelToken supply correct
+        assertEq(babelToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(babelToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelToken supply minted to BabelVault
+        assertEq(babelToken.balanceOf(address(babelVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelVault::totalUpdateWeek correct
+        assertEq(babelVault.totalUpdateWeek(), _fixedInitialAmounts.length + babelVault.getWeek());
+
+        // BabelVault::lockWeeks correct
+        assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+
         // transfer voting tokens to recipients
         vm.prank(users.user1);
         babelToken.transferFrom(address(babelVault), users.user1, user1Allocation);
