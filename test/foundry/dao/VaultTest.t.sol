@@ -268,6 +268,69 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.allocated(receiver), firstWeekEmissions);
     }
 
+    function test_allocateNewEmissions_oneDisabledReceiverWithVotingWeight() external {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // helper registers receivers and performs all necessary checks
+        address receiver = address(mockEmissionReceiver);
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
+
+        // user votes for receiver to get emissions
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // cache state prior to allocateNewEmissions
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // disable emission receiver prior to calling allocateNewEmissions
+        vm.prank(users.owner);
+        babelVault.setReceiverIsActive(RECEIVER_ID, false);
+
+        // receiver calls allocateNewEmissions
+        vm.prank(receiver);
+        uint256 allocated = babelVault.allocateNewEmissions(RECEIVER_ID);
+
+        // verify BabelVault::totalUpdateWeek current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+
+        // verify unallocated supply remained the same; this happens because
+        // 1) BabelVault::_allocateTotalWeekly decreases total unallocated by
+        //    the weekly emission amount
+        // 2) BabelVault::allocateNewEmissions increases total unallocated by
+        //    the amount disabled receivers would have received if enabled; in
+        //    this case only 1 receiver so entire emissions get credited back
+        //    to unallocated supply
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // verify emissions correctly set for current week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // verify BabelVault::lockWeeks reduced correctly
+        assertEq(babelVault.lockWeeks(), INIT_ES_LOCK_WEEKS-INIT_ES_LOCK_DECAY_WEEKS);
+
+        // verify receiver disabled and last processed week = system week
+        (, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(RECEIVER_ID);
+        assertEq(isActive, false);
+        assertEq(updatedWeek, systemWeek);
+
+        // verify receiver was allocated zero as they were disabled
+        assertEq(allocated, 0);
+        assertEq(babelVault.allocated(receiver), 0);
+    }
+
     function test_allocateNewEmissions_twoReceiversWithEqualVotingWeight() external {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
