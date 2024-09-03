@@ -613,6 +613,55 @@ contract VaultTest is TestSetup {
             // verify future account weekly unlocks updated for locked amount
             assertEq(tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks()),
                     futureLockerAccountWeeklyUnlocksPre + lockedAmount);
+
+            // claim fees for boost delegate if enough were accrued
+            if(expectedFeeAmount >= INIT_LOCK_TO_TOKEN_RATIO) {
+                // cache state before call
+                (receiverLockedBalance, ) = tokenLocker.getAccountBalances(mockBoostDelegateAddr);
+                assertEq(receiverLockedBalance, 0);
+                totalLockedWeightPre = tokenLocker.getTotalWeight();
+                futureLockerTotalWeeklyUnlocksPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks());
+                futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(mockBoostDelegateAddr, systemWeek+babelVault.lockWeeks());
+
+                lockedAmount = expectedFeeAmount / INIT_LOCK_TO_TOKEN_RATIO;
+
+                // perform the call
+                vm.prank(mockBoostDelegateAddr);
+                assertTrue(babelVault.claimBoostDelegationFees(mockBoostDelegateAddr));
+
+                // verify pending reward correctly updated
+                assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr),
+                         expectedFeeAmount - lockedAmount * INIT_LOCK_TO_TOKEN_RATIO);
+
+                // verify delegate has positive voting weight in the current week
+                assertTrue(tokenLocker.getAccountWeight(mockBoostDelegateAddr) > 0);
+
+                // verify delegate has no voting weight for future weeks
+                assertEq(tokenLocker.getAccountWeightAt(mockBoostDelegateAddr, systemWeek+1), 0);
+
+                // verify total weight for current week increased by delegate weight
+                assertEq(tokenLocker.getTotalWeight(), totalLockedWeightPre + tokenLocker.getAccountWeight(mockBoostDelegateAddr));
+
+                // verify no total weight for future weeks
+                assertEq(tokenLocker.getTotalWeightAt(systemWeek+1), 0);
+
+                // verify delegate active locks are correct
+                (activeLockData, frozenAmount)
+                    = tokenLocker.getAccountActiveLocks(mockBoostDelegateAddr, 0);
+
+                assertEq(activeLockData.length, 1);
+                assertEq(frozenAmount, 0);
+                assertEq(activeLockData[0].amount, lockedAmount);
+                assertEq(activeLockData[0].weeksToUnlock, babelVault.lockWeeks());
+
+                // verify future total weekly unlocks updated for locked amount
+                assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks()),
+                        futureLockerTotalWeeklyUnlocksPre + lockedAmount);
+
+                // verify future account weekly unlocks updated for locked amount
+                assertEq(tokenLocker.getAccountWeeklyUnlocks(mockBoostDelegateAddr, systemWeek+babelVault.lockWeeks()),
+                        futureLockerAccountWeeklyUnlocksPre + lockedAmount);
+            }
         }
     }
 
@@ -680,6 +729,23 @@ contract VaultTest is TestSetup {
         // the fee which was given as a stored pending reward to delegate
         assertEq(babelToken.balanceOf(address(babelVault)), vaultTokenBalancePre - (rewardAmount - expectedFeeAmount));
         assertEq(babelToken.balanceOf(mockEmissionReceiverAddr), receiverTokenBalancePre + (rewardAmount - expectedFeeAmount));
+
+        // claim fees for boost delegate if enough were accrued
+        if(expectedFeeAmount >= INIT_LOCK_TO_TOKEN_RATIO) {
+            // cache state before call
+            vaultTokenBalancePre = babelToken.balanceOf(address(babelVault));
+            receiverTokenBalancePre = babelToken.balanceOf(mockBoostDelegateAddr);
+
+            vm.prank(mockBoostDelegateAddr);
+            assertTrue(babelVault.claimBoostDelegationFees(mockBoostDelegateAddr));
+
+            // very stored pending fees were reset 
+            assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), 0);
+
+            // // verify tokens have been sent from vault to receiver
+            assertEq(babelToken.balanceOf(address(babelVault)), vaultTokenBalancePre - expectedFeeAmount);
+            assertEq(babelToken.balanceOf(mockBoostDelegateAddr), receiverTokenBalancePre + expectedFeeAmount);
+        }
     }
 
     function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
