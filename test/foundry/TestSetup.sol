@@ -10,7 +10,7 @@ import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
 import {IStabilityPool} from "../../contracts/interfaces/IStabilityPool.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ILiquidationManager} from "../../contracts/interfaces/ILiquidationManager.sol";
-import {IBabelVault, IRewards} from "../../contracts/interfaces/IVault.sol";
+import {IBabelVault, IRewards, IBoostDelegate} from "../../contracts/interfaces/IVault.sol";
 import {IBabelToken} from "../../contracts/interfaces/IBabelToken.sol";
 import {IIncentiveVoting} from "../../contracts/interfaces/IIncentiveVoting.sol";
 import {ITokenLocker} from "../../contracts/interfaces/ITokenLocker.sol";
@@ -469,5 +469,22 @@ contract MockEmissionReceiver is IEmissionReceiver, IRewards {
 
     function claimableReward(address) external view returns (uint256 amount) {
         amount = reward;
+    }
+}
+
+contract MockBoostDelegate is IBoostDelegate {
+    uint256 feePct;
+
+    function setFeePct(uint256 newFeePct) external {
+        feePct = newFeePct;
+    }
+
+    function getFeePct(address, address, uint256, uint256, uint256) external view returns (uint256 val) {
+        val = feePct;
+    }
+
+    function delegatedBoostCallback(address , address , uint256 , uint256 ,
+                                    uint256 , uint256 , uint256) external pure returns (bool success) {
+        success = true;
     }
 }

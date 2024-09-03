@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IRewards, MockEmissionReceiver, SafeCast} from "../TestSetup.sol";
+import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IRewards, MockEmissionReceiver, MockBoostDelegate, SafeCast} from "../TestSetup.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -11,14 +11,25 @@ contract VaultTest is TestSetup {
 
     uint256 constant internal MAX_COUNT = 10;
 
+    MockBoostDelegate internal mockBoostDelegate;
     MockEmissionReceiver internal mockEmissionReceiver;
+
+    address mockBoostDelegateAddr;
     address mockEmissionReceiverAddr;
-    
+
+    // get around "stack too deep" errors
+    uint256 expectedFeeAmount;
+
     function setUp() public virtual override {
         super.setUp();
 
+        mockBoostDelegate = new MockBoostDelegate();
         mockEmissionReceiver = new MockEmissionReceiver();
+
+        mockBoostDelegateAddr = address(mockBoostDelegate);
         mockEmissionReceiverAddr = address(mockEmissionReceiver);
+
+        expectedFeeAmount = 0;
     }
 
     function test_constructor() external view {
@@ -402,10 +413,10 @@ contract VaultTest is TestSetup {
         vm.prank(mockEmissionReceiverAddr);
         assertTrue(babelVault.batchClaimRewards(mockEmissionReceiverAddr, address(0), rewardContracts, 0));
 
-        // verify allocated balance reduced by transfer amount
+        // verify allocated balance reduced by reward amount
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
 
-        // verify account weekly earned increased by transferred amount
+        // verify account weekly earned increased by reward amount
         assertEq(babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek),
                  accountWeeklyEarnedPre + rewardAmount);
 
@@ -486,10 +497,10 @@ contract VaultTest is TestSetup {
         vm.prank(mockEmissionReceiverAddr);
         assertTrue(babelVault.batchClaimRewards(mockEmissionReceiverAddr, address(0), rewardContracts, 0));
 
-        // verify allocated balance reduced by transfer amount
+        // verify allocated balance reduced by reward amount
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
 
-        // verify account weekly earned increased by transferred amount
+        // verify account weekly earned increased by reward amount
         assertEq(babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek),
                  accountWeeklyEarnedPre + rewardAmount);
 
@@ -504,6 +515,171 @@ contract VaultTest is TestSetup {
         // verify tokens have been sent from vault to receiver
         assertEq(babelToken.balanceOf(address(babelVault)), vaultTokenBalancePre - rewardAmount);
         assertEq(babelToken.balanceOf(mockEmissionReceiverAddr), receiverTokenBalancePre + rewardAmount);
+    }
+
+    function test_batchClaimRewards_withBoostDelegate_inBoostGraceWeeks_inVaultLockWeeks(
+        uint256 rewardAmount, uint16 maxFeePct) external {
+        // first get some allocated tokens
+        test_allocateNewEmissions_oneReceiverWithVotingWeight();
+
+        uint256 allocatedBalancePre = babelVault.allocated(mockEmissionReceiverAddr);
+        assertTrue(allocatedBalancePre > 0);
+
+        // bound fuzz inputs
+        rewardAmount = bound(rewardAmount, 0, allocatedBalancePre);
+        mockEmissionReceiver.setReward(rewardAmount);
+        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, MAX_PCT));
+
+        // setup boost delegate
+        vm.prank(mockBoostDelegateAddr);
+        assertTrue(babelVault.setBoostDelegationParams(true, maxFeePct, mockBoostDelegateAddr));
+
+        // cache state prior to call
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        // verify still inside boost grace weeks
+        assertTrue(systemWeek < boostCalc.MAX_BOOST_GRACE_WEEKS());
+        uint128 delegateWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(mockBoostDelegateAddr, systemWeek);
+        uint128 unallocatedTotalPre = babelVault.unallocatedTotal();
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
+
+        // receiver has nothing locked prior to call
+        (uint256 receiverLockedBalance, ) = tokenLocker.getAccountBalances(mockEmissionReceiverAddr);
+        assertEq(receiverLockedBalance, 0);
+        uint256 totalLockedWeightPre = tokenLocker.getTotalWeight();
+        uint256 futureLockerTotalWeeklyUnlocksPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks());
+        uint256 futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks());
+
+        // batch claim rewards
+        IRewards[] memory rewardContracts = new IRewards[](1);
+        rewardContracts[0] = IRewards(mockEmissionReceiver);
+        vm.prank(mockEmissionReceiverAddr);
+        assertTrue(babelVault.batchClaimRewards(mockEmissionReceiverAddr, mockBoostDelegateAddr, rewardContracts, maxFeePct));
+
+        // verify allocated balance reduced by reward amount
+        assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
+
+        // calculate expected fee
+        expectedFeeAmount = rewardAmount * maxFeePct / MAX_PCT;
+
+        // verify delegate has stored pending reward equal to fee
+        assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
+
+        // verify delegate weekly earned increased by reward amount
+        assertEq(babelVault.getAccountWeeklyEarned(mockBoostDelegateAddr, systemWeek),
+                 delegateWeeklyEarnedPre + rewardAmount);
+        // verify account weekly earned was unchanged
+        assertEq(babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek), 0);
+
+        // verify unallocated total remains the same as the transfer took
+        // place inside the BoostCalculator's MAX_BOOST_GRACE_WEEKS
+        assertEq(babelVault.unallocatedTotal(), unallocatedTotalPre);
+
+        // verify receiver's pending reward was correctly set to the "dust"
+        // amount that was too small to lock
+        uint256 lockedAmount = (rewardAmount - expectedFeeAmount) / INIT_LOCK_TO_TOKEN_RATIO;
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr),
+                 rewardAmount - expectedFeeAmount - lockedAmount * INIT_LOCK_TO_TOKEN_RATIO);
+
+        // verify lock has been correctly created
+        if(lockedAmount > 0) {
+            (receiverLockedBalance, ) = tokenLocker.getAccountBalances(mockEmissionReceiverAddr);
+            assertEq(receiverLockedBalance, lockedAmount);
+
+            // verify receiver has positive voting weight in the current week
+            assertTrue(tokenLocker.getAccountWeight(mockEmissionReceiverAddr) > 0);
+
+            // verify receiver has no voting weight for future weeks
+            assertEq(tokenLocker.getAccountWeightAt(mockEmissionReceiverAddr, systemWeek+1), 0);
+
+            // verify total weight for current week increased by receiver weight
+            assertEq(tokenLocker.getTotalWeight(), totalLockedWeightPre + tokenLocker.getAccountWeight(mockEmissionReceiverAddr));
+
+            // verify no total weight for future weeks
+            assertEq(tokenLocker.getTotalWeightAt(systemWeek+1), 0);
+
+            // verify receiver active locks are correct
+            (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+                = tokenLocker.getAccountActiveLocks(mockEmissionReceiverAddr, 0);
+
+            assertEq(activeLockData.length, 1);
+            assertEq(frozenAmount, 0);
+            assertEq(activeLockData[0].amount, lockedAmount);
+            assertEq(activeLockData[0].weeksToUnlock, babelVault.lockWeeks());
+
+            // verify future total weekly unlocks updated for locked amount
+            assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks()),
+                    futureLockerTotalWeeklyUnlocksPre + lockedAmount);
+
+            // verify future account weekly unlocks updated for locked amount
+            assertEq(tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks()),
+                    futureLockerAccountWeeklyUnlocksPre + lockedAmount);
+        }
+    }
+
+    function test_batchClaimRewards_withBoostDelegate_inBoostGraceWeeks_outVaultLockWeeks(
+        uint256 rewardAmount, uint16 maxFeePct) external {
+        // first get some allocated tokens and warp time to after the
+        // vault's forced locking period expires
+        _allocateNewEmissionsAndWarp(INIT_ES_LOCK_WEEKS);
+
+        // verify vault's forced locking period has expired
+        assertEq(babelVault.lockWeeks(), 0);
+
+        uint256 allocatedBalancePre = babelVault.allocated(mockEmissionReceiverAddr);
+        assertTrue(allocatedBalancePre > 0);
+
+        // bound fuzz inputs
+        rewardAmount = bound(rewardAmount, 0, allocatedBalancePre);
+        mockEmissionReceiver.setReward(rewardAmount);
+        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, MAX_PCT));
+
+        // setup boost delegate
+        vm.prank(mockBoostDelegateAddr);
+        assertTrue(babelVault.setBoostDelegationParams(true, maxFeePct, mockBoostDelegateAddr));
+
+        // cache state prior to call
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        // verify still inside boost grace weeks
+        assertTrue(systemWeek < boostCalc.MAX_BOOST_GRACE_WEEKS());
+        uint128 delegateWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(mockBoostDelegateAddr, systemWeek);
+        uint128 unallocatedTotalPre = babelVault.unallocatedTotal();
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
+        uint256 vaultTokenBalancePre = babelToken.balanceOf(address(babelVault));
+        uint256 receiverTokenBalancePre = babelToken.balanceOf(mockEmissionReceiverAddr);
+
+        // batch claim rewards
+        IRewards[] memory rewardContracts = new IRewards[](1);
+        rewardContracts[0] = IRewards(mockEmissionReceiver);
+        vm.prank(mockEmissionReceiverAddr);
+        assertTrue(babelVault.batchClaimRewards(mockEmissionReceiverAddr, mockBoostDelegateAddr, rewardContracts, maxFeePct));
+
+        // verify allocated balance reduced by reward amount
+        assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
+
+        // calculate expected fee
+        expectedFeeAmount = rewardAmount * maxFeePct / MAX_PCT;
+
+        // verify delegate has stored pending reward equal to fee
+        assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
+
+        // verify delegate weekly earned increased by reward amount
+        assertEq(babelVault.getAccountWeeklyEarned(mockBoostDelegateAddr, systemWeek),
+                 delegateWeeklyEarnedPre + rewardAmount);
+        // verify account weekly earned was unchanged
+        assertEq(babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek), 0);
+
+        // verify unallocated total remains the same as the transfer took
+        // place inside the BoostCalculator's MAX_BOOST_GRACE_WEEKS
+        assertEq(babelVault.unallocatedTotal(), unallocatedTotalPre);
+
+        // verify receiver's pending reward remains zero as since the forced
+        // lock period has expired, the tokens will be transferred instead
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
+
+        // verify tokens have been sent from vault to receiver, not including
+        // the fee which was given as a stored pending reward to delegate
+        assertEq(babelToken.balanceOf(address(babelVault)), vaultTokenBalancePre - (rewardAmount - expectedFeeAmount));
+        assertEq(babelToken.balanceOf(mockEmissionReceiverAddr), receiverTokenBalancePre + (rewardAmount - expectedFeeAmount));
     }
 
     function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
