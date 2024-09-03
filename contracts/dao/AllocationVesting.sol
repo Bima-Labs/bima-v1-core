@@ -7,6 +7,8 @@ import { DelegatedOps } from "../dependencies/DelegatedOps.sol";
 import { BabelOwnable } from "../dependencies/BabelOwnable.sol";
 import { ITokenLocker } from "../interfaces/ITokenLocker.sol";
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
  * @title Vesting contract for team and investors
  * @author BabelFi
@@ -26,7 +28,9 @@ contract AllocationVesting is DelegatedOps, Ownable {
     error LockedAllocation();
     error IllegalVestingStart();
     error VestingAlreadyStarted();
+    error SelfTransfer();
     error IncompatibleVestingPeriod(uint256 numberOfWeeksFrom, uint256 numberOfWeeksTo);
+    error PositivePreclaimButZeroTransfer();
 
     struct AllocationSplit {
         address recipient;
@@ -42,9 +46,11 @@ contract AllocationVesting is DelegatedOps, Ownable {
     }
 
     // This number should allow a good precision in allocation fractions
-    uint256 private constant TOTAL_POINTS = 100000;
+    uint24 private constant TOTAL_POINTS = 100000;
+    // used as denominator for preclaim % calculations
+    uint256 private constant TOTAL_PRECLAIM = 100;
     // Users allocations
-    mapping(address => AllocationState) public allocations;
+    mapping(address recipient => AllocationState) public allocations;
     // max percentage of one's vest that can be preclaimed in total
     uint256 public immutable maxTotalPreclaimPct;
     // Total allocation expressed in tokens
@@ -81,25 +87,42 @@ contract AllocationVesting is DelegatedOps, Ownable {
      * @dev This can be called only once by the owner
      */
     function setAllocations(AllocationSplit[] calldata allocationSplits, uint256 vestingStart_) external onlyOwner {
+        // enforce vesting start in the future but not more than 5 weeks
         if (vestingStart_ < block.timestamp || block.timestamp + 5 weeks < vestingStart_) revert IllegalVestingStart();
+
+        // can only start vesting once
         if (vestingStart != 0) revert VestingAlreadyStarted();
+
+        // update storage with vesting start time
         vestingStart = vestingStart_;
-        uint256 loopEnd = allocationSplits.length;
-        uint256 totalPoints;
-        for (uint256 i; i < loopEnd; ) {
+
+        // cumulative data
+        uint24 totalPoints;
+
+        // more efficient to not cache loop length since calldata
+        for (uint256 i; i < allocationSplits.length; ) {
             address recipient = allocationSplits[i].recipient;
             uint8 numberOfWeeks = allocationSplits[i].numberOfWeeks;
-            uint256 points = allocationSplits[i].points;
+            uint24 points = allocationSplits[i].points;
+
+            // sanity checks on allocation inputs
             if (points == 0) revert ZeroAllocation();
             if (numberOfWeeks == 0) revert ZeroNumberOfWeeks();
             if (allocations[recipient].numberOfWeeks > 0) revert DuplicateAllocation();
+
+            // update memory cumulative points
             totalPoints += points;
-            allocations[recipient].points = uint24(points);
+
+            // set allocation state for recipient
+            allocations[recipient].points = points;
             allocations[recipient].numberOfWeeks = numberOfWeeks;
+
             unchecked {
                 ++i;
             }
         }
+
+        // sanity check to ensure complete allocation
         if (totalPoints != TOTAL_POINTS) revert AllocationsMismatch();
     }
 
@@ -110,29 +133,70 @@ contract AllocationVesting is DelegatedOps, Ownable {
      * @param to Recipient
      * @param points Number of points to transfer
      */
-    function transferPoints(address from, address to, uint256 points) external callerOrDelegated(from) {
+    function transferPoints(address from, address to, uint24 points) external callerOrDelegated(from) {
+        // revert on self-transfer to prevent infinite points exploit
+        if(from == to) revert SelfTransfer();
+
+        // revert on zero points input
+        if (points == 0) revert ZeroAllocation();
+
+        // cache allocation state of `from` and `to` addresses
         AllocationState memory fromAllocation = allocations[from];
         AllocationState memory toAllocation = allocations[to];
-        uint8 numberOfWeeksFrom = fromAllocation.numberOfWeeks;
-        uint8 numberOfWeeksTo = toAllocation.numberOfWeeks;
-        if (numberOfWeeksTo != 0 && numberOfWeeksTo != numberOfWeeksFrom)
-            revert IncompatibleVestingPeriod(numberOfWeeksFrom, numberOfWeeksTo);
-        uint256 totalVested = _vestedAt(block.timestamp, fromAllocation.points, numberOfWeeksFrom);
-        if (totalVested < fromAllocation.claimed) revert LockedAllocation();
-        if (points == 0) revert ZeroAllocation();
+
+        // revert if `from` has less points allocation than they are
+        // trying to transfer
         if (fromAllocation.points < points) revert InsufficientPoints();
-        // We claim one last time before transfer
-        uint256 claimed = _claim(from, fromAllocation.points, fromAllocation.claimed, numberOfWeeksFrom);
-        // Passive balance to transfer
-        uint128 claimedAdjustment = uint128((claimed * points) / fromAllocation.points);
-        allocations[from].points = uint24(fromAllocation.points - points);
+        
+        // enforce identical vesting periods if `to` has an active vesting period
+        if (toAllocation.numberOfWeeks != 0 && 
+            toAllocation.numberOfWeeks != fromAllocation.numberOfWeeks)
+            revert IncompatibleVestingPeriod(fromAllocation.numberOfWeeks, toAllocation.numberOfWeeks);
+
+        // get points currently vested for `from` address
+        uint256 totalVested = _vestedAt(block.timestamp, fromAllocation.points, fromAllocation.numberOfWeeks);
+
+        // revert if `from` has claimed more than they've vested
+        // since then `from` has no points to transfer
+        if (totalVested < fromAllocation.claimed) revert LockedAllocation();
+        
+        // claim one last time before transfer
+        uint256 claimed = _claim(from, fromAllocation.points, fromAllocation.claimed, fromAllocation.numberOfWeeks);
+
+        // passive balance to transfer
+        uint128 claimedAdjustment = SafeCast.toUint128((claimed * points) / fromAllocation.points);
+
+        // update storage - if `from` has a positive preclaimed balance,
+        // transfer preclaimed amount in proportion to points tranferred
+        // to prevent point transfers being used to bypass the maximum preclaim limit
+        if(fromAllocation.preclaimed > 0) {
+            uint96 preclaimedToTransfer = SafeCast.toUint96((uint256(fromAllocation.preclaimed) * points) /
+                                                            fromAllocation.points);
+
+            // this should never happen but sneaky users may try to preclaiming and
+            // point transferring using very small amounts so prevent this
+            if(preclaimedToTransfer == 0) revert PositivePreclaimButZeroTransfer();
+
+            allocations[to].preclaimed = toAllocation.preclaimed + preclaimedToTransfer;
+            allocations[from].preclaimed = fromAllocation.preclaimed - preclaimedToTransfer;
+        }
+        
+        // update storage - deduct points from `from` using memory cache
+        allocations[from].points = fromAllocation.points - points;
+
         // we don't use fromAllocation as it's been modified with _claim()
         allocations[from].claimed = allocations[from].claimed - claimedAdjustment;
 
-        allocations[to].points = toAllocation.points + uint24(points);
+        // update storage - increase points to `to` using memory cache
+        // self-transfer prevented at start of the function so this is safe
+        allocations[to].points = toAllocation.points + points;
+
+        // update storage - increase `to` for claim adjustment
         allocations[to].claimed = toAllocation.claimed + claimedAdjustment;
-        if (numberOfWeeksTo == 0) {
-            allocations[to].numberOfWeeks = numberOfWeeksFrom;
+
+        // if `to` had no active vesting period, copy from `from`
+        if (toAllocation.numberOfWeeks == 0) {
+            allocations[to].numberOfWeeks = fromAllocation.numberOfWeeks;
         }
     }
 
@@ -147,7 +211,9 @@ contract AllocationVesting is DelegatedOps, Ownable {
     }
 
     /**
-     * @notice Lock future claimable tokens tokens
+     * @notice Lock future claimable tokens. This function allows entities
+     * who receive token allocations to get voting power by locking their
+     * future claims
      * @dev Can be delegated
      * @param account Account to lock for
      * @param receiver Receiver of the lock
@@ -158,24 +224,53 @@ contract AllocationVesting is DelegatedOps, Ownable {
         address receiver,
         uint256 amount
     ) public callerOrDelegated(account) {
+        // cache allocation state of account
         AllocationState memory allocation = allocations[account];
+
+        // revert if account has no points or vesting hasn't started
         if (allocation.points == 0 || vestingStart == 0) revert CannotLock();
+
+        // copy currently claimed amount
         uint256 claimedUpdated = allocation.claimed;
+
+        // claim prior to locking if possible
         if (_claimableAt(block.timestamp, allocation.points, allocation.claimed, allocation.numberOfWeeks) > 0) {
             claimedUpdated = _claim(account, allocation.points, allocation.claimed, allocation.numberOfWeeks);
         }
+
+        // calculate user share of allocation
         uint256 userAllocation = (allocation.points * totalAllocation) / TOTAL_POINTS;
+
+        // calculate unclaimed amount accounting for possible claim that just happened
         uint256 _unclaimed = userAllocation - claimedUpdated;
+
+        // copy user preclaim amount
         uint256 preclaimed = allocation.preclaimed;
-        uint256 maxTotalPreclaim = (maxTotalPreclaimPct * userAllocation) / 100;
+
+        // calculate max user can preclaim from their allocation
+        uint256 maxTotalPreclaim = (maxTotalPreclaimPct * userAllocation) / TOTAL_PRECLAIM;
+
+        // calculate how much remaining user can preclaim
         uint256 leftToPreclaim = maxTotalPreclaim - preclaimed;
+
+        // if input amount 0, use min(leftToPreclaim, _unclaimed)
         if (amount == 0) amount = leftToPreclaim > _unclaimed ? _unclaimed : leftToPreclaim;
+
+        // otherwise revert if attempting to preclaim more than max preclaimed or remaining unclaimed
         else if (preclaimed + amount > maxTotalPreclaim || amount > _unclaimed) revert PreclaimTooLarge();
-        amount = (amount / lockToTokenRatio) * lockToTokenRatio; // truncating the dust
-        allocations[account].claimed = uint128(claimedUpdated + amount);
-        allocations[account].preclaimed = uint96(preclaimed + amount);
+
+        // truncate any dust
+        amount = (amount / lockToTokenRatio) * lockToTokenRatio;
+
+        // update storage account claimed & preclaimed amounts
+        allocations[account].claimed = SafeCast.toUint128(claimedUpdated + amount);
+        allocations[account].preclaimed = SafeCast.toUint96(preclaimed + amount);
+
+        // transfer tokens from vault into this contract
         vestingToken.transferFrom(vault, address(this), amount);
-        tokenLocker.lock(receiver, amount / lockToTokenRatio, 52);
+
+        // lock the tokens in the TokenLocker for max length
+        tokenLocker.lock(receiver, amount / lockToTokenRatio, tokenLocker.MAX_LOCK_WEEKS());
     }
 
     /**
@@ -196,12 +291,21 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint256 claimed,
         uint256 numberOfWeeks
     ) private returns (uint256 claimedUpdated) {
+        // revert if nothing to claim
         if (points == 0) revert NothingToClaim();
+
         uint256 claimable = _claimableAt(block.timestamp, points, claimed, numberOfWeeks);
         if (claimable == 0) revert NothingToClaim();
+
+        // output updated account claimed amount
         claimedUpdated = claimed + claimable;
-        allocations[account].claimed = uint128(claimedUpdated);
-        // We send to delegate for possible zaps
+
+        // update storage claimed amount
+        allocations[account].claimed = SafeCast.toUint128(claimedUpdated);
+
+        // transfer tokens from vault to the sender
+        // note: it is intentional that if claim() is called by a delegate,
+        // the tokens will be sent to the delegate instead of the account
         vestingToken.transferFrom(vault, msg.sender, claimable);
     }
 
@@ -220,28 +324,76 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint256 points,
         uint256 claimed,
         uint256 numberOfWeeks
-    ) private view returns (uint256) {
+    ) private view returns (uint256 claimable) {
         uint256 totalVested = _vestedAt(when, points, numberOfWeeks);
-        return totalVested > claimed ? totalVested - claimed : 0;
+
+        // tokens are only claimable if the total vested amount
+        // is greater than the already claimed amount
+        claimable = totalVested > claimed ? totalVested - claimed : 0;
     }
 
     function _vestedAt(uint256 when, uint256 points, uint256 numberOfWeeks) private view returns (uint256 vested) {
-        if (vestingStart == 0 || numberOfWeeks == 0) return 0;
+        // cache vesting start time into memory saving 2 redundant storage reads
+        uint256 vestingStartCache = vestingStart;
+
+        // revert if vesting hasn't started or account has no vesting period
+        if (vestingStartCache == 0 || numberOfWeeks == 0) return 0;
+
+        // convert vesting weeks into timestamp
         uint256 vestingWeeks = numberOfWeeks * 1 weeks;
-        uint256 vestingEnd = vestingStart + vestingWeeks;
+
+        // calculate vesting end time as a timestamp
+        uint256 vestingEnd = vestingStartCache + vestingWeeks;
+
+        // end time for vesting calculation = min(when, vestingEnd)
+        // this prevents incorrectly giving more tokens if called
+        // prior to or after vestingEnd
         uint256 endTime = when >= vestingEnd ? vestingEnd : when;
-        uint256 timeSinceStart = endTime - vestingStart;
+
+        // calculate how much time has elapsed for the vesting calculation
+        uint256 timeSinceStart = endTime - vestingStartCache;
+
+        // finally perform the vesting calculation
         vested = (totalAllocation * timeSinceStart * points) / (TOTAL_POINTS * vestingWeeks);
     }
 
     /**
      * @notice Calculates the total number of tokens left unclaimed by the user including unvested ones
      * @param account Account to calculate for
-     * @return Unclaimed tokens
+     * @return accountUnclaimed tokens
      */
-    function unclaimed(address account) external view returns (uint256) {
+    function unclaimed(address account) external view returns (uint256 accountUnclaimed) {
         AllocationState memory allocation = allocations[account];
+
+        // calculate account's total token allocation
         uint256 accountAllocation = (totalAllocation * allocation.points) / TOTAL_POINTS;
-        return accountAllocation - allocation.claimed;
+
+        // unclaimed amount is account allocation minus what they've already claimed        
+        accountUnclaimed = accountAllocation - allocation.claimed;
+    }
+
+    /**
+     * @notice Calculates the total number of tokens left to preclaim
+     * @param account Account to calculate for
+     * @return accountPreclaimable tokens
+     */
+    function preclaimable(address account) external view returns (uint256 accountPreclaimable) {
+        AllocationState memory allocation = allocations[account];
+
+        // if account has no points or vesting hasn't started,
+        // nothing can be preclaimed
+        if (allocation.points == 0 || vestingStart == 0) {
+            accountPreclaimable = 0;
+        }
+        else {
+            // calculate account's total token allocation
+            uint256 accountAllocation = (totalAllocation * allocation.points) / TOTAL_POINTS;
+
+            // calculate max user can preclaim from their allocation
+            uint256 maxTotalPreclaim = (maxTotalPreclaimPct * accountAllocation) / TOTAL_PRECLAIM;
+
+            // return max user can preclaim minus what user has already preclaimed
+            accountPreclaimable = maxTotalPreclaim - allocation.preclaimed;
+        }
     }
 }

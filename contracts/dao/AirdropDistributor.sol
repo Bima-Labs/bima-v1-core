@@ -39,6 +39,8 @@ contract AirdropDistributor is Ownable {
 
     event Claimed(address indexed claimant, address indexed receiver, uint256 index, uint256 amount);
     event MerkleRootSet(bytes32 root, uint256 canClaimUntil);
+    event SetClaimCallback(address receiver, address callback);
+    event SweepUnclaimedTokens(uint256 amount);
 
     constructor(IERC20 _token, ITokenLocker _locker, address _vault) {
         token = _token;
@@ -51,8 +53,11 @@ contract AirdropDistributor is Ownable {
     function setMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
         require(merkleRoot == bytes32(0), "merkleRoot already set");
         merkleRoot = _merkleRoot;
-        canClaimUntil = block.timestamp + CLAIM_DURATION;
-        emit MerkleRootSet(_merkleRoot, canClaimUntil);
+
+        uint256 canClaimUntilCached = block.timestamp + CLAIM_DURATION;
+        canClaimUntil = canClaimUntilCached;
+
+        emit MerkleRootSet(_merkleRoot, canClaimUntilCached);
     }
 
     function sweepUnclaimedTokens() external {
@@ -63,6 +68,8 @@ contract AirdropDistributor is Ownable {
         token.transferFrom(vault, address(this), amount);
         token.approve(vault, amount);
         IBabelVault(vault).increaseUnallocatedSupply(amount);
+
+        emit SweepUnclaimedTokens(amount);
     }
 
     function isClaimed(uint256 index) public view returns (bool) {
@@ -94,12 +101,14 @@ contract AirdropDistributor is Ownable {
             require(claimant.isContract(), "Claimant must be a contract");
         }
 
-        require(merkleRoot != bytes32(0), "merkleRoot not set");
+        bytes32 merkleRootCache = merkleRoot;
+        require(merkleRootCache != bytes32(0), "merkleRoot not set");
+
         require(block.timestamp < canClaimUntil, "Claims period has finished");
         require(!isClaimed(index), "Already claimed");
 
         bytes32 node = keccak256(abi.encodePacked(index, claimant, amount));
-        require(MerkleProof.verifyCalldata(merkleProof, merkleRoot, node), "Invalid proof");
+        require(MerkleProof.verifyCalldata(merkleProof, merkleRootCache, node), "Invalid proof");
 
         _setClaimed(index);
         token.transferFrom(vault, address(this), amount * lockToTokenRatio);
@@ -119,6 +128,8 @@ contract AirdropDistributor is Ownable {
      */
     function setClaimCallback(address _callback) external returns (bool) {
         claimCallback[msg.sender] = _callback;
+
+        emit SetClaimCallback(msg.sender, _callback);
 
         return true;
     }
