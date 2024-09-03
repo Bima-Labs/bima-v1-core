@@ -7,8 +7,10 @@ import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 interface IEmissionReceiver {
-    function notifyRegisteredId(uint256[] memory assignedIds) external returns (bool);
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool);
 }
 
 /**
@@ -21,6 +23,8 @@ interface IEmissionReceiver {
 contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     using Address for address;
     using SafeERC20 for IERC20;
+
+    uint256 constant MAX_FEE_PCT = 10000;
 
     IBabelToken public immutable babelToken;
     ITokenLocker public immutable locker;
@@ -42,28 +46,27 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     uint64 public lockWeeks;
 
     // id -> receiver data
-    uint16[65535] public receiverUpdatedWeek;
-    // id -> address of receiver
     // not bi-directional, one receiver can have multiple ids
-    mapping(uint256 => Receiver) public idToReceiver;
+    mapping(uint256 receiverId => Receiver receiverData) public idToReceiver;
 
     // week -> total amount of tokens to be released in that week
     uint128[65535] public weeklyEmissions;
 
     // receiver -> remaining tokens which have been allocated but not yet distributed
-    mapping(address => uint256) public allocated;
+    mapping(address receiver => uint256 remainingAllocated) public allocated;
 
     // account -> week -> BABEL amount claimed in that week (used for calculating boost)
-    mapping(address => uint128[65535]) accountWeeklyEarned;
+    mapping(address account => uint128[65535] weeklyEarned) accountWeeklyEarned;
 
     // pending rewards for an address (dust after locking, fees from delegation)
-    mapping(address => uint256) private storedPendingReward;
+    mapping(address account => uint256 pendingRewards) private storedPendingReward;
 
-    mapping(address => Delegation) public boostDelegation;
+    mapping(address account => Delegation delegationData) public boostDelegation;
 
     struct Receiver {
         address account;
         bool isActive;
+        uint16 updatedWeek;
     }
 
     struct Delegation {
@@ -87,9 +90,13 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         deploymentManager = _manager;
 
         // ensure the stability pool is registered with receiver ID 0
-        _voter.registerNewReceiver();
-        idToReceiver[0] = Receiver({ account: _stabilityPool, isActive: true });
-        emit NewReceiverRegistered(_stabilityPool, 0);
+        uint256 id = _voter.registerNewReceiver();
+        require(id == 0, "Stability pool must have receiver ID 0");
+
+        idToReceiver[id] = Receiver({ account: _stabilityPool,
+                                      isActive: true,
+                                      updatedWeek: 0 });
+        emit NewReceiverRegistered(_stabilityPool, id);
     }
 
     function setInitialParameters(
@@ -97,47 +104,58 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         IBoostCalculator _boostCalculator,
         uint256 totalSupply,
         uint64 initialLockWeeks,
-        uint128[] memory _fixedInitialAmounts,
-        InitialAllowance[] memory initialAllowances
+        uint128[] calldata _fixedInitialAmounts,
+        InitialAllowance[] calldata initialAllowances
     ) external {
         // enforce invariant described in TokenLocker to prevent overflows
         require(totalSupply <= type(uint32).max * locker.lockToTokenRatio(), 
                 "Total supply must be <= type(uint32).max * lockToTokenRatio");
 
+        // only deployment manager can set initial parameters
         require(msg.sender == deploymentManager, "!deploymentManager");
+
         emissionSchedule = _emissionSchedule;
         boostCalculator = _boostCalculator;
 
         // mint totalSupply to vault - this reverts after the first call
         babelToken.mintToVault(totalSupply);
 
-        // set initial fixed weekly emissions
+        // working data
         uint256 totalAllocated;
-        uint256 length = _fixedInitialAmounts.length;
+
+        // get one week after current system week
         uint256 offset = getWeek() + 1;
-        for (uint256 i; i < length; i++) {
-            uint128 amount = _fixedInitialAmounts[i];
-            weeklyEmissions[i + offset] = amount;
-            totalAllocated += amount;
+
+        // set initial fixed weekly emissions, starting in the future
+        // from next system week
+        for (uint256 i; i < _fixedInitialAmounts.length; i++) {
+            // update storage
+            weeklyEmissions[i + offset] = _fixedInitialAmounts[i];
+
+            // update working data
+            totalAllocated += _fixedInitialAmounts[i];
         }
 
         // set initial transfer allowances for airdrops, vests, bribes
-        length = initialAllowances.length;
-        for (uint256 i; i < length; i++) {
-            uint256 amount = initialAllowances[i].amount;
-            address receiver = initialAllowances[i].receiver;
-            totalAllocated += amount;
+        for (uint256 i; i < initialAllowances.length; i++) {
             // initial allocations are given as approvals
-            babelToken.increaseAllowance(receiver, amount);
+            babelToken.increaseAllowance(initialAllowances[i].receiver, initialAllowances[i].amount);
+
+            // update working data
+            totalAllocated += initialAllowances[i].amount;
         }
 
-        unallocatedTotal = uint128(totalSupply - totalAllocated);
-        totalUpdateWeek = uint64(_fixedInitialAmounts.length + offset - 1);
+        // cache here to save 1 storage read when emitting event
+        uint128 unallocatedAmount = SafeCast.toUint128(totalSupply - totalAllocated);
+
+        // update storage
+        unallocatedTotal = unallocatedAmount;
+        totalUpdateWeek = SafeCast.toUint64(_fixedInitialAmounts.length + offset - 1);
         lockWeeks = initialLockWeeks;
 
         emit EmissionScheduleSet(address(_emissionSchedule));
         emit BoostCalculatorSet(address(_boostCalculator));
-        emit UnallocatedSupplyReduced(totalAllocated, unallocatedTotal);
+        emit UnallocatedSupplyReduced(totalAllocated, unallocatedAmount);
     }
 
     /**
@@ -147,21 +165,35 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param receiver Address of the receiver
         @param count Number of IDs to assign to the receiver
      */
-    function registerReceiver(address receiver, uint256 count) external onlyOwner returns (bool) {
+    function registerReceiver(address receiver, uint256 count) external onlyOwner returns (bool success) {
+        // allocate memory to save created receiver ids
         uint256[] memory assignedIds = new uint256[](count);
-        uint16 week = uint16(getWeek());
+
+        // get current system week
+        uint16 week = SafeCast.toUint16(getWeek());
+
         for (uint256 i; i < count; i++) {
+            // register new id with IncentiveVoting
             uint256 id = voter.registerNewReceiver();
+
+            // save new id to assigned ids
             assignedIds[i] = id;
-            receiverUpdatedWeek[id] = week;
-            idToReceiver[id] = Receiver({ account: receiver, isActive: true });
+
+            // set receiver data for new receiver id
+            idToReceiver[id] = Receiver({ account: receiver,
+                                          isActive: true,
+                                          updatedWeek: week });
+
             emit NewReceiverRegistered(receiver, id);
         }
-        // notify the receiver contract of the newly registered ID
-        // also serves as a sanity check to ensure the contract is capable of receiving emissions
-        IEmissionReceiver(receiver).notifyRegisteredId(assignedIds);
 
-        return true;
+        // notify the receiver contract of the newly registered ID
+        // also serves as a sanity check to ensure the contract
+        // is capable of receiving emissions
+        require(IEmissionReceiver(receiver).notifyRegisteredId(assignedIds),
+                "notifyRegisteredId must return true");
+
+        success = true;
     }
 
     /**
@@ -172,14 +204,16 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param id ID of the receiver to modify the isActive status for
         @param isActive is this receiver eligible to receive emissions?
      */
-    function setReceiverIsActive(uint256 id, bool isActive) external onlyOwner returns (bool) {
-        Receiver memory receiver = idToReceiver[id];
-        require(receiver.account != address(0), "ID not set");
-        receiver.isActive = isActive;
-        idToReceiver[id] = receiver;
+    function setReceiverIsActive(uint256 id, bool isActive) external onlyOwner returns (bool success) {
+        // revert if receiver id not associated with an address
+        require(idToReceiver[id].account != address(0), "ID not set");
+
+        // update storage - isActive status, address remains the same
+        idToReceiver[id].isActive = isActive;
+
         emit ReceiverIsActiveStatusModified(id, isActive);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -187,113 +221,168 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @dev Callable only by the owner (the DAO admin voter, to change the emission schedule).
              The new schedule is applied from the start of the next epoch.
      */
-    function setEmissionSchedule(IEmissionSchedule _emissionSchedule) external onlyOwner returns (bool) {
+    function setEmissionSchedule(IEmissionSchedule _emissionSchedule) external onlyOwner returns (bool success) {
         _allocateTotalWeekly(emissionSchedule, getWeek());
         emissionSchedule = _emissionSchedule;
         emit EmissionScheduleSet(address(_emissionSchedule));
 
-        return true;
+        success = true;
     }
 
-    function setBoostCalculator(IBoostCalculator _boostCalculator) external onlyOwner returns (bool) {
+    function setBoostCalculator(IBoostCalculator _boostCalculator) external onlyOwner returns (bool success) {
         boostCalculator = _boostCalculator;
         emit BoostCalculatorSet(address(_boostCalculator));
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Transfer tokens out of the vault
      */
-    function transferTokens(IERC20 token, address receiver, uint256 amount) external onlyOwner returns (bool) {
+    function transferTokens(IERC20 token, address receiver, uint256 amount) external onlyOwner returns (bool success) {
+        // if token being transferred is the protocol's token,
+        // then prevent transfers into the vault via this function
+        // and update storage unallocated total
         if (address(token) == address(babelToken)) {
             require(receiver != address(this), "Self transfer denied");
+
             uint256 unallocated = unallocatedTotal - amount;
-            unallocatedTotal = uint128(unallocated);
+
+            unallocatedTotal = SafeCast.toUint128(unallocated);
             emit UnallocatedSupplyReduced(amount, unallocated);
         }
+
         token.safeTransfer(receiver, amount);
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Receive BABEL tokens and add them to the unallocated supply
      */
-    function increaseUnallocatedSupply(uint256 amount) external returns (bool) {
+    function increaseUnallocatedSupply(uint256 amount) external returns (bool success) {
+        // safe to use `transferFrom` here since it is the protocol's token
         babelToken.transferFrom(msg.sender, address(this), amount);
+
+        // update storage unallocated total
         uint256 unallocated = unallocatedTotal + amount;
-        unallocatedTotal = uint128(unallocated);
+        unallocatedTotal = SafeCast.toUint128(unallocated);
+
         emit UnallocatedSupplyIncreased(amount, unallocated);
 
-        return true;
+        success = true;
     }
 
     function _allocateTotalWeekly(IEmissionSchedule _emissionSchedule, uint256 currentWeek) internal {
+        // cache most recent total update week
         uint256 week = totalUpdateWeek;
+
+        // if same as system week, do nothing
         if (week >= currentWeek) return;
 
+        // if no emission schedule, just update storage to set
+        // total update week to current system week
         if (address(_emissionSchedule) == address(0)) {
-            totalUpdateWeek = uint64(currentWeek);
+            totalUpdateWeek = SafeCast.toUint64(currentWeek);
             return;
         }
 
-        uint256 lock;
+        // working data
+        uint64 lock;
         uint256 weeklyAmount;
         uint256 unallocated = unallocatedTotal;
+
+        // iterate through unprocessed weeks until current system week
         while (week < currentWeek) {
             ++week;
-            (weeklyAmount, lock) = _emissionSchedule.getTotalWeeklyEmissions(week, unallocated);
-            weeklyEmissions[week] = uint128(weeklyAmount);
 
+            // get weekly emissions and remaining lock weeks; this call
+            // modifies EmissionSchedule storage
+            (weeklyAmount, lock) = _emissionSchedule.getTotalWeeklyEmissions(week, unallocated);
+
+            // update storage weekly emission amount for processed week
+            weeklyEmissions[week] = SafeCast.toUint128(weeklyAmount);
+
+            // update working data
             unallocated = unallocated - weeklyAmount;
+            
             emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
         }
 
-        unallocatedTotal = uint128(unallocated);
-        totalUpdateWeek = uint64(currentWeek);
-        lockWeeks = uint64(lock);
+        // update storage
+        unallocatedTotal = SafeCast.toUint128(unallocated);
+        totalUpdateWeek = SafeCast.toUint64(currentWeek);
+        lockWeeks = lock;
     }
 
     /**
-        @notice Allocate additional `babelToken` allowance to an emission reciever
+        @notice Allocate additional `babelToken` allowance to an emission receiver
                 based on the emission schedule
         @param id Receiver ID. The caller must be the receiver mapped to this ID.
-        @return uint256 Additional `babelToken` allowance for the receiver. The receiver
-                        accesses the tokens using `Vault.transferAllocatedTokens`
+        @return amount Additional `babelToken` allowance for the receiver. The receiver
+                       accesses the tokens using `Vault.transferAllocatedTokens`
      */
-    function allocateNewEmissions(uint256 id) external returns (uint256) {
+    function allocateNewEmissions(uint256 id) external returns (uint256 amount) {
+        // cache receiver data from storage
         Receiver memory receiver = idToReceiver[id];
-        require(receiver.account == msg.sender, "Receiver not registered");
-        uint256 week = receiverUpdatedWeek[id];
+
+        // only account linked to receiver can call this function
+        require(receiver.account == msg.sender, "Not receiver account");
+
+        // get current system week
         uint256 currentWeek = getWeek();
-        if (week == currentWeek) return 0;
 
-        IEmissionSchedule _emissionSchedule = emissionSchedule;
-        _allocateTotalWeekly(_emissionSchedule, currentWeek);
+        // nothing to do if the receiver was last processed
+        // on same week as current system week; just return
+        // default 0
+        if (receiver.updatedWeek != currentWeek) {
+            // otherwise ensure weekly totals have been processed
+            // up to the current system week
+            IEmissionSchedule _emissionSchedule = emissionSchedule;
 
-        if (address(_emissionSchedule) == address(0)) {
-            receiverUpdatedWeek[id] = uint16(currentWeek);
-            return 0;
-        }
+            // note: even if no valid emission schedule exists, this
+            // call is still required to update storage totalUpdateWeek
+            // to current system week
+            _allocateTotalWeekly(_emissionSchedule, currentWeek);
 
-        uint256 amount;
-        while (week < currentWeek) {
-            ++week;
-            amount = amount + _emissionSchedule.getReceiverWeeklyEmissions(id, week, weeklyEmissions[week]);
-        }
+            // update storage receiver last processed week to
+            // current system week
+            idToReceiver[id].updatedWeek = SafeCast.toUint16(currentWeek);
+        
+            // if a valid emission schedule exists perform additional
+            // processing otherwise return default 0
+            if (address(_emissionSchedule) != address(0)) {
+                // iterate through unprocessed weeks for receiver
+                // using original cached last updated week since storage
+                // was just updated to current system week
+                while (receiver.updatedWeek < currentWeek) {
+                    ++receiver.updatedWeek;
 
-        receiverUpdatedWeek[id] = uint16(currentWeek);
-        if (receiver.isActive) {
-            allocated[msg.sender] = allocated[msg.sender] + amount;
-            emit IncreasedAllocation(msg.sender, amount);
-            return amount;
-        } else {
-            // if receiver is not active, return allocation to the unallocated supply
-            uint256 unallocated = unallocatedTotal + amount;
-            unallocatedTotal = uint128(unallocated);
-            emit UnallocatedSupplyIncreased(amount, unallocated);
-            return 0;
+                    // update output with emissions for previous week being processed
+                    amount += _emissionSchedule.getReceiverWeeklyEmissions(id,
+                                                                           receiver.updatedWeek,
+                                                                           weeklyEmissions[receiver.updatedWeek]);
+                }
+
+                // if receiver is active, update storage allocated amount
+                // with the newly emitted total amount
+                if (receiver.isActive) {
+                    allocated[msg.sender] += amount;
+
+                    emit IncreasedAllocation(msg.sender, amount);
+                } 
+                // otherwise return allocation to the unallocated supply
+                else {
+                    uint256 unallocated = unallocatedTotal + amount;
+                    unallocatedTotal = SafeCast.toUint128(unallocated);
+
+                    emit UnallocatedSupplyIncreased(amount, unallocated);
+
+                    // set output to 0 since inactive receiver doesn't receive
+                    // emissions but they are added to unallocated supply
+                    amount = 0;
+                }
+            }
         }
     }
 
@@ -304,14 +393,15 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param claimant Address that is claiming the tokens
         @param receiver Address to transfer tokens to
         @param amount Desired amount of tokens to transfer. This value always assumes max boost.
-        @return bool success
+        @return success bool
      */
-    function transferAllocatedTokens(address claimant, address receiver, uint256 amount) external returns (bool) {
+    function transferAllocatedTokens(address claimant, address receiver, uint256 amount) external returns (bool success) {
         if (amount > 0) {
             allocated[msg.sender] -= amount;
             _transferAllocated(0, claimant, receiver, address(0), amount);
         }
-        return true;
+
+        success = true;
     }
 
     /**
@@ -322,38 +412,56 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                              `address(0)` to use the boost of the claimer.
         @param rewardContracts Array of addresses of registered receiver contracts where
                                the caller has pending rewards to claim.
-        @param maxFeePct Maximum fee percent to pay to delegate, as a whole number out of 10000
-        @return bool success
+        @param maxFeePct Maximum fee percent to pay to delegate, as a whole number out of MAX_FEE_PCT
+        @return success bool
      */
     function batchClaimRewards(
         address receiver,
         address boostDelegate,
         IRewards[] calldata rewardContracts,
         uint256 maxFeePct
-    ) external returns (bool) {
-        require(maxFeePct <= 10000, "Invalid maxFeePct");
+    ) external returns (bool success) {
+        // enforce max fee
+        require(maxFeePct <= MAX_FEE_PCT, "Invalid maxFeePct");
 
+        // working data
         uint256 total;
-        uint256 length = rewardContracts.length;
-        for (uint256 i; i < length; i++) {
+
+        // more efficient not to cache length as calldata
+        for (uint256 i; i < rewardContracts.length; i++) {
             uint256 amount = rewardContracts[i].vaultClaimReward(msg.sender, receiver);
+
+            // update storage; decrease allocated for reward contract
+            // by the claimed amount
             allocated[address(rewardContracts[i])] -= amount;
+
+            // update working data
             total += amount;
         }
+
+        // transfer total claimed rewards to receiver
         _transferAllocated(maxFeePct, msg.sender, receiver, boostDelegate, total);
-        return true;
+        
+        success = true;
     }
 
     /**
         @notice Claim tokens earned from boost delegation fees
         @param receiver Address to transfer the tokens to
-        @return bool Success
+        @return success bool
      */
-    function claimBoostDelegationFees(address receiver) external returns (bool) {
+    function claimBoostDelegationFees(address receiver) external returns (bool success) {
+        // cache pending rewards for caller
         uint256 amount = storedPendingReward[msg.sender];
+
+        // enforce claim minimum
         require(amount >= lockToTokenRatio, "Nothing to claim");
+
+        // either transfer or lock the rewards based on
+        // value of storage `lockWeeks`
         _transferOrLock(msg.sender, receiver, amount);
-        return true;
+        
+        success = true;
     }
 
     function _transferAllocated(
@@ -363,23 +471,46 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         address boostDelegate,
         uint256 amount
     ) internal {
+        // nothing to do for 0 amount
         if (amount > 0) {
+            // get current system week
             uint256 week = getWeek();
+
+            // cache weekly emission for current system week
             uint256 totalWeekly = weeklyEmissions[week];
+
             address claimant = boostDelegate == address(0) ? account : boostDelegate;
+
+            // weekly amount claimed so far
             uint256 previousAmount = accountWeeklyEarned[claimant][week];
 
-            // if boost delegation is active, get the fee and optional callback address
+            // working data
             uint256 fee;
             IBoostDelegate delegateCallback;
+
+            // if boost delegation is active, get the fee and optional callback address
             if (boostDelegate != address(0)) {
+                // cache delegation data from storage
                 Delegation memory data = boostDelegation[boostDelegate];
-                delegateCallback = data.callback;
+
+                // revert if delegation is not enabled
                 require(data.isEnabled, "Invalid delegate");
+
+                // copy callback address to working data
+                delegateCallback = data.callback;
+
+                // if fee in delegation data is max(uint16) then execute callback
+                // to get actual fee percent
                 if (data.feePct == type(uint16).max) {
                     fee = delegateCallback.getFeePct(account, receiver, amount, previousAmount, totalWeekly);
-                    require(fee <= 10000, "Invalid delegate fee");
-                } else fee = data.feePct;
+
+                    // enforce callback fee can't be greater than constant max fee
+                    require(fee <= MAX_FEE_PCT, "Invalid delegate fee");
+                }
+                // otherwise use fee percent in delegation data
+                else fee = data.feePct;
+
+                // enforce fee percent can't be greater than input max fee
                 require(fee <= maxFeePct, "fee exceeds maxFeePct");
             }
 
@@ -394,17 +525,25 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                 // remaining tokens from unboosted claims are added to the unallocated total
                 // context avoids stack-too-deep
                 uint256 boostUnclaimed = amount - adjustedAmount;
+
                 if (boostUnclaimed > 0) {
                     uint256 unallocated = unallocatedTotal + boostUnclaimed;
-                    unallocatedTotal = uint128(unallocated);
+
+                    unallocatedTotal = SafeCast.toUint128(unallocated);
+
                     emit UnallocatedSupplyIncreased(boostUnclaimed, unallocated);
                 }
             }
-            accountWeeklyEarned[claimant][week] = uint128(previousAmount + amount);
 
-            // apply boost delegation fee
+            // update storage weekly amount claimed so far for newly claimed amount
+            accountWeeklyEarned[claimant][week] = SafeCast.toUint128(previousAmount + amount);
+
+            // apply boost delegation fee; `fee` currently = fee percent
             if (fee != 0) {
-                fee = (adjustedAmount * fee) / 10000;
+                // calculate actual fee amount using fee percent
+                fee = (adjustedAmount * fee) / MAX_FEE_PCT;
+
+                // deduced fee from adjusted amount
                 adjustedAmount -= fee;
             }
 
@@ -413,10 +552,14 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             // these effects were already applied to the stored value
             adjustedAmount += storedPendingReward[account];
 
+            // either transfer or lock amount based on
+            // value of storage `lockWeeks`
             _transferOrLock(account, receiver, adjustedAmount);
 
-            // apply delegate fee and optionally perform callback
+            // apply delegate fee
             if (fee != 0) storedPendingReward[boostDelegate] += fee;
+
+            // optionally perform callback
             if (address(delegateCallback) != address(0)) {
                 require(
                     delegateCallback.delegatedBoostCallback(
@@ -435,21 +578,35 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     function _transferOrLock(address claimant, address receiver, uint256 amount) internal {
-        uint256 _lockWeeks = lockWeeks;
-        if (_lockWeeks == 0) {
+        // cache number of weeks allocated tokens are locked for
+        uint256 lockWeekCache = lockWeeks;
+
+        // if no forced lock, reset pending rewards and transfer claimed tokens
+        if (lockWeekCache == 0) {
             storedPendingReward[claimant] = 0;
             babelToken.transfer(receiver, amount);
-        } else {
+        }
+        // otherwise perform a forced lock
+        else {
             // lock for receiver and store remaining balance in `storedPendingReward`
+
+            // calculate lock amount accounting for lock to token ratio
             uint256 lockAmount = amount / lockToTokenRatio;
+
+            // the lock amount gets divided by lockToTokenRatio and the lock function
+            // will multiply the input by lockToTokenRatio when transferring tokens, hence
+            // do the same here when updating storage; this sets the pending reward to the
+            // "dust" amount which didn't get locked
             storedPendingReward[claimant] = amount - lockAmount * lockToTokenRatio;
-            if (lockAmount > 0) locker.lock(receiver, lockAmount, _lockWeeks);
+
+            // perform the lock
+            if (lockAmount > 0) locker.lock(receiver, lockAmount, lockWeekCache);
         }
     }
 
     /**
         @notice Claimable BABEL amount for `account` in `rewardContract` after applying boost
-        @dev Returns (0, 0) if the boost delegate is invalid, or the delgate's callback fee
+        @dev Returns (0, 0) if the boost delegate is invalid, or the delegate's callback fee
              function is incorrectly configured.
         @param account Address claiming rewards
         @param boostDelegate Address to delegate boost from when claiming. Set as
@@ -465,18 +622,33 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         address boostDelegate,
         IRewards rewardContract
     ) external view returns (uint256 adjustedAmount, uint256 feeToDelegate) {
+        // get claimable reward amount from reward contract
         uint256 amount = rewardContract.claimableReward(account);
+
+        // get current system week
         uint256 week = getWeek();
+
+        // cache weekly emissions for current systme week
         uint256 totalWeekly = weeklyEmissions[week];
+
         address claimant = boostDelegate == address(0) ? account : boostDelegate;
+
+        // cache previous amount claimed this week by claimant
         uint256 previousAmount = accountWeeklyEarned[claimant][week];
 
+        // working data
         uint256 fee;
+
         if (boostDelegate != address(0)) {
+            // cache delegate data from storage
             Delegation memory data = boostDelegation[boostDelegate];
+
+            // return 0 if delegate not enabled
             if (!data.isEnabled) return (0, 0);
-            fee = data.feePct;
-            if (fee == type(uint16).max) {
+
+            // if fee in delegation data is max(uint16) then execute callback
+            // to get actual fee percent
+            if (data.feePct == type(uint16).max) {
                 try data.callback.getFeePct(claimant, receiver, amount, previousAmount, totalWeekly) returns (
                     uint256 _fee
                 ) {
@@ -485,41 +657,52 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                     return (0, 0);
                 }
             }
-            if (fee > 10000) return (0, 0);
+            // otherwise use fee percent in delegation data
+            else fee = data.feePct;
+
+            // enforce fee can't be greater than constant max fee
+            if (fee > MAX_FEE_PCT) return (0, 0);
         }
 
         adjustedAmount = boostCalculator.getBoostedAmount(claimant, amount, previousAmount, totalWeekly);
-        fee = (adjustedAmount * fee) / 10000;
 
-        return (adjustedAmount, fee);
+        // calculate actual fee amount using fee percent (`fee` currently = fee percent)
+        fee = (adjustedAmount * fee) / MAX_FEE_PCT;
     }
 
     /**
         @notice Enable or disable boost delegation, and set boost delegation parameters
         @param isEnabled is boost delegation enabled?
         @param feePct Fee % charged when claims are made that delegate to the caller's boost.
-                      Given as a whole number out of 10000. If set to type(uint16).max, the fee
+                      Given as a whole number out of MAX_FEE_PCT. If set to type(uint16).max, the fee
                       is set by calling `IBoostDelegate(callback).getFeePct` prior to each claim.
         @param callback Optional contract address to receive a callback each time a claim is
                         made which delegates to the caller's boost.
      */
-    function setBoostDelegationParams(bool isEnabled, uint256 feePct, address callback) external returns (bool) {
+    function setBoostDelegationParams(bool isEnabled, uint16 feePct, address callback) external returns (bool success) {
         if (isEnabled) {
-            require(feePct <= 10000 || feePct == type(uint16).max, "Invalid feePct");
+            // enforce fee percent is either max(uint16) or <= constant max fee
+            require(feePct <= MAX_FEE_PCT || feePct == type(uint16).max, "Invalid feePct");
+
+            // enforce callback address is a contract
             if (callback != address(0) || feePct == type(uint16).max) {
                 require(callback.isContract(), "Callback must be a contract");
             }
+
+            // save delegation data to storage
             boostDelegation[msg.sender] = Delegation({
                 isEnabled: true,
-                feePct: uint16(feePct),
+                feePct: feePct,
                 callback: IBoostDelegate(callback)
             });
-        } else {
+        }
+        else {
             delete boostDelegation[msg.sender];
         }
+
         emit BoostDelegationSet(msg.sender, isEnabled, feePct, callback);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -529,18 +712,34 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @return boosted remaining claimable amount that will receive some amount of boost (including max boost)
      */
     function getClaimableWithBoost(address claimant) external view returns (uint256 maxBoosted, uint256 boosted) {
+        // get current system week
         uint256 week = getWeek();
+
+        // cache total weekly emissions for current system week
         uint256 totalWeekly = weeklyEmissions[week];
+
+        // cache previous amount account claimed for current system week
         uint256 previousAmount = accountWeeklyEarned[claimant][week];
-        return boostCalculator.getClaimableWithBoost(claimant, previousAmount, totalWeekly);
+
+        (maxBoosted, boosted) = boostCalculator.getClaimableWithBoost(claimant, previousAmount, totalWeekly);
     }
 
     /**
         @notice Get the claimable amount that `claimant` has earned boost delegation fees
      */
     function claimableBoostDelegationFees(address claimant) external view returns (uint256 amount) {
+        // output pending rewards for claimant
         amount = storedPendingReward[claimant];
-        // only return values `>= lockToTokenRatio` so we do not report "dust" stored for normal users
-        return amount >= lockToTokenRatio ? amount : 0;
+
+        // if smaller than lock to token ratio, return 0
+        if(amount < lockToTokenRatio) amount = 0;
+    }
+
+    function getAccountWeeklyEarned(address claimant, uint16 week) external view returns (uint128 amount) {
+        amount = accountWeeklyEarned[claimant][week];
+    }
+
+    function getStoredPendingReward(address claimant) external view returns(uint256 amount) {
+        amount = storedPendingReward[claimant];
     }
 }

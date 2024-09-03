@@ -34,9 +34,12 @@ import {InterimAdmin} from "../../contracts/dao/InterimAdmin.sol";
 import {TokenLocker} from "../../contracts/dao/TokenLocker.sol";
 import {IncentiveVoting} from "../../contracts/dao/IncentiveVoting.sol";
 import {BabelToken} from "../../contracts/dao/BabelToken.sol";
-import {BabelVault} from "../../contracts/dao/Vault.sol";
+import {BabelVault, IEmissionReceiver} from "../../contracts/dao/Vault.sol";
 import {EmissionSchedule} from "../../contracts/dao/EmissionSchedule.sol";
 import {BoostCalculator} from "../../contracts/dao/BoostCalculator.sol";
+
+// external
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // foundry
 import {Test} from "forge-std/Test.sol";
@@ -94,16 +97,16 @@ contract TestSetup is Test {
     BoostCalculator  internal boostCalc;
 
     // constants
+    uint64 constant internal MAX_PCT = 10000; // 100%
     uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
     uint256 internal constant INIT_MIN_NET_DEBT = 1800e18;
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
     address internal constant ZERO_ADDRESS = address(0);
 
-    uint256 internal constant INIT_BS_GRACE_WEEKS = 1;
+    uint256 internal constant INIT_BS_GRACE_WEEKS = 2;
     uint64 internal constant INIT_ES_LOCK_WEEKS = 4;
     uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
     uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
-    uint64[2][] internal scheduledWeeklyPct;
     uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max*INIT_LOCK_TO_TOKEN_RATIO;
     uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
 
@@ -282,6 +285,7 @@ contract TestSetup is Test {
         assertEq(1, factory.troveManagerCount());
 
         // create EmissionSchedule
+        uint64[2][] memory scheduledWeeklyPct;
         emissionSchedule = new EmissionSchedule(address(babelCore), 
                                                 IIncentiveVoting(address(incentiveVoting)),
                                                 IBabelVault(address(babelVault)),
@@ -289,6 +293,11 @@ contract TestSetup is Test {
                                                 INIT_ES_LOCK_DECAY_WEEKS,
                                                 INIT_ES_WEEKLY_PCT,
                                                 scheduledWeeklyPct);
+
+        // EmissionSchedule storage correctly set
+        assertEq(emissionSchedule.lockWeeks(), INIT_ES_LOCK_WEEKS);
+        assertEq(emissionSchedule.lockDecayWeeks(), INIT_ES_LOCK_DECAY_WEEKS);
+        assertEq(emissionSchedule.weeklyPct(), INIT_ES_WEEKLY_PCT);
 
         // create BoostCalculator
         boostCalc = new BoostCalculator(address(babelCore),
@@ -308,5 +317,144 @@ contract TestSetup is Test {
 
         // verify we are in the first week
         assertEq(tokenLocker.getWeek(), 0);
+    }
+
+    // common helper functions used in tests
+    function _vaultSetDefaultInitialParameters() internal {
+        uint128[] memory _fixedInitialAmounts;
+        IBabelVault.InitialAllowance[] memory initialAllowances;
+
+        vm.prank(users.owner);
+        babelVault.setInitialParameters(emissionSchedule,
+                                        boostCalc,
+                                        INIT_BAB_TKN_TOTAL_SUPPLY,
+                                        INIT_VLT_LOCK_WEEKS,
+                                        _fixedInitialAmounts,
+                                        initialAllowances);
+
+        // addresses correctly set
+        assertEq(address(babelVault.emissionSchedule()), address(emissionSchedule));
+        assertEq(address(babelVault.boostCalculator()), address(boostCalc));
+
+        // BabelToken supply correct
+        assertEq(babelToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(babelToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelToken supply minted to BabelVault
+        assertEq(babelToken.balanceOf(address(babelVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelVault::unallocatedTotal correct (no initial allowances)
+        assertEq(babelVault.unallocatedTotal(), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelVault::totalUpdateWeek correct
+        assertEq(babelVault.totalUpdateWeek(), _fixedInitialAmounts.length + babelVault.getWeek());
+
+        // BabelVault::lockWeeks correct
+        assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+    }
+
+    function _vaultSetupAndLockTokens(uint256 user1Allocation) internal returns (uint256 initialUnallocated) {
+        // setup the vault to get BabelTokens which are used for voting
+        uint128[] memory _fixedInitialAmounts;
+        IBabelVault.InitialAllowance[] memory initialAllowances 
+            = new IBabelVault.InitialAllowance[](1);
+        
+        // give user1 initial allocation
+        initialAllowances[0].receiver = users.user1;
+        initialAllowances[0].amount = user1Allocation;
+
+        vm.prank(users.owner);
+        babelVault.setInitialParameters(emissionSchedule,
+                                        boostCalc,
+                                        INIT_BAB_TKN_TOTAL_SUPPLY,
+                                        INIT_VLT_LOCK_WEEKS,
+                                        _fixedInitialAmounts,
+                                        initialAllowances);
+
+        // addresses correctly set
+        assertEq(address(babelVault.emissionSchedule()), address(emissionSchedule));
+        assertEq(address(babelVault.boostCalculator()), address(boostCalc));
+
+        // BabelToken supply correct
+        assertEq(babelToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(babelToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelToken supply minted to BabelVault
+        assertEq(babelToken.balanceOf(address(babelVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
+
+        // BabelVault::totalUpdateWeek correct
+        assertEq(babelVault.totalUpdateWeek(), _fixedInitialAmounts.length + babelVault.getWeek());
+
+        // BabelVault::lockWeeks correct
+        assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+
+        // transfer voting tokens to recipients
+        vm.prank(users.user1);
+        babelToken.transferFrom(address(babelVault), users.user1, user1Allocation);
+
+        // verify recipients have received voting tokens
+        assertEq(babelToken.balanceOf(users.user1), user1Allocation);
+
+        // verify remaining supply is unallocated
+        initialUnallocated = babelVault.unallocatedTotal();
+        assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY - user1Allocation);
+
+        // receiver locks up their tokens to get voting weight
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, user1Allocation/INIT_LOCK_TO_TOKEN_RATIO, 52);
+
+        // verify receiver balance after lock; calculated this way because of how
+        // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
+        // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
+        uint256 users1TokensAfterLock = user1Allocation -
+                                        (user1Allocation/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
+        assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
+    }
+
+    function _vaultRegisterReceiver(address receiverAddr, uint256 count) internal returns(uint256 firstReceiverId) {
+        // cache next id and system week
+        firstReceiverId = incentiveVoting.receiverCount();
+        uint16 currentWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // owner registers receiver
+        vm.prank(users.owner);
+        assertTrue(babelVault.registerReceiver(receiverAddr, count));
+
+        // verify all receivers registered
+        for (uint256 i = firstReceiverId; i <= count; i++) {
+            (address registeredReceiver, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(i);
+            assertEq(registeredReceiver, receiverAddr);
+            assertTrue(isActive);
+            assertEq(updatedWeek, currentWeek);
+
+            assertEq(incentiveVoting.receiverUpdatedWeek(i), currentWeek);
+        }
+
+        // Verify IncentiveVoting state
+        assertEq(incentiveVoting.receiverCount(), firstReceiverId + count);
+
+        // Verify MockEmissionReceiver state
+        MockEmissionReceiver(receiverAddr).assertNotifyRegisteredIdCalled(count);
+    }
+}
+
+contract MockEmissionReceiver is IEmissionReceiver {
+    bool public notifyRegisteredIdCalled;
+    uint256[] public lastAssignedIds;
+
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
+        notifyRegisteredIdCalled = true;
+        lastAssignedIds = assignedIds;
+        success = true;
+    }
+
+    /**
+     * @notice Asserts that notifyRegisteredId was called with the expected number of assigned IDs
+     * @dev Added this for testing purposes
+     * @param expectedCount The expected number of assigned IDs
+     */
+    function assertNotifyRegisteredIdCalled(uint256 expectedCount) external view {
+        require(notifyRegisteredIdCalled, "notifyRegisteredId was not called");
+        require(lastAssignedIds.length == expectedCount, "Unexpected number of assigned IDs");
     }
 }

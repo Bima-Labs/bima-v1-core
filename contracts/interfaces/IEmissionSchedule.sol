@@ -20,7 +20,7 @@ interface IEmissionSchedule is IBabelOwnable, ISystemStart {
     function getTotalWeeklyEmissions(
         uint256 week,
         uint256 unallocatedTotal
-    ) external returns (uint256 amount, uint256 lock);
+    ) external returns (uint256 amount, uint64 lock);
 
     function setLockParameters(uint64 _lockWeeks, uint64 _lockDecayWeeks) external returns (bool);
 

@@ -5,6 +5,8 @@ import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {IIncentiveVoting, ITokenLocker} from "../interfaces/IIncentiveVoting.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
     @title Babel Incentive Voting
     @notice Users with BABEL balances locked in `TokenLocker` may register their
@@ -41,7 +43,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         uint8[MAX_LOCK_WEEKS] weeksToUnlock;
     }
 
-    mapping(address => AccountData) accountLockData;
+    mapping(address account => AccountData lockData) accountLockData;
 
     uint256 public receiverCount;
     // id -> receiver data
@@ -65,7 +67,8 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
     function getAccountRegisteredLocks(
         address account
     ) external view returns (uint256 frozenWeight, ITokenLocker.LockData[] memory lockData) {
-        return (accountLockData[account].frozenWeight, _getAccountLocks(account));
+        frozenWeight = accountLockData[account].frozenWeight;
+        lockData = _getAccountLocks(account);
     }
 
     function getAccountCurrentVotes(address account) public view returns (Vote[] memory votes) {
@@ -75,117 +78,205 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         for (uint256 i; i < length; i++) {
             votes[i] = Vote({ id: storedVotes[i][0], points: storedVotes[i][1] });
         }
-        return votes;
     }
 
-    function getReceiverWeight(uint256 idx) external view returns (uint256) {
-        return getReceiverWeightAt(idx, getWeek());
+    function getReceiverWeight(uint256 idx) external view returns (uint256 weight) {
+        weight = getReceiverWeightAt(idx, getWeek());
     }
 
-    function getReceiverWeightAt(uint256 idx, uint256 week) public view returns (uint256) {
-        if (idx >= receiverCount) return 0;
-        uint256 rate = receiverDecayRate[idx];
-        uint256 updatedWeek = receiverUpdatedWeek[idx];
-        if (week <= updatedWeek) return receiverWeeklyWeights[idx][week];
+    function getReceiverWeightAt(uint256 idx, uint256 week) public view returns (uint256 weight) {
+        // if idx >= receiver count nothing to do, default 0 will be returned
+        if(idx < receiverCount) {
+            // get last updated week for input idx
+            uint256 updatedWeek = receiverUpdatedWeek[idx];
 
-        uint256 weight = receiverWeeklyWeights[idx][updatedWeek];
-        if (weight == 0) return 0;
+            // if input week has already been processed, return answer from storage
+            if (week <= updatedWeek) return receiverWeeklyWeights[idx][week];
 
-        while (updatedWeek < week) {
-            updatedWeek++;
-            weight -= rate;
-            rate -= receiverWeeklyUnlocks[idx][updatedWeek];
+            // otherwise read weight from idx's last updated week
+            weight = receiverWeeklyWeights[idx][updatedWeek];
+
+            // if not 0, perform additional processing
+            if (weight != 0) {
+                // cache decay rate from idx storage
+                uint256 rate = receiverDecayRate[idx];
+
+                // iterate over unprocessed weeks until input week,
+                // adjusting the weight by decay rate and decay
+                // rate by weekly unlocks
+                while (updatedWeek < week) {
+                    updatedWeek++;
+                    weight -= rate;
+                    rate -= receiverWeeklyUnlocks[idx][updatedWeek];
+                }
+            }
         }
-
-        return weight;
     }
 
-    function getTotalWeight() external view returns (uint256) {
-        return getTotalWeightAt(getWeek());
+    function getTotalWeight() external view returns (uint256 weight) {
+        weight = getTotalWeightAt(getWeek());
     }
 
-    function getTotalWeightAt(uint256 week) public view returns (uint256) {
-        uint256 rate = totalDecayRate;
+    function getTotalWeightAt(uint256 week) public view returns (uint256 weight) {
+        // get last updated week for total weight
         uint256 updatedWeek = totalUpdatedWeek;
+
+        // if input week has already been processed, return answer from storage
         if (week <= updatedWeek) return totalWeeklyWeights[week];
 
-        uint256 weight = totalWeeklyWeights[updatedWeek];
-        if (weight == 0) return 0;
+        // otherwise read weight from total weight's last updated week
+        weight = totalWeeklyWeights[updatedWeek];
 
-        while (updatedWeek < week) {
-            updatedWeek++;
-            weight -= rate;
-            rate -= totalWeeklyUnlocks[updatedWeek];
+        // if not 0, perform additional processing
+        if (weight != 0) {
+            // cache total decay rate from storage; this represents the
+            // rate at the last updated week so is the correct rate to
+            // start from
+            uint256 rate = totalDecayRate;
+
+            // iterate over unprocessed weeks until input week,
+            // adjusting the weight by decay rate and decay
+            // rate by weekly unlocks
+            while (updatedWeek < week) {
+                updatedWeek++;
+                weight -= rate;
+                rate -= totalWeeklyUnlocks[updatedWeek];
+            }
         }
-        return weight;
     }
 
-    function getReceiverWeightWrite(uint256 idx) public returns (uint256) {
+    function getReceiverWeightWrite(uint256 idx) public returns (uint256 weight) {
+        // revert for invalid idx
         require(idx < receiverCount, "Invalid ID");
+
+        // get current system week
         uint256 week = getWeek();
+
+        // get last updated week for input idx
         uint256 updatedWeek = receiverUpdatedWeek[idx];
-        uint256 weight = receiverWeeklyWeights[idx][updatedWeek];
 
+        // output weight from idx's last updated week
+        weight = receiverWeeklyWeights[idx][updatedWeek];
+
+        // if zero, just update the idx last updated week
+        // to the current system week
         if (weight == 0) {
-            receiverUpdatedWeek[idx] = uint16(week);
-            return 0;
+            receiverUpdatedWeek[idx] = SafeCast.toUint16(week);
         }
+        // otherwise perform additional processing
+        else {
+            // cache decay rate from idx storage
+            uint256 rate = receiverDecayRate[idx];
 
-        uint256 rate = receiverDecayRate[idx];
-        while (updatedWeek < week) {
-            updatedWeek++;
-            weight -= rate;
-            receiverWeeklyWeights[idx][updatedWeek] = uint40(weight);
-            rate -= receiverWeeklyUnlocks[idx][updatedWeek];
+            // iterate over unprocessed weeks until current system
+            // week, adjusting the weight by decay rate and decay
+            // rate by weekly unlocks
+            while (updatedWeek < week) {
+                updatedWeek++;
+                weight -= rate;
+                // update storage weekly idx weight
+                receiverWeeklyWeights[idx][updatedWeek] = SafeCast.toUint40(weight);
+
+                // adjust rate by weekly unlocks
+                rate -= receiverWeeklyUnlocks[idx][updatedWeek];
+            }
+
+            // finally update idx decay rate and last processed week
+            receiverDecayRate[idx] = SafeCast.toUint32(rate);
+            receiverUpdatedWeek[idx] = SafeCast.toUint16(week);
         }
-
-        receiverDecayRate[idx] = uint32(rate);
-        receiverUpdatedWeek[idx] = uint16(week);
-
-        return weight;
     }
 
-    function getTotalWeightWrite() public returns (uint256) {
+    function getTotalWeightWrite() public returns (uint256 weight) {
+        // get current system week
         uint256 week = getWeek();
+
+        // get last updated week for total weight
         uint256 updatedWeek = totalUpdatedWeek;
-        uint256 weight = totalWeeklyWeights[updatedWeek];
 
+        // output weight from total weight's last updated week
+        weight = totalWeeklyWeights[updatedWeek];
+
+        // if zero, just update the total weight last updated week
+        // to the current system week
         if (weight == 0) {
-            totalUpdatedWeek = uint16(week);
-            return 0;
+            totalUpdatedWeek = SafeCast.toUint16(week);
         }
+        // otherwise perform additional processing
+        else {
+            // cache total decay rate from storage; this represents the
+            // rate at the last updated week so is the correct rate to
+            // start from
+            uint256 rate = totalDecayRate;
 
-        uint256 rate = totalDecayRate;
-        while (updatedWeek < week) {
-            updatedWeek++;
-            weight -= rate;
-            totalWeeklyWeights[updatedWeek] = uint40(weight);
-            rate -= totalWeeklyUnlocks[updatedWeek];
+            // iterate over unprocessed weeks until current system week,
+            // adjusting the weight by decay rate and decay rate by weekly
+            // unlocks
+            while (updatedWeek < week) {
+                updatedWeek++;
+                weight -= rate;
+
+                // update storage weekly total weight
+                totalWeeklyWeights[updatedWeek] = SafeCast.toUint40(weight);
+
+                // adjust rate by weekly unlocks
+                rate -= totalWeeklyUnlocks[updatedWeek];
+            }
+
+            // finally update total decay rate and last processed week
+            totalDecayRate = SafeCast.toUint32(rate);
+            totalUpdatedWeek = SafeCast.toUint16(week);
         }
-
-        totalDecayRate = uint32(rate);
-        totalUpdatedWeek = uint16(week);
-
-        return weight;
     }
 
-    function getReceiverVotePct(uint256 id, uint256 week) external returns (uint256) {
+    function getReceiverVoteInputs(uint256 id, uint256 week) external 
+    returns (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight) {
+        // lookback one week
         week -= 1;
+
+        // update storage - id & total weights for any
+        // missing weeks up to current system week
         getReceiverWeightWrite(id);
         getTotalWeightWrite();
 
-        uint256 totalWeight = totalWeeklyWeights[week];
-        if (totalWeight == 0) return 0;
+        // output total weight for lookback week
+        totalWeeklyWeight = totalWeeklyWeights[week];
 
-        return (1e18 * uint256(receiverWeeklyWeights[id][week])) / totalWeight;
+        // if not zero, also output receiver weekly weight
+        if(totalWeeklyWeight != 0) {
+            receiverWeeklyWeight = receiverWeeklyWeights[id][week];
+        }
     }
 
-    function registerNewReceiver() external returns (uint256) {
+    function getReceiverVotePct(uint256 id, uint256 week) external returns (uint256 votePct) {
+        // lookback one week
+        week -= 1;
+
+        // update storage - id & total weights for any
+        // missing weeks up to current system week
+        getReceiverWeightWrite(id);
+        getTotalWeightWrite();
+
+        // output total weight for lookback week
+        votePct = totalWeeklyWeights[week];
+
+        // if not zero, calculate the actual vote percent
+        // for the lookback week; using votePct as denominator
+        // since it contains the totalWeight
+        if(votePct != 0) {
+            votePct = 1e18 * uint256(receiverWeeklyWeights[id][week]) / votePct;
+        }
+    }
+
+    function registerNewReceiver() external returns (uint256 id) {
+        // only vault can register new receivers
         require(msg.sender == vault, "Not Treasury");
-        uint256 id = receiverCount;
-        receiverUpdatedWeek[id] = uint16(getWeek());
-        receiverCount = id + 1;
-        return id;
+
+        // output current value then increment storage
+        id = receiverCount++;
+
+        // set last processed week to current system week
+        receiverUpdatedWeek[id] = SafeCast.toUint16(getWeek());
     }
 
     /**
@@ -197,7 +288,9 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
                         locks may wish to skip smaller locks to reduce gas costs.
      */
     function registerAccountWeight(address account, uint256 minWeeks) external callerOrDelegated(account) {
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
+
         Vote[] memory existingVotes;
 
         // if account has an active vote, clear the recorded vote
@@ -226,6 +319,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         uint256 minWeeks,
         Vote[] calldata votes
     ) external callerOrDelegated(account) {
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
 
         // if account has an active vote, clear the recorded vote
@@ -259,9 +353,16 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
                              votes are added in addition to previous votes.
      */
     function vote(address account, Vote[] calldata votes, bool clearPrevious) external callerOrDelegated(account) {
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
+
+        // cache account's frozen weight
         uint256 frozenWeight = accountData.frozenWeight;
+
+        // revert if no frozen weight or no locks
         require(frozenWeight > 0 || accountData.lockLength > 0, "No registered weight");
+
+        // working data
         uint256 points;
         uint256 offset;
 
@@ -284,9 +385,16 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         @notice Remove all active votes for the caller
      */
     function clearVote(address account) external callerOrDelegated(account) {
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
+
+        // cache account's frozen weight
         uint256 frozenWeight = accountData.frozenWeight;
+
+        // clear account's current votes
         _removeVoteWeights(account, getAccountCurrentVotes(account), frozenWeight);
+
+        // reset voteLength & points
         accountData.voteLength = 0;
         accountData.points = 0;
 
@@ -298,23 +406,35 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         @dev Called by `tokenLocker` when an account performs an early withdrawal
              of locked tokens, to prevent a registered weight > actual lock weight
      */
-    function clearRegisteredWeight(address account) external returns (bool) {
+    function clearRegisteredWeight(address account) external returns (bool success) {
         require(
-            msg.sender == account || msg.sender == address(tokenLocker) || isApprovedDelegate[account][msg.sender],
+            msg.sender == account || msg.sender == address(tokenLocker) ||
+            isApprovedDelegate[account][msg.sender],
             "Delegate not approved"
         );
 
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
+
+        // get current system week
         uint256 week = getWeek();
+
+        // cache number of account's locks
         uint256 length = accountData.lockLength;
+
+        // cache account's frozen weight
         uint256 frozenWeight = accountData.frozenWeight;
+
         if (length > 0 || frozenWeight > 0) {
+            // clear any current votes
             if (accountData.voteLength > 0) {
                 _removeVoteWeights(account, getAccountCurrentVotes(account), frozenWeight);
                 accountData.voteLength = 0;
                 accountData.points = 0;
+
                 emit ClearedVotes(account, week);
             }
+
             // lockLength and frozenWeight are never both > 0
             if (length > 0) accountData.lockLength = 0;
             else accountData.frozenWeight = 0;
@@ -322,7 +442,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
             emit AccountWeightRegistered(account, week, 0, new ITokenLocker.LockData[](0));
         }
 
-        return true;
+        success = true;
     }
 
     /**
@@ -331,26 +451,34 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
              registering frozen locks, unfreezing, and having a larger registered
              vote weight than their actual lock weight.
      */
-    function unfreeze(address account, bool keepVote) external returns (bool) {
+    function unfreeze(address account, bool keepVote) external returns (bool success) {
+        // only tokenLocker can call this function
         require(msg.sender == address(tokenLocker));
+
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
+
+        // cache account's frozen weight
         uint256 frozenWeight = accountData.frozenWeight;
 
         // if frozenWeight == 0, the account was not registered so nothing needed
         if (frozenWeight > 0) {
             // clear previous votes
             Vote[] memory existingVotes;
+
             if (accountData.voteLength > 0) {
                 existingVotes = getAccountCurrentVotes(account);
                 _removeVoteWeightsFrozen(existingVotes, frozenWeight);
             }
 
+            // get current system week
             uint256 week = getWeek();
-            accountData.week = uint16(week);
+
+            accountData.week = SafeCast.toUint16(week);
             accountData.frozenWeight = 0;
 
             uint256 amount = frozenWeight / MAX_LOCK_WEEKS;
-            accountData.lockedAmounts[0] = uint32(amount);
+            accountData.lockedAmounts[0] = SafeCast.toUint32(amount);
             accountData.weeksToUnlock[0] = uint8(MAX_LOCK_WEEKS);
             accountData.lockLength = 1;
 
@@ -369,7 +497,8 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
             lockData[0] = ITokenLocker.LockData({ amount: amount, weeksToUnlock: MAX_LOCK_WEEKS });
             emit AccountWeightRegistered(account, week, 0, lockData);
         }
-        return true;
+
+        success = true;
     }
 
     /**
@@ -377,61 +506,83 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
              of [(amount, weeks to unlock)] sorted by weeks-to-unlock descending.
      */
     function _getAccountLocks(address account) internal view returns (ITokenLocker.LockData[] memory lockData) {
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
 
+        // cache number of account's locks
         uint256 length = accountData.lockLength;
+
+        // get current system week
         uint256 systemWeek = getWeek();
+
+        // if account has frozen weight use system week
+        // else use account's last processed week
         uint256 accountWeek = accountData.frozenWeight > 0 ? systemWeek : accountData.week;
+
+        // get storage references to account's unlock weeks & locked amounts
         uint8[MAX_LOCK_WEEKS] storage weeksToUnlock = accountData.weeksToUnlock;
         uint32[MAX_LOCK_WEEKS] storage amounts = accountData.lockedAmounts;
 
+        // allocate output array
         lockData = new ITokenLocker.LockData[](length);
+
         uint256 idx;
         for (; idx < length; idx++) {
+            // calculate the unlock week for this lock
             uint256 unlockWeek = weeksToUnlock[idx] + accountWeek;
+
             if (unlockWeek <= systemWeek) {
                 assembly {
                     mstore(lockData, idx)
                 }
                 break;
             }
-            uint256 remainingWeeks = unlockWeek - systemWeek;
-            uint256 amount = amounts[idx];
-            lockData[idx] = ITokenLocker.LockData({ amount: amount, weeksToUnlock: remainingWeeks });
-        }
 
-        return lockData;
+            lockData[idx] = ITokenLocker.LockData({ amount: amounts[idx],
+                                                    weeksToUnlock: unlockWeek - systemWeek });
+        }
     }
 
-    function _registerAccountWeight(address account, uint256 minWeeks) internal returns (uint256) {
+    function _registerAccountWeight(address account, uint256 minWeeks) internal returns (uint256 frozen) {
+        // get storage reference to account's lock data
         AccountData storage accountData = accountLockData[account];
 
-        // get updated account lock weights and store locally
-        (ITokenLocker.LockData[] memory lockData, uint256 frozen) = tokenLocker.getAccountActiveLocks(
-            account,
-            minWeeks
-        );
+        ITokenLocker.LockData[] memory lockData;
+
+        // get latest account lock weights from TokenLocker and store locally
+        (lockData, frozen) = tokenLocker.getAccountActiveLocks(account, minWeeks);
+
+        // cache number of locks
         uint256 length = lockData.length;
+
+        // if frozen, multiply by max lock weeks and
+        // update storage account frozen weight
         if (frozen > 0) {
             frozen *= MAX_LOCK_WEEKS;
-            accountData.frozenWeight = uint40(frozen);
-        } else if (length > 0) {
+            accountData.frozenWeight = SafeCast.toUint40(frozen);
+        }
+        // else if there are active locks iterate through them
+        // updating storage account locked amounts and weeks to unlock
+        else if (length > 0) {
             for (uint256 i; i < length; i++) {
-                uint256 amount = lockData[i].amount;
-                uint256 weeksToUnlock = lockData[i].weeksToUnlock;
-                accountData.lockedAmounts[i] = uint32(amount);
-                accountData.weeksToUnlock[i] = uint8(weeksToUnlock);
+                accountData.lockedAmounts[i] = SafeCast.toUint32(lockData[i].amount);
+                accountData.weeksToUnlock[i] = SafeCast.toUint8(lockData[i].weeksToUnlock);
             }
-        } else {
+        }
+        // revert if nothing frozen and no active locks
+        else {
             revert("No active locks");
         }
-        uint256 week = getWeek();
-        accountData.week = uint16(week);
-        accountData.lockLength = uint8(length);
 
-        emit AccountWeightRegistered(account, week, frozen, lockData);
+        // get current system week
+        uint256 systemWeek = getWeek();
 
-        return frozen;
+        // update storage account latest processed week to current system
+        // week and lock length to latest locks processed from TokenLocker
+        accountData.week = SafeCast.toUint16(systemWeek);
+        accountData.lockLength = SafeCast.toUint8(length);
+
+        emit AccountWeightRegistered(account, systemWeek, frozen, lockData);
     }
 
     function _storeAccountVotes(
@@ -441,15 +592,22 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         uint256 points,
         uint256 offset
     ) internal {
+        // get storage reference to account's active votes
         uint16[2][MAX_POINTS] storage storedVotes = accountData.activeVotes;
-        uint256 length = votes.length;
-        for (uint256 i; i < length; i++) {
-            storedVotes[offset + i] = [uint16(votes[i].id), uint16(votes[i].points)];
+
+        // iterate through votes input, cheaper to not
+        // cache length since calldata
+        for (uint256 i; i < votes.length; i++) {
+            // record each vote
+            storedVotes[offset + i] = [SafeCast.toUint16(votes[i].id),
+                                        SafeCast.toUint16(votes[i].points)];
             points += votes[i].points;
         }
+
         require(points <= MAX_POINTS, "Exceeded max vote points");
-        accountData.voteLength = uint16(offset + length);
-        accountData.points = uint16(points);
+
+        accountData.voteLength = SafeCast.toUint16(offset + votes.length);
+        accountData.points = SafeCast.toUint16(points);
 
         emit NewVotes(account, getWeek(), votes, points);
     }
@@ -486,117 +644,182 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
 
     /** @dev Should not be called directly, use `_addVoteWeights` */
     function _addVoteWeightsUnfrozen(address account, Vote[] memory votes) internal {
+        // get account locks from TokenLocker
         ITokenLocker.LockData[] memory lockData = _getAccountLocks(account);
+
+        // cache number of locks
         uint256 lockLength = lockData.length;
+
+        // revert if no locks
         require(lockLength > 0, "Registered weight has expired");
 
+        // working data
         uint256 totalWeight;
         uint256 totalDecay;
         uint256 systemWeek = getWeek();
         uint256[MAX_LOCK_WEEKS + 1] memory weeklyUnlocks;
-        for (uint256 i; i < votes.length; i++) {
-            uint256 id = votes[i].id;
-            uint256 points = votes[i].points;
 
+        // iterate through every vote
+        for (uint256 i; i < votes.length; i++) {
+            (uint256 id, uint256 points) = (votes[i].id, votes[i].points);
+
+            // working data
             uint256 weight;
             uint256 decayRate;
+
+            // for every vote, iterate through every lock
             for (uint256 x; x < lockLength; x++) {
                 uint256 weeksToUnlock = lockData[x].weeksToUnlock;
                 uint256 amount = (lockData[x].amount * points) / MAX_POINTS;
-                receiverWeeklyUnlocks[id][systemWeek + weeksToUnlock] += uint32(amount);
 
-                weeklyUnlocks[weeksToUnlock] += uint32(amount);
+                // updating storage receiver weekly unlocks
+                receiverWeeklyUnlocks[id][systemWeek + weeksToUnlock] += SafeCast.toUint32(amount);
+
+                // update working data
+                weeklyUnlocks[weeksToUnlock] += SafeCast.toUint32(amount);
                 weight += amount * weeksToUnlock;
                 decayRate += amount;
             }
-            receiverWeeklyWeights[id][systemWeek] = uint40(getReceiverWeightWrite(id) + weight);
-            receiverDecayRate[id] += uint32(decayRate);
 
+            // update storage receiver weekly weights and decay rate
+            receiverWeeklyWeights[id][systemWeek] = SafeCast.toUint40(getReceiverWeightWrite(id) + weight);
+            receiverDecayRate[id] += SafeCast.toUint32(decayRate);
+
+            // update working data
             totalWeight += weight;
             totalDecay += decayRate;
         }
 
+        // iterate through every lock updating storage total weekly unlocks
         for (uint256 i; i < lockLength; i++) {
             uint256 weeksToUnlock = lockData[i].weeksToUnlock;
-            totalWeeklyUnlocks[systemWeek + weeksToUnlock] += uint32(weeklyUnlocks[weeksToUnlock]);
+            totalWeeklyUnlocks[systemWeek + weeksToUnlock]
+                += SafeCast.toUint32(weeklyUnlocks[weeksToUnlock]);
         }
-        totalWeeklyWeights[systemWeek] = uint40(getTotalWeightWrite() + totalWeight);
-        totalDecayRate += uint32(totalDecay);
+
+        // update storage total weekly weights and decay rate
+        // using working data totals calculated in previous loops
+        totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() + totalWeight);
+        totalDecayRate += SafeCast.toUint32(totalDecay);
     }
 
     /** @dev Should not be called directly, use `_addVoteWeights` */
     function _addVoteWeightsFrozen(Vote[] memory votes, uint256 frozenWeight) internal {
+        // get current system week
         uint256 systemWeek = getWeek();
+
+        // working data
         uint256 totalWeight;
+
+        // cache votes length
         uint256 length = votes.length;
+
+        // iterate through every vote
         for (uint256 i; i < length; i++) {
-            uint256 id = votes[i].id;
-            uint256 points = votes[i].points;
+            (uint256 id, uint256 points) = (votes[i].id, votes[i].points);
 
             uint256 weight = (frozenWeight * points) / MAX_POINTS;
 
-            receiverWeeklyWeights[id][systemWeek] = uint40(getReceiverWeightWrite(id) + weight);
+            // trigger receiver weight write to process any missing
+            // weeks until system week, then update storage receiver
+            // weekly weights
+            receiverWeeklyWeights[id][systemWeek] = SafeCast.toUint40(getReceiverWeightWrite(id) + weight);
+
+            // update working data
             totalWeight += weight;
         }
 
-        totalWeeklyWeights[systemWeek] = uint40(getTotalWeightWrite() + totalWeight);
+        // trigger total weight write to process any missing weeks until
+        // system week, then update storage total weekly weights
+        totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() + totalWeight);
     }
 
     /** @dev Should not be called directly, use `_removeVoteWeights` */
     function _removeVoteWeightsUnfrozen(address account, Vote[] memory votes) internal {
+        // get account locks from TokenLocker
         ITokenLocker.LockData[] memory lockData = _getAccountLocks(account);
+
+        // cache number of locks
         uint256 lockLength = lockData.length;
 
+        // working data
         uint256 totalWeight;
         uint256 totalDecay;
         uint256 systemWeek = getWeek();
         uint256[MAX_LOCK_WEEKS + 1] memory weeklyUnlocks;
 
+        // iterate through every vote
         for (uint256 i; i < votes.length; i++) {
             (uint256 id, uint256 points) = (votes[i].id, votes[i].points);
 
+            // working data
             uint256 weight;
             uint256 decayRate;
+
+            // for every vote, iterate through every lock
             for (uint256 x; x < lockLength; x++) {
                 uint256 weeksToUnlock = lockData[x].weeksToUnlock;
                 uint256 amount = (lockData[x].amount * points) / MAX_POINTS;
-                receiverWeeklyUnlocks[id][systemWeek + weeksToUnlock] -= uint32(amount);
 
-                weeklyUnlocks[weeksToUnlock] += uint32(amount);
+                // updating storage receiver weekly unlocks
+                receiverWeeklyUnlocks[id][systemWeek + weeksToUnlock] -= SafeCast.toUint32(amount);
+
+                // update working data
+                weeklyUnlocks[weeksToUnlock] += SafeCast.toUint32(amount);
                 weight += amount * weeksToUnlock;
                 decayRate += amount;
             }
-            receiverWeeklyWeights[id][systemWeek] = uint40(getReceiverWeightWrite(id) - weight);
-            receiverDecayRate[id] -= uint32(decayRate);
 
+            // update storage receiver weekly weights and decay rate
+            receiverWeeklyWeights[id][systemWeek] = SafeCast.toUint40(getReceiverWeightWrite(id) - weight);
+            receiverDecayRate[id] -= SafeCast.toUint32(decayRate);
+
+            // update working data
             totalWeight += weight;
             totalDecay += decayRate;
         }
 
+        // iterate through every lock updating storage total weekly unlocks
         for (uint256 i; i < lockLength; i++) {
             uint256 weeksToUnlock = lockData[i].weeksToUnlock;
-            totalWeeklyUnlocks[systemWeek + weeksToUnlock] -= uint32(weeklyUnlocks[weeksToUnlock]);
+            totalWeeklyUnlocks[systemWeek + weeksToUnlock]
+                -= SafeCast.toUint32(weeklyUnlocks[weeksToUnlock]);
         }
-        totalWeeklyWeights[systemWeek] = uint40(getTotalWeightWrite() - totalWeight);
-        totalDecayRate -= uint32(totalDecay);
+
+        // update storage total weekly weights and decay rate
+        // using working data totals calculated in previous loops
+        totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() - totalWeight);
+        totalDecayRate -= SafeCast.toUint32(totalDecay);
     }
 
     /** @dev Should not be called directly, use `_removeVoteWeights` */
     function _removeVoteWeightsFrozen(Vote[] memory votes, uint256 frozenWeight) internal {
+        // get current system week
         uint256 systemWeek = getWeek();
 
+        // working data
         uint256 totalWeight;
+
+        // cache votes length
         uint256 length = votes.length;
+
+        // iterate through every vote
         for (uint256 i; i < length; i++) {
             (uint256 id, uint256 points) = (votes[i].id, votes[i].points);
 
             uint256 weight = (frozenWeight * points) / MAX_POINTS;
 
-            receiverWeeklyWeights[id][systemWeek] = uint40(getReceiverWeightWrite(id) - weight);
+            // trigger receiver weight write to process any missing
+            // weeks until system week, then update storage receiver
+            // weekly weights
+            receiverWeeklyWeights[id][systemWeek] = SafeCast.toUint40(getReceiverWeightWrite(id) - weight);
 
+            // update working data
             totalWeight += weight;
         }
 
-        totalWeeklyWeights[systemWeek] = uint40(getTotalWeightWrite() - totalWeight);
+        // trigger total weight write to process any missing weeks until
+        // system week, then update storage total weekly weights
+        totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() - totalWeight);
     }
 }

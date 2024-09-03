@@ -21,7 +21,7 @@ interface IBorrowerOperations is IBabelOwnable, IBabelBase, IDelegatedOps {
         uint256[] prices;
     }
 
-    event BorrowingFeePaid(address indexed borrower, uint256 amount);
+    event BorrowingFeePaid(address indexed borrower, IERC20 collateralToken, uint256 amount);
     event CollateralConfigured(ITroveManager, IERC20 collateralToken);
     event TroveCreated(address indexed _borrower, uint256 arrayIndex);
     event TroveManagerRemoved(ITroveManager);

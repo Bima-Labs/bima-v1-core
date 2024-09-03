@@ -24,7 +24,7 @@ interface IIncentiveVoting is ISystemStart, IDelegatedOps {
 
     function clearVote(address account) external;
 
-    function getReceiverVotePct(uint256 id, uint256 week) external returns (uint256);
+    function getReceiverVoteInputs(uint256 id, uint256 week) external returns (uint256, uint256);
 
     function getReceiverWeightWrite(uint256 idx) external returns (uint256);
 

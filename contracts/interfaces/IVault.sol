@@ -47,7 +47,7 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
 
     function setBoostCalculator(IBoostCalculator _boostCalculator) external returns (bool);
 
-    function setBoostDelegationParams(bool isEnabled, uint256 feePct, address callback) external returns (bool);
+    function setBoostDelegationParams(bool isEnabled, uint16 feePct, address callback) external returns (bool);
 
     function setEmissionSchedule(IEmissionSchedule _emissionSchedule) external returns (bool);
 
@@ -83,7 +83,7 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
 
     function getClaimableWithBoost(address claimant) external view returns (uint256 maxBoosted, uint256 boosted);
 
-    function idToReceiver(uint256) external view returns (address account, bool isActive);
+    function idToReceiver(uint256) external view returns (address account, bool isActive, uint16 updatedWeek);
 
     function lockWeeks() external view returns (uint64);
 
@@ -92,8 +92,6 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
     function claimableBoostDelegationFees(address claimant) external view returns (uint256 amount);
 
     function babelToken() external view returns (IBabelToken);
-
-    function receiverUpdatedWeek(uint256) external view returns (uint16);
 
     function totalUpdateWeek() external view returns (uint64);
 
