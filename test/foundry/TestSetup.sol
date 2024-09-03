@@ -10,7 +10,7 @@ import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
 import {IStabilityPool} from "../../contracts/interfaces/IStabilityPool.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ILiquidationManager} from "../../contracts/interfaces/ILiquidationManager.sol";
-import {IBabelVault} from "../../contracts/interfaces/IVault.sol";
+import {IBabelVault, IRewards} from "../../contracts/interfaces/IVault.sol";
 import {IBabelToken} from "../../contracts/interfaces/IBabelToken.sol";
 import {IIncentiveVoting} from "../../contracts/interfaces/IIncentiveVoting.sol";
 import {ITokenLocker} from "../../contracts/interfaces/ITokenLocker.sol";
@@ -438,9 +438,10 @@ contract TestSetup is Test {
     }
 }
 
-contract MockEmissionReceiver is IEmissionReceiver {
+contract MockEmissionReceiver is IEmissionReceiver, IRewards {
     bool public notifyRegisteredIdCalled;
     uint256[] public lastAssignedIds;
+    uint256 public reward;
 
     function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
         notifyRegisteredIdCalled = true;
@@ -456,5 +457,17 @@ contract MockEmissionReceiver is IEmissionReceiver {
     function assertNotifyRegisteredIdCalled(uint256 expectedCount) external view {
         require(notifyRegisteredIdCalled, "notifyRegisteredId was not called");
         require(lastAssignedIds.length == expectedCount, "Unexpected number of assigned IDs");
+    }
+
+    function setReward(uint256 newReward) external {
+        reward = newReward;
+    }
+
+    function vaultClaimReward(address, address) external view returns (uint256 amount) {
+        amount = reward;
+    }
+
+    function claimableReward(address) external view returns (uint256 amount) {
+        amount = reward;
     }
 }
