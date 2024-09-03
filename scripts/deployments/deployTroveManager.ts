@@ -7,11 +7,7 @@ const COLLATERAL_ADDRESS = "";
 const FACTORY_ADDRESS = "";
 const PRICEFEED_ADDRESS = "";
 const BABELVAULT_ADDRESS = "";
-
-// Comment/Uncomment respective oracle deployments, based on the oracle we use
-const ORACLE_ADDRESS = ""; // If we use existing AggregatorV3Interface onchain oracle
-const STORK_ORACLE_ADDRESS = ""; // If we use Stork oracle
-const ENCODED_ASSET_ID = ""; // If we use Stork oracle
+const ORACLE_ADDRESS = "";
 
 async function main() {
   const priceFeed = await ethers.getContractAt("PriceFeed", PRICEFEED_ADDRESS);
@@ -23,9 +19,6 @@ async function main() {
 
   //! DO NOT USE MOCK ORACLE IF YOU ARE NOT DEPLOYING ON THE LOCAL NETWORK
   // const mockOracleAddress = await deployMockOracle();
-
-  //! USE IF WE USE STORK ORACLE FOR THIS TROVE MANAGER
-  // const storkOracleWrapperAddress = await deployStorkOracleWrapper();
 
   console.log("troveManagerCount before: ", await factory.troveManagerCount());
 
@@ -90,15 +83,6 @@ const deployMockOracle = async () => {
   const mockOracleAddress = await mockOracle.getAddress();
   console.log("MockOracle deployed!: ", mockOracleAddress);
   return mockOracleAddress;
-};
-
-const deployStorkOracleWrapper = async () => {
-  const storkOracleWrapperFactory = await ethers.getContractFactory("StorkOracleWrapper");
-  const storkOracleWrapper = await storkOracleWrapperFactory.deploy(STORK_ORACLE_ADDRESS, ENCODED_ASSET_ID);
-  await storkOracleWrapper.waitForDeployment();
-  const storkOracleWrapperAddress = await storkOracleWrapper.getAddress();
-  console.log("StorkOracleWrapper deployed!: ", storkOracleWrapperAddress);
-  return storkOracleWrapperAddress;
 };
 
 main()
