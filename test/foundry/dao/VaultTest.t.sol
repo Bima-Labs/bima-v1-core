@@ -218,6 +218,8 @@ contract VaultTest is TestSetup {
 
         // cache state prior to call
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        // verify still inside boost grace weeks
+        assertTrue(systemWeek < boostCalc.MAX_BOOST_GRACE_WEEKS());
         uint128 accountWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek);
         uint128 unallocatedTotalPre = babelVault.unallocatedTotal();
         assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
@@ -284,6 +286,88 @@ contract VaultTest is TestSetup {
             assertEq(tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks()),
                     futureLockerAccountWeeklyUnlocksPre + lockedAmount);
         }
+    }
+
+    // helper function
+    function _allocateNewEmissionsAndWarp(uint256 weeksToWarp) internal {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // helper registers receivers and performs all necessary checks
+        address receiver = address(mockEmissionReceiver);
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
+
+        // user votes for receiver to get emissions
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // warp time by input
+        vm.warp(block.timestamp + 1 weeks * weeksToWarp);
+
+        // cache state prior to allocateNewEmissions
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // receiver calls allocateNewEmissions
+        vm.prank(receiver);
+        babelVault.allocateNewEmissions(RECEIVER_ID);
+
+        // verify BabelVault::totalUpdateWeek current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+    }
+
+    function test_transferAllocatedTokens_noPendingRewards_inBoostGraceWeeks_outVaultLockWeeks(uint256 transferAmount) external {
+        // first get some allocated tokens and warp time to after the
+        // vault's forced locking period expires
+        _allocateNewEmissionsAndWarp(INIT_ES_LOCK_WEEKS);
+
+        // verify vault's forced locking period has expired
+        assertEq(babelVault.lockWeeks(), 0);
+
+        uint256 allocatedBalancePre = babelVault.allocated(mockEmissionReceiverAddr);
+        assertTrue(allocatedBalancePre > 0);
+
+        // bound fuzz inputs
+        transferAmount = bound(transferAmount, 0, allocatedBalancePre);
+
+        // cache state prior to call
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        // verify still inside boost grace weeks
+        assertTrue(systemWeek < boostCalc.MAX_BOOST_GRACE_WEEKS());
+        uint128 accountWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek);
+        uint128 unallocatedTotalPre = babelVault.unallocatedTotal();
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
+        uint256 vaultTokenBalancePre = babelToken.balanceOf(address(babelVault));
+        uint256 receiverTokenBalancePre = babelToken.balanceOf(mockEmissionReceiverAddr);
+
+        // then transfer allocated tokens
+        vm.prank(mockEmissionReceiverAddr);
+        assertTrue(babelVault.transferAllocatedTokens(mockEmissionReceiverAddr, mockEmissionReceiverAddr, transferAmount));
+
+        // verify allocated balance reduced by transfer amount
+        assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - transferAmount);
+
+        // verify account weekly earned increased by transferred amount
+        assertEq(babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek),
+                 accountWeeklyEarnedPre + transferAmount);
+
+        // verify unallocated total remains the same as the transfer took
+        // place inside the BoostCalculator's MAX_BOOST_GRACE_WEEKS
+        assertEq(babelVault.unallocatedTotal(), unallocatedTotalPre);
+
+        // verify receiver's pending reward remains zero as since the forced
+        // lock period has expired, the tokens will be transferred instead
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
+
+        // verify tokens have been sent from vault to receiver
+        assertEq(babelToken.balanceOf(address(babelVault)), vaultTokenBalancePre - transferAmount);
+        assertEq(babelToken.balanceOf(mockEmissionReceiverAddr), receiverTokenBalancePre + transferAmount);
     }
 
 

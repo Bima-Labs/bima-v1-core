@@ -103,7 +103,7 @@ contract TestSetup is Test {
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
     address internal constant ZERO_ADDRESS = address(0);
 
-    uint256 internal constant INIT_BS_GRACE_WEEKS = 2;
+    uint256 internal constant INIT_BS_GRACE_WEEKS = 5;
     uint64 internal constant INIT_ES_LOCK_WEEKS = 4;
     uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
     uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
