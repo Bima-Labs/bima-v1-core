@@ -41,7 +41,7 @@ contract TokenLockerTest is TestSetup {
         returns(uint256 lockedAmount, uint256 weeksLockedFor) 
     {
         // save user initial balance
-        uint256 userPreLockTokedBalance = babelToken.balanceOf(users.user1);
+        uint256 userPreLockTokenBalance = babelToken.balanceOf(users.user1);
 
         (uint256 userPreLockLockedBalance, ) = tokenLocker.getAccountBalances(users.user1);
 
@@ -56,7 +56,7 @@ contract TokenLockerTest is TestSetup {
         assertEq(lockedAmount, amountToLock);
         // when checking actual token balances, need to multipy lockedAmount by
         // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
-        assertEq(babelToken.balanceOf(users.user1), userPreLockTokedBalance - lockedAmount*INIT_LOCK_TO_TOKEN_RATIO);
+        assertEq(babelToken.balanceOf(users.user1), userPreLockTokenBalance - lockedAmount*INIT_LOCK_TO_TOKEN_RATIO);
 
         // verify user has positive voting weight in the current week
         uint256 userWeight = tokenLocker.getAccountWeight(users.user1);

@@ -207,7 +207,89 @@ contract VaultTest is TestSetup {
         // voting weight
     }
 
-    function test_allocateNewEmissions_oneReceiverWithVotingWeight() external {
+    function test_transferAllocatedTokens_noPendingRewards_inBoostGraceWeeks_inVaultLockWeeks(uint256 transferAmount) external {
+        // first get some allocated tokens
+        test_allocateNewEmissions_oneReceiverWithVotingWeight();
+
+        address receiver = address(mockEmissionReceiver);
+        uint256 allocatedBalancePre = babelVault.allocated(receiver);
+        assertTrue(allocatedBalancePre > 0);
+
+        // bound fuzz inputs
+        transferAmount = bound(transferAmount, 0, allocatedBalancePre);
+
+        // cache state prior to call
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        uint128 accountWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(receiver, systemWeek);
+        uint128 unallocatedTotalPre = babelVault.unallocatedTotal();
+        uint256 accountPendingRewardPre = babelVault.getStoredPendingReward(receiver);
+        assertEq(accountPendingRewardPre, 0);
+
+        // receiver has nothing locked prior to call
+        (uint256 receiverLockedBalance, ) = tokenLocker.getAccountBalances(receiver);
+        assertEq(receiverLockedBalance, 0);
+        uint256 totalLockedWeightPre = tokenLocker.getTotalWeight();
+        uint256 futureLockerTotalWeeklyUnlocksPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks());
+        uint256 futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(receiver, systemWeek+babelVault.lockWeeks());
+
+        // then transfer allocated tokens
+        vm.prank(receiver);
+        assertTrue(babelVault.transferAllocatedTokens(receiver, receiver, transferAmount));
+
+        // verify allocated balance reduced by transfer amount
+        assertEq(babelVault.allocated(receiver), allocatedBalancePre - transferAmount);
+
+        // verify account weekly earned increased by transferred amount
+        assertEq(babelVault.getAccountWeeklyEarned(receiver, systemWeek),
+                 accountWeeklyEarnedPre + transferAmount);
+
+        // verify unallocated total remains the same as the transfer took
+        // place inside the BoostCalculator's MAX_BOOST_GRACE_WEEKS
+        assertEq(babelVault.unallocatedTotal(), unallocatedTotalPre);
+
+        // verify receiver's pending reward was correctly set to the "dust"
+        // amount that was too small to lock
+        uint256 lockedAmount = transferAmount / INIT_LOCK_TO_TOKEN_RATIO;
+        assertEq(babelVault.getStoredPendingReward(receiver),
+                 transferAmount - lockedAmount * INIT_LOCK_TO_TOKEN_RATIO);
+
+        // verify lock has been correctly created
+        if(lockedAmount > 0) {
+            (receiverLockedBalance, ) = tokenLocker.getAccountBalances(receiver);
+            assertEq(receiverLockedBalance, lockedAmount);
+
+            // verify receiver has positive voting weight in the current week
+            assertTrue(tokenLocker.getAccountWeight(receiver) > 0);
+
+            // verify receiver has no voting weight for future weeks
+            assertEq(tokenLocker.getAccountWeightAt(receiver, tokenLocker.getWeek()+1), 0);
+
+            // verify total weight for current week increased by receiver weight
+            assertEq(tokenLocker.getTotalWeight(), totalLockedWeightPre + tokenLocker.getAccountWeight(receiver));
+
+            // verify no total weight for future weeks
+            assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+
+            // verify receiver active locks are correct
+            (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+                = tokenLocker.getAccountActiveLocks(receiver, 0);
+
+            assertEq(activeLockData.length, 1);
+            assertEq(frozenAmount, 0);
+            assertEq(activeLockData[0].amount, lockedAmount);
+            assertEq(activeLockData[0].weeksToUnlock, babelVault.lockWeeks());
+
+            // verify future total weekly unlocks updated for locked amount
+            assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks()),
+                    futureLockerTotalWeeklyUnlocksPre + lockedAmount);
+
+            // verify future account weekly unlocks updated for locked amount
+            assertEq(tokenLocker.getAccountWeeklyUnlocks(receiver, systemWeek+babelVault.lockWeeks()),
+                    futureLockerAccountWeeklyUnlocksPre + lockedAmount);
+        }
+    }
+
+    function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 

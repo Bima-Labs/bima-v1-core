@@ -593,11 +593,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             // calculate lock amount accounting for lock to token ratio
             uint256 lockAmount = amount / lockToTokenRatio;
 
-            // @audit is this correct?
-            // amount - lockAmount * lockToTokenRatio
-            // amount - (amount / lockToTokenRatio) * lockToTokenRatio
-            // amount - amount
-            // = 0 ?
+            // the lock amount gets divided by lockToTokenRatio and the lock function
+            // will multiply the input by lockToTokenRatio when transferring tokens, hence
+            // do the same here when updating storage; this sets the pending reward to the
+            // "dust" amount which didn't get locked
             storedPendingReward[claimant] = amount - lockAmount * lockToTokenRatio;
 
             // perform the lock
@@ -734,5 +733,13 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
 
         // if smaller than lock to token ratio, return 0
         if(amount < lockToTokenRatio) amount = 0;
+    }
+
+    function getAccountWeeklyEarned(address claimant, uint16 week) external view returns (uint128 amount) {
+        amount = accountWeeklyEarned[claimant][week];
+    }
+
+    function getStoredPendingReward(address claimant) external view returns(uint256 amount) {
+        amount = storedPendingReward[claimant];
     }
 }
