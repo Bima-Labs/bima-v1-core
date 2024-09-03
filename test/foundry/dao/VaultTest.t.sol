@@ -12,11 +12,13 @@ contract VaultTest is TestSetup {
     uint256 constant internal MAX_COUNT = 10;
 
     MockEmissionReceiver internal mockEmissionReceiver;
+    address mockEmissionReceiverAddr;
     
     function setUp() public virtual override {
         super.setUp();
 
         mockEmissionReceiver = new MockEmissionReceiver();
+        mockEmissionReceiverAddr = address(mockEmissionReceiver);
     }
 
     function test_constructor() external view {
@@ -113,7 +115,7 @@ contract VaultTest is TestSetup {
         vm.warp(block.timestamp + weeksToAdd * 1 weeks);
 
         // helper registers receivers and performs all necessary checks
-        _vaultRegisterReceiver(address(mockEmissionReceiver), count);
+        _vaultRegisterReceiver(mockEmissionReceiverAddr, count);
     }
 
     function test_registerReceiver_zeroCount() external {
@@ -153,11 +155,8 @@ contract VaultTest is TestSetup {
         // first need to fund vault with tokens
         test_setInitialParameters();
 
-        // owner registers receiver
-        address receiver = address(mockEmissionReceiver);
-
         // helper registers receivers and performs all necessary checks
-        uint256 RECEIVER_ID = _vaultRegisterReceiver(receiver, 1);
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(mockEmissionReceiverAddr, 1);
 
         // warp time by 1 week
         vm.warp(block.timestamp + 1 weeks);
@@ -170,7 +169,7 @@ contract VaultTest is TestSetup {
         assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY);
 
         // receiver calls allocateNewEmissions
-        vm.prank(receiver);
+        vm.prank(mockEmissionReceiverAddr);
         uint256 allocated = babelVault.allocateNewEmissions(RECEIVER_ID);
 
         // verify BabelVault::totalUpdateWeek current system week
@@ -211,8 +210,7 @@ contract VaultTest is TestSetup {
         // first get some allocated tokens
         test_allocateNewEmissions_oneReceiverWithVotingWeight();
 
-        address receiver = address(mockEmissionReceiver);
-        uint256 allocatedBalancePre = babelVault.allocated(receiver);
+        uint256 allocatedBalancePre = babelVault.allocated(mockEmissionReceiverAddr);
         assertTrue(allocatedBalancePre > 0);
 
         // bound fuzz inputs
@@ -220,27 +218,26 @@ contract VaultTest is TestSetup {
 
         // cache state prior to call
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
-        uint128 accountWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(receiver, systemWeek);
+        uint128 accountWeeklyEarnedPre = babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek);
         uint128 unallocatedTotalPre = babelVault.unallocatedTotal();
-        uint256 accountPendingRewardPre = babelVault.getStoredPendingReward(receiver);
-        assertEq(accountPendingRewardPre, 0);
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr), 0);
 
         // receiver has nothing locked prior to call
-        (uint256 receiverLockedBalance, ) = tokenLocker.getAccountBalances(receiver);
+        (uint256 receiverLockedBalance, ) = tokenLocker.getAccountBalances(mockEmissionReceiverAddr);
         assertEq(receiverLockedBalance, 0);
         uint256 totalLockedWeightPre = tokenLocker.getTotalWeight();
         uint256 futureLockerTotalWeeklyUnlocksPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks());
-        uint256 futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(receiver, systemWeek+babelVault.lockWeeks());
+        uint256 futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks());
 
         // then transfer allocated tokens
-        vm.prank(receiver);
-        assertTrue(babelVault.transferAllocatedTokens(receiver, receiver, transferAmount));
+        vm.prank(mockEmissionReceiverAddr);
+        assertTrue(babelVault.transferAllocatedTokens(mockEmissionReceiverAddr, mockEmissionReceiverAddr, transferAmount));
 
         // verify allocated balance reduced by transfer amount
-        assertEq(babelVault.allocated(receiver), allocatedBalancePre - transferAmount);
+        assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - transferAmount);
 
         // verify account weekly earned increased by transferred amount
-        assertEq(babelVault.getAccountWeeklyEarned(receiver, systemWeek),
+        assertEq(babelVault.getAccountWeeklyEarned(mockEmissionReceiverAddr, systemWeek),
                  accountWeeklyEarnedPre + transferAmount);
 
         // verify unallocated total remains the same as the transfer took
@@ -250,29 +247,29 @@ contract VaultTest is TestSetup {
         // verify receiver's pending reward was correctly set to the "dust"
         // amount that was too small to lock
         uint256 lockedAmount = transferAmount / INIT_LOCK_TO_TOKEN_RATIO;
-        assertEq(babelVault.getStoredPendingReward(receiver),
+        assertEq(babelVault.getStoredPendingReward(mockEmissionReceiverAddr),
                  transferAmount - lockedAmount * INIT_LOCK_TO_TOKEN_RATIO);
 
         // verify lock has been correctly created
         if(lockedAmount > 0) {
-            (receiverLockedBalance, ) = tokenLocker.getAccountBalances(receiver);
+            (receiverLockedBalance, ) = tokenLocker.getAccountBalances(mockEmissionReceiverAddr);
             assertEq(receiverLockedBalance, lockedAmount);
 
             // verify receiver has positive voting weight in the current week
-            assertTrue(tokenLocker.getAccountWeight(receiver) > 0);
+            assertTrue(tokenLocker.getAccountWeight(mockEmissionReceiverAddr) > 0);
 
             // verify receiver has no voting weight for future weeks
-            assertEq(tokenLocker.getAccountWeightAt(receiver, tokenLocker.getWeek()+1), 0);
+            assertEq(tokenLocker.getAccountWeightAt(mockEmissionReceiverAddr, systemWeek+1), 0);
 
             // verify total weight for current week increased by receiver weight
-            assertEq(tokenLocker.getTotalWeight(), totalLockedWeightPre + tokenLocker.getAccountWeight(receiver));
+            assertEq(tokenLocker.getTotalWeight(), totalLockedWeightPre + tokenLocker.getAccountWeight(mockEmissionReceiverAddr));
 
             // verify no total weight for future weeks
-            assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+            assertEq(tokenLocker.getTotalWeightAt(systemWeek+1), 0);
 
             // verify receiver active locks are correct
             (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-                = tokenLocker.getAccountActiveLocks(receiver, 0);
+                = tokenLocker.getAccountActiveLocks(mockEmissionReceiverAddr, 0);
 
             assertEq(activeLockData.length, 1);
             assertEq(frozenAmount, 0);
@@ -284,10 +281,11 @@ contract VaultTest is TestSetup {
                     futureLockerTotalWeeklyUnlocksPre + lockedAmount);
 
             // verify future account weekly unlocks updated for locked amount
-            assertEq(tokenLocker.getAccountWeeklyUnlocks(receiver, systemWeek+babelVault.lockWeeks()),
+            assertEq(tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks()),
                     futureLockerAccountWeeklyUnlocksPre + lockedAmount);
         }
     }
+
 
     function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
         // setup vault giving user1 half supply to lock for voting power
