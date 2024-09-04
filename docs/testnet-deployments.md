@@ -32,7 +32,6 @@
 - [Soneium Minato Testnet](#Soneium-Minato-Testnet)
 - [Rootstock Testnet](#rootstock-testnet)
 
-
 ## Arbitrum Sepolia Testnet
 
 | Core Contracts     | Address                                    |
@@ -234,27 +233,26 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x42BA4B2aa2348Ef16f74370945F82ba6fb207f8D |
-| PriceFeed          | 0x96544E147b80262A9b82E237ae0856A3800BC045 |
-| FeeReceiver        | 0x37EC6a7532E964F1A74032b100719876ae9768bb |
-| InterimAdmin       | 0x5C92E1b3251bBCA3E5328093E13257DE323A4e4d |
-| Gas Pool           | 0xf6043aC08fBE40fDA6f4A3F56dC3fa4188e8EfdF |
-| Factory            | 0xc663441101860f19e9B174C55E02f513BBbcc564 |
-| LiquidationManager | 0xbE818281d5B1f76A86d24aD2157bfBA5c32e2a2C |
-| DebtToken          | 0xa5A2d52F2670B4135A0BE3A035ed8933AEc7FA52 |
-| BorrowerOperations | 0x4BBb1Ec253Da5A79BBe1196640C350aE490Ec33D |
-| StabilityPool      | 0xf9312548C7Eb3fc2b851b3EBe9505ACEd16E0812 |
-| TroveManager       | 0xa9505E73282492779C45f91acEEf5cc9328500de |
-| SortedTroves       | 0x242535a09b644059C36b2986Fff2F8c6f7a862A3 |
-| TokenLocker        | 0x1f2517C75A13cb9D4Be04ab72d6039aDBF6D8ec7 |
-| IncentiveVoting    | 0x9B241c362d41484C16B733352c7C795cC25f150d |
-| BabelToken         | 0xbFEa106Aa5a0D23872ec16D0B24947539480C558 |
-| BabelVault         | 0x32CC43E221539390bFF539c5093BDB2d8E59096D |
+| BabelCore          | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
+| PriceFeed          | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
+| FeeReceiver        | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
+| InterimAdmin       | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
+| Gas Pool           | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
+| Factory            | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 |
+| LiquidationManager | 0xDbB15AC4e44b999eFaeDA902A4f8F59bF881382B |
+| DebtToken          | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF |
+| BorrowerOperations | 0xe05295f7be167a9bFfEd5b0a4626b42dEdDC955f |
+| StabilityPool      | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 |
+| TroveManager       | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D |
+| SortedTroves       | 0x3175c8E8C107c34D69D6884e1CC9c240B227Db06 |
+| TokenLocker        | 0x9a64371655872B16395342B0C7A27C16d9eaC78e |
+| IncentiveVoting    | 0xb50b156c2f9418DE5c38Ca9070Ef2c3FA5e1AFA2 |
+| BabelToken         | 0xA385C1494F7540CF3e6e35C0FBcCab2Fa6696C9C |
+| BabelVault         | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| stBTC (mocked)  | 0x207eC3288AC9422f22905Db4861B1F4f5ebEB278 | 0xEC29712045972E64CFE9be26C192A535E14881Da | 0x7d8F7d705AbBE5a12C26a51C4c69321B08ECFd9B |
-| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0xb3Ead2D9Baf95a4499C89dDA4a34a38a3f6B57CB | 0x7d8F7d705AbBE5a12C26a51C4c69321B08ECFd9B |
+| uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0x7fa611d05cDA27E7c6a1B030721d7781F15e19cb | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
 
 ## BEVM Testnet
 
@@ -801,8 +799,7 @@
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
- 
+
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-
