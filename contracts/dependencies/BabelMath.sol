@@ -15,12 +15,12 @@ library BabelMath {
      */
     uint256 internal constant NICR_PRECISION = 1e20;
 
-    function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
-        return (_a < _b) ? _a : _b;
+    function _min(uint256 _a, uint256 _b) internal pure returns (uint256 result) {
+        result = (_a < _b) ? _a : _b;
     }
 
-    function _max(uint256 _a, uint256 _b) internal pure returns (uint256) {
-        return (_a >= _b) ? _a : _b;
+    function _max(uint256 _a, uint256 _b) internal pure returns (uint256 result) {
+        result = (_a >= _b) ? _a : _b;
     }
 
     /*
@@ -54,73 +54,70 @@ library BabelMath {
      * In function 1), the decayed base rate will be 0 for 1000 years or > 1000 years
      * In function 2), the difference in tokens issued at 1000 years and any time > 1000 years, will be negligible
      */
-    function _decPow(uint256 _base, uint256 _minutes) internal pure returns (uint256) {
+    function _decPow(uint256 _base, uint256 _minutes) internal pure returns (uint256 result) {
         if (_minutes > 525600000) {
             _minutes = 525600000;
         } // cap to avoid overflow
 
         if (_minutes == 0) {
-            return DECIMAL_PRECISION;
+            result = DECIMAL_PRECISION;
         }
+        else {
+            uint256 y = DECIMAL_PRECISION;
+            uint256 x = _base;
+            uint256 n = _minutes;
 
-        uint256 y = DECIMAL_PRECISION;
-        uint256 x = _base;
-        uint256 n = _minutes;
-
-        // Exponentiation-by-squaring
-        while (n > 1) {
-            if (n % 2 == 0) {
-                x = decMul(x, x);
-                n = n / 2;
-            } else {
-                // if (n % 2 != 0)
-                y = decMul(x, y);
-                x = decMul(x, x);
-                n = (n - 1) / 2;
+            // Exponentiation-by-squaring
+            while (n > 1) {
+                if (n % 2 == 0) {
+                    x = decMul(x, x);
+                    n = n / 2;
+                } else {
+                    // if (n % 2 != 0)
+                    y = decMul(x, y);
+                    x = decMul(x, x);
+                    n = (n - 1) / 2;
+                }
             }
+
+            result = decMul(x, y);
         }
-
-        return decMul(x, y);
     }
 
-    function _getAbsoluteDifference(uint256 _a, uint256 _b) internal pure returns (uint256) {
-        return (_a >= _b) ? _a - _b : _b - _a;
+    function _getAbsoluteDifference(uint256 _a, uint256 _b) internal pure returns (uint256 result) {
+        result = (_a >= _b) ? _a - _b : _b - _a;
     }
 
-    function _computeNominalCR(uint256 _coll, uint256 _debt) internal pure returns (uint256) {
+    function _computeNominalCR(uint256 _coll, uint256 _debt) internal pure returns (uint256 result) {
         if (_debt > 0) {
-            return (_coll * NICR_PRECISION) / _debt;
+            result = (_coll * NICR_PRECISION) / _debt;
         }
         // Return the maximal value for uint256 if the Trove has a debt of 0. Represents "infinite" CR.
         else {
             // if (_debt == 0)
-            return 2 ** 256 - 1;
+            result = 2 ** 256 - 1;
         }
     }
 
-    function _computeCR(uint256 _coll, uint256 _debt, uint256 _price) internal pure returns (uint256) {
+    function _computeCR(uint256 _coll, uint256 _debt, uint256 _price) internal pure returns (uint256 result) {
         if (_debt > 0) {
-            uint256 newCollRatio = (_coll * _price) / _debt;
-
-            return newCollRatio;
+            result = (_coll * _price) / _debt;
         }
         // Return the maximal value for uint256 if the Trove has a debt of 0. Represents "infinite" CR.
         else {
             // if (_debt == 0)
-            return 2 ** 256 - 1;
+            result = 2 ** 256 - 1;
         }
     }
 
-    function _computeCR(uint256 _coll, uint256 _debt) internal pure returns (uint256) {
+    function _computeCR(uint256 _coll, uint256 _debt) internal pure returns (uint256 result) {
         if (_debt > 0) {
-            uint256 newCollRatio = (_coll) / _debt;
-
-            return newCollRatio;
+            result = (_coll) / _debt;
         }
         // Return the maximal value for uint256 if the Trove has a debt of 0. Represents "infinite" CR.
         else {
             // if (_debt == 0)
-            return 2 ** 256 - 1;
+            result = 2 ** 256 - 1;
         }
     }
 }
