@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-library BabelMath {
-    uint256 internal constant DECIMAL_PRECISION = 1e18;
+import {BIMA_DECIMAL_PRECISION} from "./Constants.sol";
 
+library BabelMath {
     /* Precision for Nominal ICR (independent of price). Rationale for the value:
      *
      * - Making it “too high” could lead to overflows.
@@ -33,7 +33,7 @@ library BabelMath {
     function decMul(uint256 x, uint256 y) internal pure returns (uint256 decProd) {
         uint256 prod_xy = x * y;
 
-        decProd = (prod_xy + (DECIMAL_PRECISION / 2)) / DECIMAL_PRECISION;
+        decProd = (prod_xy + (BIMA_DECIMAL_PRECISION / 2)) / BIMA_DECIMAL_PRECISION;
     }
 
     /*
@@ -60,10 +60,10 @@ library BabelMath {
         } // cap to avoid overflow
 
         if (_minutes == 0) {
-            result = DECIMAL_PRECISION;
+            result = BIMA_DECIMAL_PRECISION;
         }
         else {
-            uint256 y = DECIMAL_PRECISION;
+            uint256 y = BIMA_DECIMAL_PRECISION;
             uint256 x = _base;
             uint256 n = _minutes;
 

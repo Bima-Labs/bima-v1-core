@@ -6,6 +6,7 @@ import {BabelBase} from "../dependencies/BabelBase.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
+import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 import {IBorrowerOperations, ITroveManager, IDebtToken} from "../interfaces/IBorrowerOperations.sol";
 
 /**
@@ -520,7 +521,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
     }
 
     function _requireValidMaxFeePercentage(uint256 _maxFeePercentage) internal pure {
-        require(_maxFeePercentage <= DECIMAL_PRECISION, "Max fee percentage must less than or equal to 100%");
+        require(_maxFeePercentage <= BIMA_DECIMAL_PRECISION, "Max fee percentage must less than or equal to 100%");
     }
 
     // Compute the new collateral ratio, considering the change in coll and debt. Assumes 0 pending rewards.

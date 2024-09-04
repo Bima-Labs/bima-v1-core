@@ -5,6 +5,7 @@ import {IPriceFeed, IAggregatorV3Interface} from "../interfaces/IPriceFeed.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 
 /**
     @title Babel Multi Token Price Feed
@@ -247,7 +248,7 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
          * - If price decreased, the percentage deviation is in relation to the previous price.
          * - If price increased, the percentage deviation is in relation to the current price.
          */
-        uint256 percentDeviation = ((maxPrice - minPrice) * BabelMath.DECIMAL_PRECISION) / maxPrice;
+        uint256 percentDeviation = ((maxPrice - minPrice) * BIMA_DECIMAL_PRECISION) / maxPrice;
 
         return percentDeviation > MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND;
     }

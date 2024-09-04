@@ -7,6 +7,7 @@ import {ISortedTroves} from "../../interfaces/ISortedTroves.sol";
 import {IFactory} from "../../interfaces/IFactory.sol";
 import {BabelBase} from "../../dependencies/BabelBase.sol";
 import {BabelMath} from "../../dependencies/BabelMath.sol";
+import {BIMA_DECIMAL_PRECISION} from "../../dependencies/Constants.sol";
 
 contract MultiCollateralHintHelpers is BabelBase {
     IBorrowerOperations public immutable borrowerOperations;
@@ -69,7 +70,7 @@ contract MultiCollateralHintHelpers is BabelBase {
                 if (netDebt > minNetDebt) {
                     uint256 maxRedeemableDebt = BabelMath._min(remainingDebt, netDebt - minNetDebt);
 
-                    uint256 newColl = coll - ((maxRedeemableDebt * DECIMAL_PRECISION) / _price);
+                    uint256 newColl = coll - ((maxRedeemableDebt * BIMA_DECIMAL_PRECISION) / _price);
                     uint256 newDebt = netDebt - maxRedeemableDebt;
 
                     uint256 compositeDebt = _getCompositeDebt(newDebt);

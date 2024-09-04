@@ -36,8 +36,6 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function withdrawFromSP(uint256 _amount) external;
 
-    function DECIMAL_PRECISION() external view returns (uint256);
-
     function P() external view returns (uint256);
 
     function SCALE_FACTOR() external view returns (uint256);

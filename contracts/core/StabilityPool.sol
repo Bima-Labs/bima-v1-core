@@ -5,6 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 /**
@@ -18,7 +19,6 @@ import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/ISt
 contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
-    uint256 public constant DECIMAL_PRECISION = 1e18;
     uint128 public constant SUNSET_DURATION = 180 days;
     uint256 constant REWARD_DURATION = 1 weeks;
 
@@ -55,7 +55,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      * During its lifetime, a deposit's value evolves from d_t to d_t * P / P_t , where P_t
      * is the snapshot of P taken at the instant the deposit was made. 18-digit decimal.
      */
-    uint256 public P = DECIMAL_PRECISION;
+    uint256 public P = BIMA_DECIMAL_PRECISION;
 
     uint256 public constant SCALE_FACTOR = 1e9;
 
@@ -347,7 +347,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
          * 4) Store this error for use in the next correction when this function is called.
          * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
          */
-        uint256 babelNumerator = (_babelIssuance * DECIMAL_PRECISION) + lastBabelError;
+        uint256 babelNumerator = (_babelIssuance * BIMA_DECIMAL_PRECISION) + lastBabelError;
 
         uint256 babelPerUnitStaked = babelNumerator / _totalDebtTokenDeposits;
         lastBabelError = babelNumerator - (babelPerUnitStaked * _totalDebtTokenDeposits);
@@ -406,13 +406,13 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
          * 4) Store these errors for use in the next correction when this function is called.
          * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
          */
-        uint256 collateralNumerator = (_collToAdd * DECIMAL_PRECISION) + lastCollateralError_Offset;
+        uint256 collateralNumerator = (_collToAdd * BIMA_DECIMAL_PRECISION) + lastCollateralError_Offset;
 
         if (_debtToOffset == _totalDebtTokenDeposits) {
-            debtLossPerUnitStaked = DECIMAL_PRECISION; // When the Pool depletes to 0, so does each deposit
+            debtLossPerUnitStaked = BIMA_DECIMAL_PRECISION; // When the Pool depletes to 0, so does each deposit
             lastDebtLossError_Offset = 0;
         } else {
-            uint256 debtLossNumerator = (_debtToOffset * DECIMAL_PRECISION) - lastDebtLossError_Offset;
+            uint256 debtLossNumerator = (_debtToOffset * BIMA_DECIMAL_PRECISION) - lastDebtLossError_Offset;
             /*
              * Add 1 to make error in quotient positive. We want "slightly too much" Debt loss,
              * which ensures the error in any given compoundedDebtDeposit favors the Stability Pool.
@@ -440,7 +440,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
          * The newProductFactor is the factor by which to change all deposits, due to the depletion of Stability Pool Debt in the liquidation.
          * We make the product factor 0 if there was a pool-emptying. Otherwise, it is (1 - DebtLossPerUnitStaked)
          */
-        uint256 newProductFactor = uint256(DECIMAL_PRECISION) - _debtLossPerUnitStaked;
+        uint256 newProductFactor = uint256(BIMA_DECIMAL_PRECISION) - _debtLossPerUnitStaked;
 
         uint128 currentScaleCached = currentScale;
         uint128 currentEpochCached = currentEpoch;
@@ -464,15 +464,15 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             emit EpochUpdated(currentEpoch);
             currentScale = 0;
             emit ScaleUpdated(currentScale);
-            newP = DECIMAL_PRECISION;
+            newP = BIMA_DECIMAL_PRECISION;
 
             // If multiplying P by a non-zero product factor would reduce P below the scale boundary, increment the scale
-        } else if ((currentP * newProductFactor) / DECIMAL_PRECISION < SCALE_FACTOR) {
-            newP = (currentP * newProductFactor * SCALE_FACTOR) / DECIMAL_PRECISION;
+        } else if ((currentP * newProductFactor) / BIMA_DECIMAL_PRECISION < SCALE_FACTOR) {
+            newP = (currentP * newProductFactor * SCALE_FACTOR) / BIMA_DECIMAL_PRECISION;
             currentScale = currentScaleCached + 1;
             emit ScaleUpdated(currentScale);
         } else {
-            newP = (currentP * newProductFactor) / DECIMAL_PRECISION;
+            newP = (currentP * newProductFactor) / BIMA_DECIMAL_PRECISION;
         }
 
         require(newP > 0, "NewP");
@@ -511,7 +511,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
             uint256 secondPortion = nextSums[i] / SCALE_FACTOR;
-            collateralGains[i] += (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / DECIMAL_PRECISION;
+            collateralGains[i] += (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
         }
         return collateralGains;
     }
@@ -539,7 +539,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             uint256 firstPortion = sums[i] - depSums[i];
             uint256 secondPortion = nextSums[i] / SCALE_FACTOR;
             depositorGains[i] += uint80(
-                (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / DECIMAL_PRECISION
+                (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
             );
         }
         return (hasGains);
@@ -558,7 +558,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         if (totalDebt == 0 || initialDeposit == 0) {
             return 0;
         }
-        uint256 babelNumerator = (_vestedEmissions() * DECIMAL_PRECISION) + lastBabelError;
+        uint256 babelNumerator = (_vestedEmissions() * BIMA_DECIMAL_PRECISION) + lastBabelError;
         uint256 babelPerUnitStaked = babelNumerator / totalDebt;
         uint256 marginalBabelGain = babelPerUnitStaked * P;
 
@@ -575,7 +575,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             secondPortion = (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBabelGain) / SCALE_FACTOR;
         }
 
-        return (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / DECIMAL_PRECISION;
+        return (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / BIMA_DECIMAL_PRECISION;
     }
 
     function _claimableReward(address _depositor) private view returns (uint256) {
@@ -606,7 +606,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - G_Snapshot;
         uint256 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / SCALE_FACTOR;
 
-        uint256 babelGain = (initialStake * (firstPortion + secondPortion)) / P_Snapshot / DECIMAL_PRECISION;
+        uint256 babelGain = (initialStake * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
 
         return babelGain;
     }

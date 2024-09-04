@@ -10,7 +10,7 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelBase} from "../dependencies/BabelBase.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
-import {BIMA_100_PCT} from "../dependencies/Constants.sol";
+import {BIMA_100_PCT, BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 
 // todo: remove before production
 import {console} from "hardhat/console.sol";
@@ -71,10 +71,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
     // commented values are Liquity's fixed settings for each parameter
     uint256 public minuteDecayFactor; // 999037758833783000  (half-life of 12 hours)
-    uint256 public redemptionFeeFloor; // DECIMAL_PRECISION / 1000 * 5  (0.5%)
-    uint256 public maxRedemptionFee; // DECIMAL_PRECISION  (100%)
-    uint256 public borrowingFeeFloor; // DECIMAL_PRECISION / 1000 * 5  (0.5%)
-    uint256 public maxBorrowingFee; // DECIMAL_PRECISION / 100 * 5  (5%)
+    uint256 public redemptionFeeFloor; // BIMA_DECIMAL_PRECISION / 1000 * 5  (0.5%)
+    uint256 public maxRedemptionFee; // BIMA_DECIMAL_PRECISION  (100%)
+    uint256 public borrowingFeeFloor; // BIMA_DECIMAL_PRECISION / 1000 * 5  (0.5%)
+    uint256 public maxBorrowingFee; // BIMA_DECIMAL_PRECISION / 100 * 5  (5%)
     uint256 public maxSystemDebt;
 
     uint256 public interestRate;
@@ -303,8 +303,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             _minuteDecayFactor >= 977159968434245000 && // half-life of 30 minutes
                 _minuteDecayFactor <= 999931237762985000 // half-life of 1 week
         );
-        require(_redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= DECIMAL_PRECISION);
-        require(_borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= DECIMAL_PRECISION);
+        require(_redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
+        require(_borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
 
         _decayBaseRate();
 
@@ -463,7 +463,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         if (coll + debt == 0 || Troves[_borrower].status != Status.active) return (0, 0);
 
         uint256 stake = Troves[_borrower].stake;
-        return ((stake * coll) / DECIMAL_PRECISION, (stake * debt) / DECIMAL_PRECISION);
+        return ((stake * coll) / BIMA_DECIMAL_PRECISION, (stake * debt) / BIMA_DECIMAL_PRECISION);
     }
 
     function hasPendingRewards(address _borrower) public view returns (bool) {
@@ -499,7 +499,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 redeemedDebtFraction = (_collateralDrawn * _price) / _totalDebtSupply;
 
         uint256 newBaseRate = decayedBaseRate + (redeemedDebtFraction / BETA);
-        newBaseRate = BabelMath._min(newBaseRate, DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
+        newBaseRate = BabelMath._min(newBaseRate, BIMA_DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
 
         // Update the baseRate state variable
         baseRate = newBaseRate;
@@ -531,7 +531,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function _calcRedemptionFee(uint256 _redemptionRate, uint256 _collateralDrawn) internal pure returns (uint256) {
-        uint256 redemptionFee = (_redemptionRate * _collateralDrawn) / DECIMAL_PRECISION;
+        uint256 redemptionFee = (_redemptionRate * _collateralDrawn) / BIMA_DECIMAL_PRECISION;
         require(redemptionFee < _collateralDrawn, "Fee exceeds returned collateral");
         return redemptionFee;
     }
@@ -559,7 +559,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function _calcBorrowingFee(uint256 _borrowingRate, uint256 _debt) internal pure returns (uint256) {
-        return (_borrowingRate * _debt) / DECIMAL_PRECISION;
+        return (_borrowingRate * _debt) / BIMA_DECIMAL_PRECISION;
     }
 
     // --- Internal fee functions ---
@@ -578,7 +578,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 minutesPassed = (block.timestamp - lastFeeOperationTime) / SECONDS_IN_ONE_MINUTE;
         uint256 decayFactor = BabelMath._decPow(minuteDecayFactor, minutesPassed);
 
-        return (baseRate * decayFactor) / DECIMAL_PRECISION;
+        return (baseRate * decayFactor) / BIMA_DECIMAL_PRECISION;
     }
 
     // --- Redemption functions ---
@@ -710,7 +710,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         singleRedemption.debtLot = BabelMath._min(_maxDebtAmount, t.debt - DEBT_GAS_COMPENSATION);
 
         // Get the CollateralLot of equivalent value in USD
-        singleRedemption.collateralLot = (singleRedemption.debtLot * DECIMAL_PRECISION) / _price;
+        singleRedemption.collateralLot = (singleRedemption.debtLot * BIMA_DECIMAL_PRECISION) / _price;
 
         // Decrease the debt and collateral of the current Trove according to the debt lot and corresponding collateral to send
         uint256 newDebt = (t.debt) - singleRedemption.debtLot;
@@ -1288,8 +1288,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
          * 4) Store these errors for use in the next correction when this function is called.
          * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
          */
-        uint256 collateralNumerator = (_coll * DECIMAL_PRECISION) + lastCollateralError_Redistribution;
-        uint256 debtNumerator = (_debt * DECIMAL_PRECISION) + lastDebtError_Redistribution;
+        uint256 collateralNumerator = (_coll * BIMA_DECIMAL_PRECISION) + lastCollateralError_Redistribution;
+        uint256 debtNumerator = (_debt * BIMA_DECIMAL_PRECISION) + lastDebtError_Redistribution;
         uint256 totalStakesCached = totalStakes;
         // Get the per-unit-staked terms
         uint256 collateralRewardPerUnitStaked = collateralNumerator / totalStakesCached;

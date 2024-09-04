@@ -2,14 +2,13 @@
 pragma solidity 0.8.19;
 
 import {IBabelBase} from "../interfaces/IBabelBase.sol";
+import {BIMA_DECIMAL_PRECISION} from "./Constants.sol";
 
 /*
  * Base contract for TroveManager, BorrowerOperations and StabilityPool. Contains global system constants and
  * common functions.
  */
 contract BabelBase is IBabelBase {
-    uint256 public constant DECIMAL_PRECISION = 1e18;
-
     // Critical system collateral ratio. If the system's total collateral ratio (TCR) falls below the CCR, Recovery Mode is triggered.
     uint256 public constant CCR = 2.25e18; // 225%
 
@@ -39,7 +38,7 @@ contract BabelBase is IBabelBase {
     }
 
     function _requireUserAcceptsFee(uint256 _fee, uint256 _amount, uint256 _maxFeePercentage) internal pure {
-        uint256 feePercentage = (_fee * DECIMAL_PRECISION) / _amount;
+        uint256 feePercentage = (_fee * BIMA_DECIMAL_PRECISION) / _amount;
         require(feePercentage <= _maxFeePercentage, "Fee exceeded provided maximum");
     }
 }
