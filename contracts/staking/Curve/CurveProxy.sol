@@ -87,7 +87,7 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
     function setExecutePermissions(
         address caller,
         address target,
-        bytes4[] memory selectors,
+        bytes4[] calldata selectors,
         bool permitted
     ) external onlyOwner returns (bool success) {
         mapping(bytes4 => bool) storage _executePermission = executePermissions[caller][target];
