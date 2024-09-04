@@ -111,18 +111,21 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
 
     function setVoteManager(address _voteManager) external onlyOwner returns (bool success) {
         voteManager = _voteManager;
+        emit SetVoteManager(_voteManager);
 
         success = true;
     }
 
     function setDepositManager(address _depositManager) external onlyOwner returns (bool success) {
         depositManager = _depositManager;
+        emit SetDepositManager(_depositManager);
 
         success = true;
     }
 
     function setPerGaugeApproval(address caller, address gauge) external onlyDepositManager returns (bool success) {
         perGaugeApproval[caller] = gauge;
+        emit SetPerGaugeApproval(caller, gauge);
 
         success = true;
     }
