@@ -21,7 +21,7 @@ contract TroveManagerGetters {
         @notice Returns all active system trove managers and collaterals, as an
         `       array of tuples of [(collateral, [troveManager, ...]), ...]
      */
-    function getAllCollateralsAndTroveManagers() external view returns (Collateral[] memory) {
+    function getAllCollateralsAndTroveManagers() external view returns (Collateral[] memory collateralMap) {
         uint256 length = factory.troveManagerCount();
         address[2][] memory troveManagersAndCollaterals = new address[2][](length);
         address[] memory uniqueCollaterals = new address[](length);
@@ -39,7 +39,8 @@ contract TroveManagerGetters {
                 }
             }
         }
-        Collateral[] memory collateralMap = new Collateral[](collateralCount);
+        
+        collateralMap = new Collateral[](collateralCount);
         for (uint256 i; i < collateralCount; i++) {
             collateralMap[i].collateral = uniqueCollaterals[i];
             uint256 tmCollCount;
@@ -55,16 +56,14 @@ contract TroveManagerGetters {
                 collateralMap[i].troveManagers[x] = troveManagers[x];
             }
         }
-
-        return collateralMap;
     }
 
     /**
         @notice Returns a list of trove managers where `account` has an existing trove
      */
-    function getActiveTroveManagersForAccount(address account) external view returns (address[] memory) {
+    function getActiveTroveManagersForAccount(address account) external view returns (address[] memory troveManagers) {
         uint256 length = factory.troveManagerCount();
-        address[] memory troveManagers = new address[](length);
+        troveManagers = new address[](length);
         uint256 tmCount;
         for (uint256 i; i < length; i++) {
             address troveManager = factory.troveManagers(i);
@@ -76,6 +75,5 @@ contract TroveManagerGetters {
         assembly {
             mstore(troveManagers, tmCount)
         }
-        return troveManagers;
     }
 }

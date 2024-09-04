@@ -107,39 +107,38 @@ contract MultiCollateralHintHelpers is BabelBase {
         ISortedTroves sortedTroves = ISortedTroves(troveManager.sortedTroves());
         uint256 arrayLength = troveManager.getTroveOwnersCount();
 
-        if (arrayLength == 0) {
-            return (address(0), 0, _inputRandomSeed);
-        }
-
-        hintAddress = sortedTroves.getLast();
-        diff = BabelMath._getAbsoluteDifference(_CR, troveManager.getNominalICR(hintAddress));
         latestRandomSeed = _inputRandomSeed;
 
-        uint256 i = 1;
+        if (arrayLength != 0) {
+            hintAddress = sortedTroves.getLast();
+            diff = BabelMath._getAbsoluteDifference(_CR, troveManager.getNominalICR(hintAddress));
 
-        while (i < _numTrials) {
-            latestRandomSeed = uint256(keccak256(abi.encodePacked(latestRandomSeed)));
+            uint256 i = 1;
 
-            uint256 arrayIndex = latestRandomSeed % arrayLength;
-            address currentAddress = troveManager.getTroveFromTroveOwnersArray(arrayIndex);
-            uint256 currentNICR = troveManager.getNominalICR(currentAddress);
+            while (i < _numTrials) {
+                latestRandomSeed = uint256(keccak256(abi.encodePacked(latestRandomSeed)));
 
-            // check if abs(current - CR) > abs(closest - CR), and update closest if current is closer
-            uint256 currentDiff = BabelMath._getAbsoluteDifference(currentNICR, _CR);
+                uint256 arrayIndex = latestRandomSeed % arrayLength;
+                address currentAddress = troveManager.getTroveFromTroveOwnersArray(arrayIndex);
+                uint256 currentNICR = troveManager.getNominalICR(currentAddress);
 
-            if (currentDiff < diff) {
-                diff = currentDiff;
-                hintAddress = currentAddress;
+                // check if abs(current - CR) > abs(closest - CR), and update closest if current is closer
+                uint256 currentDiff = BabelMath._getAbsoluteDifference(currentNICR, _CR);
+
+                if (currentDiff < diff) {
+                    diff = currentDiff;
+                    hintAddress = currentAddress;
+                }
+                i++;
             }
-            i++;
         }
     }
 
-    function computeNominalCR(uint256 _coll, uint256 _debt) external pure returns (uint256) {
-        return BabelMath._computeNominalCR(_coll, _debt);
+    function computeNominalCR(uint256 _coll, uint256 _debt) external pure returns (uint256 result) {
+        result = BabelMath._computeNominalCR(_coll, _debt);
     }
 
-    function computeCR(uint256 _coll, uint256 _debt, uint256 _price) external pure returns (uint256) {
-        return BabelMath._computeCR(_coll, _debt, _price);
+    function computeCR(uint256 _coll, uint256 _debt, uint256 _price) external pure returns (uint256 result) {
+        result = BabelMath._computeCR(_coll, _debt, _price);
     }
 }
