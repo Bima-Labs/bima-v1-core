@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
 import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 import {BIMA_100_PCT} from "../../dependencies/Constants.sol";
+
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface IBooster {
     function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool);
@@ -266,7 +268,7 @@ contract ConvexDepositToken is IEmissionReceiver {
             if (account != address(0)) {
                 uint256 integralFor = rewardIntegralFor[account][i];
                 if (integral > integralFor) {
-                    storedPendingReward[account][i] += uint128((balance * (integral - integralFor)) / 1e18);
+                    storedPendingReward[account][i] += SafeCast.toUint128((balance * (integral - integralFor)) / 1e18);
                     rewardIntegralFor[account][i] = integral;
                 }
             }
@@ -294,11 +296,11 @@ contract ConvexDepositToken is IEmissionReceiver {
             crvAmount -= fee;
             CRV.transfer(address(curveProxy), fee);
         }
-        lastCrvBalance = uint128(last + crvAmount);
+        lastCrvBalance = SafeCast.toUint128(last + crvAmount);
 
         last = lastCvxBalance;
         uint256 cvxAmount = CVX.balanceOf(address(this)) - last;
-        lastCvxBalance = uint128(cvxAmount + last);
+        lastCvxBalance = SafeCast.toUint128(cvxAmount + last);
 
         uint256 _periodFinish = periodFinish;
         if (block.timestamp < _periodFinish) {
@@ -308,9 +310,9 @@ contract ConvexDepositToken is IEmissionReceiver {
             cvxAmount += remaining * rewardRate[2];
         }
 
-        rewardRate[0] = uint128(babelAmount / REWARD_DURATION);
-        rewardRate[1] = uint128(crvAmount / REWARD_DURATION);
-        rewardRate[2] = uint128(cvxAmount / REWARD_DURATION);
+        rewardRate[0] = SafeCast.toUint128(babelAmount / REWARD_DURATION);
+        rewardRate[1] = SafeCast.toUint128(crvAmount / REWARD_DURATION);
+        rewardRate[2] = SafeCast.toUint128(cvxAmount / REWARD_DURATION);
 
         lastUpdate = uint32(block.timestamp);
         periodFinish = uint32(block.timestamp + REWARD_DURATION);

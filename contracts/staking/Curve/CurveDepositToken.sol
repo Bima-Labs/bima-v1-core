@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
 import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
 import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
     @title Babel Curve Deposit Wrapper
@@ -214,7 +216,7 @@ contract CurveDepositToken is IEmissionReceiver {
             if (account != address(0)) {
                 uint256 integralFor = rewardIntegralFor[account][i];
                 if (integral > integralFor) {
-                    storedPendingReward[account][i] += uint128((balance * (integral - integralFor)) / 1e18);
+                    storedPendingReward[account][i] += SafeCast.toUint128((balance * (integral - integralFor)) / 1e18);
                     rewardIntegralFor[account][i] = integral;
                 }
             }
@@ -244,8 +246,8 @@ contract CurveDepositToken is IEmissionReceiver {
             babelAmount += remaining * rewardRate[0];
             crvAmount += remaining * rewardRate[1];
         }
-        rewardRate[0] = uint128(babelAmount / REWARD_DURATION);
-        rewardRate[1] = uint128(crvAmount / REWARD_DURATION);
+        rewardRate[0] = SafeCast.toUint128(babelAmount / REWARD_DURATION);
+        rewardRate[1] = SafeCast.toUint128(crvAmount / REWARD_DURATION);
 
         lastUpdate = uint32(block.timestamp);
         periodFinish = uint32(block.timestamp + REWARD_DURATION);
