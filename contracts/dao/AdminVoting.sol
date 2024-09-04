@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
 import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
@@ -73,8 +74,6 @@ contract AdminVoting is DelegatedOps, SystemStart {
     // account last proposal creation timestamps
     mapping(address account => uint256 timestamp) public latestProposalTimestamp;
 
-    // percentages are expressed as a whole number out of `MAX_PCT`
-    uint256 public constant MAX_PCT = 10000;
     // percent of total weight required to create a new proposal
     uint256 public minCreateProposalPct;
     // percent of total weight that must vote for a proposal before it can be executed
@@ -120,7 +119,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(weight > 0, "Zero total voting weight for given week");
 
         // over-write output return with weight calculation
-        weight = (weight * minCreateProposalPct / MAX_PCT);
+        weight = (weight * minCreateProposalPct / BIMA_100_PCT);
     }
 
     /**
@@ -242,7 +241,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         uint256 totalWeight = tokenLocker.getTotalWeightAt(week);
 
         // calculate required quorum for the proposal to pass
-        uint40 requiredWeight = SafeCast.toUint40((totalWeight * proposalPassPct) / MAX_PCT);
+        uint40 requiredWeight = SafeCast.toUint40((totalWeight * proposalPassPct) / BIMA_100_PCT);
 
         // output newly created proposal id
         proposalId = proposalData.length;
@@ -419,7 +418,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(msg.sender == address(this), "Only callable via proposal");
 
         // restrict max value
-        require(pct <= MAX_PCT, "Invalid value");
+        require(pct <= BIMA_100_PCT, "Invalid value");
 
         // update to new value
         minCreateProposalPct = pct;
@@ -439,7 +438,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(msg.sender == address(this), "Only callable via proposal");
 
         // restrict max value
-        require(pct <= MAX_PCT && pct > 0, "Invalid value");
+        require(pct <= BIMA_100_PCT && pct > 0, "Invalid value");
 
         // update to new value
         passingPct = pct;

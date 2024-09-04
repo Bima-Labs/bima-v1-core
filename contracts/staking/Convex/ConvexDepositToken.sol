@@ -6,6 +6,7 @@ import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
 import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+import {BIMA_100_PCT} from "../../dependencies/Constants.sol";
 
 interface IBooster {
     function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool);
@@ -288,7 +289,7 @@ contract ConvexDepositToken is IEmissionReceiver {
         uint256 last = lastCrvBalance;
         uint256 crvAmount = CRV.balanceOf(address(this)) - last;
         // apply CRV fee and send fee tokens to curveProxy
-        uint256 fee = (crvAmount * curveProxy.crvFeePct()) / 10000;
+        uint256 fee = (crvAmount * curveProxy.crvFeePct()) / BIMA_100_PCT;
         if (fee > 0) {
             crvAmount -= fee;
             CRV.transfer(address(curveProxy), fee);

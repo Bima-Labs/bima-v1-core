@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {AdminVoting} from "../../../contracts/dao/AdminVoting.sol";
 import {IBabelCore} from "../../../contracts/interfaces/IBabelCore.sol";
+import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 
 // test setup
 import {TestSetup, IBabelVault} from "../TestSetup.sol";
@@ -107,7 +108,7 @@ contract AdminVotingTest is TestSetup {
         // verify requiredWeight calculated using correct passing percent
         assertEq(adminVoting.getProposalRequiredWeight(proposalId), 
                  (tokenLocker.getTotalWeightAt(proposalWeek) * proposalPassingPct) /
-                 adminVoting.MAX_PCT());
+                 BIMA_100_PCT);
         // verify proposal details stored correctly
         assertEq(adminVoting.getProposalWeek(proposalId), proposalWeek);
         assertEq(adminVoting.getProposalCreatedAt(proposalId), block.timestamp);
@@ -208,7 +209,7 @@ contract AdminVotingTest is TestSetup {
         // verify requiredWeight calculated using standard passing percent
         assertEq(adminVoting.getProposalRequiredWeight(1), 
                  (tokenLocker.getTotalWeightAt(adminVoting.getWeek()-1) * adminVoting.passingPct()) /
-                 adminVoting.MAX_PCT());
+                 BIMA_100_PCT);
     }
 
     // helper function to successfully cancel a proposal

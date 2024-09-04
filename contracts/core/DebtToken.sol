@@ -5,6 +5,7 @@ import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/tok
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 /**
     @title Babel Debt Token "acUSD"
@@ -166,7 +167,7 @@ contract DebtToken is OFT {
      * @return fee applied to the corresponding flash loan.
      */
     function _flashFee(uint256 amount) internal pure returns (uint256 fee) {
-        fee = (amount * FLASH_LOAN_FEE) / 10000;
+        fee = (amount * FLASH_LOAN_FEE) / BIMA_100_PCT;
         require(fee > 0, "ERC20FlashMint: amount too small");
     }
 

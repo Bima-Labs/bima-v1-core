@@ -10,6 +10,7 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelBase} from "../dependencies/BabelBase.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 // todo: remove before production
 import {console} from "hardhat/console.sol";
@@ -57,7 +58,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     // Maximum interest rate must be lower than the minimum LST staking yield
     // so that over time the actual TCR becomes greater than the calculated TCR.
     uint256 public constant MAX_INTEREST_RATE_IN_BPS = 400; // 4%
-    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) / (10000 * SECONDS_IN_YEAR); //50%
+    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) / (BIMA_100_PCT * SECONDS_IN_YEAR); //50%
 
     // During bootsrap period redemptions are not allowed
     uint256 public constant BOOTSTRAP_PERIOD = 14 days;

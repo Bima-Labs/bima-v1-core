@@ -5,6 +5,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+import {BIMA_100_PCT} from "../../dependencies/Constants.sol";
 
 import {ICurveProxy, IGaugeController, IERC20, IMinter, IFeeDistributor, IVotingEscrow, IAragon} from "../../interfaces/ICurveProxy.sol";
 
@@ -30,7 +31,7 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
     uint256 constant WEEK = 604800;
     uint256 constant MAX_LOCK_DURATION = 4 * 365 * 86400; // 4 years
 
-    uint64 public crvFeePct; // fee as a pct out of 10000
+    uint64 public crvFeePct; // fee as a pct out of BIMA_100_PCT
     uint64 public unlockTime;
 
     // the vote manager is approved to call voting-related functions
@@ -102,7 +103,7 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         @dev CRV earned as fees is periodically added to the contract's locked position
      */
     function setCrvFeePct(uint64 _feePct) external onlyOwner returns (bool success) {
-        require(_feePct <= 10000, "Invalid setting");
+        require(_feePct <= BIMA_100_PCT, "Invalid setting");
         crvFeePct = _feePct;
         emit CrvFeePctSet(_feePct);
         success = true;
@@ -165,7 +166,7 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         amount = CRV.balanceOf(address(this)) - initial;
 
         // apply fee prior to transfer
-        uint256 fee = (amount * crvFeePct) / 10000;
+        uint256 fee = (amount * crvFeePct) / BIMA_100_PCT;
         amount -= fee;
 
         CRV.transfer(receiver, amount);
