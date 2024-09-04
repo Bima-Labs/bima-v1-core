@@ -46,8 +46,8 @@ contract Factory is IFactory, BabelOwnable {
         liquidationManager = _liquidationManager;
     }
 
-    function troveManagerCount() external view returns (uint256) {
-        return troveManagers.length;
+    function troveManagerCount() external view returns (uint256 count) {
+        count = troveManagers.length;
     }
 
     /**

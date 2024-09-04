@@ -64,8 +64,8 @@ contract InterimAdmin is Ownable {
     /**
         @notice The total number of votes created
      */
-    function getProposalCount() external view returns (uint256) {
-        return proposalData.length;
+    function getProposalCount() external view returns (uint256 count) {
+        count = proposalData.length;
     }
 
     /**
@@ -84,7 +84,9 @@ contract InterimAdmin is Ownable {
             proposal.canExecuteAfter < block.timestamp &&
             proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
 
-        return (proposal.createdAt, proposal.canExecuteAfter, proposal.processed, canExecute, payload);
+        createdAt = proposal.createdAt;
+        canExecuteAfter = proposal.canExecuteAfter;
+        executed = proposal.processed;
     }
 
     /**
@@ -210,13 +212,13 @@ contract InterimAdmin is Ownable {
         babelCore.commitTransferOwnership(adminVoting);
     }
 
-    function _isSetGuardianPayload(Action calldata action) internal pure returns (bool) {
+    function _isSetGuardianPayload(Action calldata action) internal pure returns (bool output) {
         bytes memory data = action.data;
         // Extract the call sig from payload data
         bytes4 sig;
         assembly {
             sig := mload(add(data, 0x20))
         }
-        return sig == IBabelCore.setGuardian.selector;
+        output = sig == IBabelCore.setGuardian.selector;
     }
 }

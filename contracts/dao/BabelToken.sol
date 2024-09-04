@@ -53,23 +53,23 @@ contract BabelToken is OFT, IERC2612 {
         vault = _vault;
     }
 
-    function mintToVault(uint256 _totalSupply) external returns (bool) {
+    function mintToVault(uint256 _totalSupply) external returns (bool success) {
         require(msg.sender == vault);
         require(maxTotalSupply == 0);
 
         _mint(vault, _totalSupply);
         maxTotalSupply = _totalSupply;
 
-        return true;
+        success = true;
     }
 
     // --- EIP 2612 functionality ---
 
-    function domainSeparator() public view override returns (bytes32) {
+    function domainSeparator() public view override returns (bytes32 output) {
         if (block.chainid == _CACHED_CHAIN_ID) {
-            return _CACHED_DOMAIN_SEPARATOR;
+            output = _CACHED_DOMAIN_SEPARATOR;
         } else {
-            return _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
+            output = _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
         }
     }
 
@@ -95,21 +95,21 @@ contract BabelToken is OFT, IERC2612 {
         _approve(owner, spender, amount);
     }
 
-    function nonces(address owner) external view override returns (uint256) {
+    function nonces(address owner) external view override returns (uint256 nonce) {
         // FOR EIP 2612
-        return _nonces[owner];
+        nonce = _nonces[owner];
     }
 
-    function transferToLocker(address sender, uint256 amount) external returns (bool) {
+    function transferToLocker(address sender, uint256 amount) external returns (bool success) {
         require(msg.sender == locker, "Not locker");
         _transfer(sender, locker, amount);
-        return true;
+        success = true;
     }
 
     // --- Internal operations ---
 
-    function _buildDomainSeparator(bytes32 typeHash, bytes32 name_, bytes32 version_) private view returns (bytes32) {
-        return keccak256(abi.encode(typeHash, name_, version_, block.chainid, address(this)));
+    function _buildDomainSeparator(bytes32 typeHash, bytes32 name_, bytes32 version_) private view returns (bytes32 output) {
+        output = keccak256(abi.encode(typeHash, name_, version_, block.chainid, address(this)));
     }
 
     function _beforeTokenTransfer(address, address to, uint256) internal virtual override {

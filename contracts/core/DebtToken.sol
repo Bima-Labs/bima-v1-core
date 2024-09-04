@@ -84,20 +84,20 @@ contract DebtToken is OFT {
 
     // --- Functions for intra-Babel calls ---
 
-    function mintWithGasCompensation(address _account, uint256 _amount) external returns (bool) {
+    function mintWithGasCompensation(address _account, uint256 _amount) external returns (bool success) {
         require(msg.sender == borrowerOperationsAddress);
         _mint(_account, _amount);
         _mint(gasPool, DEBT_GAS_COMPENSATION);
 
-        return true;
+        success = true;
     }
 
-    function burnWithGasCompensation(address _account, uint256 _amount) external returns (bool) {
+    function burnWithGasCompensation(address _account, uint256 _amount) external returns (bool success) {
         require(msg.sender == borrowerOperationsAddress);
         _burn(_account, _amount);
         _burn(gasPool, DEBT_GAS_COMPENSATION);
 
-        return true;
+        success = true;
     }
 
     function mint(address _account, uint256 _amount) external {
@@ -122,18 +122,18 @@ contract DebtToken is OFT {
 
     // --- External functions ---
 
-    function transfer(address recipient, uint256 amount) public override(IERC20, ERC20) returns (bool) {
+    function transfer(address recipient, uint256 amount) public override(IERC20, ERC20) returns (bool success) {
         _requireValidRecipient(recipient);
-        return super.transfer(recipient, amount);
+        success = super.transfer(recipient, amount);
     }
 
     function transferFrom(
         address sender,
         address recipient,
         uint256 amount
-    ) public override(IERC20, ERC20) returns (bool) {
+    ) public override(IERC20, ERC20) returns (bool success) {
         _requireValidRecipient(recipient);
-        return super.transferFrom(sender, recipient, amount);
+        success = super.transferFrom(sender, recipient, amount);
     }
 
     // --- ERC 3156 Functions ---
@@ -141,10 +141,10 @@ contract DebtToken is OFT {
     /**
      * @dev Returns the maximum amount of tokens available for loan.
      * @param token The address of the token that is requested.
-     * @return The amount of token that can be loaned.
+     * @return maxLoan The amount of token that can be loaned.
      */
-    function maxFlashLoan(address token) public view returns (uint256) {
-        return token == address(this) ? type(uint256).max - totalSupply() : 0;
+    function maxFlashLoan(address token) public view returns (uint256 maxLoan) {
+        maxLoan = token == address(this) ? type(uint256).max - totalSupply() : 0;
     }
 
     /**
@@ -153,10 +153,10 @@ contract DebtToken is OFT {
      * loans.
      * @param token The token to be flash loaned.
      * @param amount The amount of tokens to be loaned.
-     * @return The fees applied to the corresponding flash loan.
+     * @return fee The fees applied to the corresponding flash loan.
      */
-    function flashFee(address token, uint256 amount) external view returns (uint256) {
-        return token == address(this) ? _flashFee(amount) : 0;
+    function flashFee(address token, uint256 amount) external view returns (uint256 fee) {
+        fee = token == address(this) ? _flashFee(amount) : 0;
     }
 
     /**
@@ -183,7 +183,7 @@ contract DebtToken is OFT {
      * supported.
      * @param amount The amount of tokens to be loaned.
      * @param data An arbitrary datafield that is passed to the receiver.
-     * @return `true` if the flash loan was successful.
+     * @return success true if the flash loan was successful.
      */
     // This function can reenter, but it doesn't pose a risk because it always preserves the property that the amount
     // minted at the beginning is always recovered and burned at the end, or else the entire function will revert.
@@ -193,7 +193,7 @@ contract DebtToken is OFT {
         address token,
         uint256 amount,
         bytes calldata data
-    ) external returns (bool) {
+    ) external returns (bool success) {
         require(token == address(this), "ERC20FlashMint: wrong token");
         require(amount <= maxFlashLoan(token), "ERC20FlashMint: amount exceeds maxFlashLoan");
         uint256 fee = _flashFee(amount);
@@ -205,16 +205,16 @@ contract DebtToken is OFT {
         _spendAllowance(address(receiver), address(this), amount + fee);
         _burn(address(receiver), amount);
         _transfer(address(receiver), _babelCore.feeReceiver(), fee);
-        return true;
+        success = true;
     }
 
     // --- EIP 2612 Functionality ---
 
-    function domainSeparator() public view returns (bytes32) {
+    function domainSeparator() public view returns (bytes32 result) {
         if (block.chainid == _CACHED_CHAIN_ID) {
-            return _CACHED_DOMAIN_SEPARATOR;
+            result = _CACHED_DOMAIN_SEPARATOR;
         } else {
-            return _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
+            result = _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
         }
     }
 
@@ -240,15 +240,15 @@ contract DebtToken is OFT {
         _approve(owner, spender, amount);
     }
 
-    function nonces(address owner) external view returns (uint256) {
+    function nonces(address owner) external view returns (uint256 nonce) {
         // FOR EIP 2612
-        return _nonces[owner];
+        nonce = _nonces[owner];
     }
 
     // --- Internal operations ---
 
-    function _buildDomainSeparator(bytes32 typeHash, bytes32 name_, bytes32 version_) private view returns (bytes32) {
-        return keccak256(abi.encode(typeHash, name_, version_, block.chainid, address(this)));
+    function _buildDomainSeparator(bytes32 typeHash, bytes32 name_, bytes32 version_) private view returns (bytes32 result) {
+        result = keccak256(abi.encode(typeHash, name_, version_, block.chainid, address(this)));
     }
 
     // --- 'require' functions ---

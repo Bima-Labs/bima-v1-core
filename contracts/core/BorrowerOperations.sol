@@ -117,7 +117,6 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
     function getTCR() external returns (uint256 globalTotalCollateralRatio) {
         SystemBalances memory balances = fetchBalances();
         (globalTotalCollateralRatio, , ) = _getTCRData(balances);
-        return globalTotalCollateralRatio;
     }
 
     /**
@@ -145,12 +144,12 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         }
     }
 
-    function checkRecoveryMode(uint256 TCR) public pure returns (bool) {
-        return TCR < CCR;
+    function checkRecoveryMode(uint256 TCR) public pure returns (bool result) {
+        result = TCR < CCR;
     }
 
-    function getCompositeDebt(uint256 _debt) external view returns (uint256) {
-        return _getCompositeDebt(_debt);
+    function getCompositeDebt(uint256 _debt) external view returns (uint256 result) {
+        result = _getCompositeDebt(_debt);
     }
 
     // --- Borrower Trove Operations ---
@@ -419,16 +418,14 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         address _caller,
         uint256 _maxFeePercentage,
         uint256 _debtAmount
-    ) internal returns (uint256) {
-        uint256 debtFee = _troveManager.decayBaseRateAndGetBorrowingFee(_debtAmount);
+    ) internal returns (uint256 debtFee) {
+        debtFee = _troveManager.decayBaseRateAndGetBorrowingFee(_debtAmount);
 
         _requireUserAcceptsFee(debtFee, _debtAmount, _maxFeePercentage);
 
         debtToken.mint(BABEL_CORE.feeReceiver(), debtFee);
 
         emit BorrowingFeePaid(_caller, collateralToken, debtFee);
-
-        return debtFee;
     }
 
     function _getCollChange(
@@ -533,7 +530,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         uint256 _debtChange,
         bool _isDebtIncrease,
         uint256 _price
-    ) internal pure returns (uint256) {
+    ) internal pure returns (uint256 newICR) {
         (uint256 newColl, uint256 newDebt) = _getNewTroveAmounts(
             _coll,
             _debt,
@@ -543,8 +540,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             _isDebtIncrease
         );
 
-        uint256 newICR = BabelMath._computeCR(newColl, newDebt, _price);
-        return newICR;
+        newICR = BabelMath._computeCR(newColl, newDebt, _price);
     }
 
     function _getNewTroveAmounts(
@@ -554,14 +550,9 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         bool _isCollIncrease,
         uint256 _debtChange,
         bool _isDebtIncrease
-    ) internal pure returns (uint256, uint256) {
-        uint256 newColl = _coll;
-        uint256 newDebt = _debt;
-
+    ) internal pure returns (uint256 newColl, uint256 newDebt) {
         newColl = _isCollIncrease ? _coll + _collChange : _coll - _collChange;
         newDebt = _isDebtIncrease ? _debt + _debtChange : _debt - _debtChange;
-
-        return (newColl, newDebt);
     }
 
     function _getNewTCRFromTroveChange(
@@ -571,12 +562,11 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         bool _isCollIncrease,
         uint256 _debtChange,
         bool _isDebtIncrease
-    ) internal pure returns (uint256) {
+    ) internal pure returns (uint256 newTCR) {
         totalDebt = _isDebtIncrease ? totalDebt + _debtChange : totalDebt - _debtChange;
         totalColl = _isCollIncrease ? totalColl + _collChange : totalColl - _collChange;
 
-        uint256 newTCR = BabelMath._computeCR(totalColl, totalDebt);
-        return newTCR;
+        newTCR = BabelMath._computeCR(totalColl, totalDebt);
     }
 
     function _getTCRData(
@@ -591,8 +581,6 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             }
         }
         amount = BabelMath._computeCR(totalPricedCollateral, totalDebt);
-
-        return (amount, totalPricedCollateral, totalDebt);
     }
 
     function _getCollateralAndTCRData(
@@ -617,8 +605,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         SystemBalances memory balances = fetchBalances();
         (amount, totalPricedCollateral, totalDebt) = _getTCRData(balances);
         isRecoveryMode = checkRecoveryMode(amount);
-
-        return (collateralToken, balances.prices[index], totalPricedCollateral, totalDebt, isRecoveryMode);
+        price = balances.prices[index];
     }
 
     function getGlobalSystemBalances() external returns (uint256 totalPricedCollateral, uint256 totalDebt) {

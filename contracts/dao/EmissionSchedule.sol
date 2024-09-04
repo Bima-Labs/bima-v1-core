@@ -50,8 +50,8 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         emit LockParametersSet(_initialLockWeeks, _lockDecayWeeks);
     }
 
-    function getWeeklyPctSchedule() external view returns (uint64[2][] memory) {
-        return scheduledWeeklyPct;
+    function getWeeklyPctSchedule() external view returns (uint64[2][] memory output) {
+        output = scheduledWeeklyPct;
     }
 
     /**
@@ -60,15 +60,15 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         @param _schedule Dynamic array of (week, weeklyPct) ordered by week descending.
                          Each `week` indicates the number of weeks after the current week.
      */
-    function setWeeklyPctSchedule(uint64[2][] calldata _schedule) external onlyOwner returns (bool) {
+    function setWeeklyPctSchedule(uint64[2][] calldata _schedule) external onlyOwner returns (bool success) {
         _setWeeklyPctSchedule(_schedule);
-        return true;
+        success = true;
     }
 
     /**
         @notice Set the number of lock weeks and rate at which lock weeks decay
      */
-    function setLockParameters(uint64 _lockWeeks, uint64 _lockDecayWeeks) external onlyOwner returns (bool) {
+    function setLockParameters(uint64 _lockWeeks, uint64 _lockDecayWeeks) external onlyOwner returns (bool success) {
         // enforce max number of lock weeks
         require(_lockWeeks <= MAX_LOCK_WEEKS, "Cannot exceed MAX_LOCK_WEEKS");
 
@@ -80,7 +80,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         lockDecayWeeks = _lockDecayWeeks;
 
         emit LockParametersSet(_lockWeeks, _lockDecayWeeks);
-        return true;
+        success = true;
     }
 
     function getReceiverWeeklyEmissions(

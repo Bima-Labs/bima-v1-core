@@ -182,52 +182,52 @@ contract SortedTroves is ISortedTroves {
     /*
      * @dev Checks if the list contains a node
      */
-    function contains(address _id) public view returns (bool) {
-        return data.nodes[_id].exists;
+    function contains(address _id) public view returns (bool result) {
+        result = data.nodes[_id].exists;
     }
 
     /*
      * @dev Checks if the list is empty
      */
-    function isEmpty() public view returns (bool) {
-        return data.size == 0;
+    function isEmpty() public view returns (bool result) {
+        result = data.size == 0;
     }
 
     /*
      * @dev Returns the current size of the list
      */
-    function getSize() external view returns (uint256) {
-        return data.size;
+    function getSize() external view returns (uint256 result) {
+        result = data.size;
     }
 
     /*
      * @dev Returns the first node in the list (node with the largest NICR)
      */
-    function getFirst() external view returns (address) {
-        return data.head;
+    function getFirst() external view returns (address result) {
+        result = data.head;
     }
 
     /*
      * @dev Returns the last node in the list (node with the smallest NICR)
      */
-    function getLast() external view returns (address) {
-        return data.tail;
+    function getLast() external view returns (address result) {
+        result = data.tail;
     }
 
     /*
      * @dev Returns the next node (with a smaller NICR) in the list for a given node
      * @param _id Node's id
      */
-    function getNext(address _id) external view returns (address) {
-        return data.nodes[_id].nextId;
+    function getNext(address _id) external view returns (address result) {
+        result = data.nodes[_id].nextId;
     }
 
     /*
      * @dev Returns the previous node (with a larger NICR) in the list for a given node
      * @param _id Node's id
      */
-    function getPrev(address _id) external view returns (address) {
-        return data.nodes[_id].prevId;
+    function getPrev(address _id) external view returns (address result) {
+        result = data.nodes[_id].prevId;
     }
 
     /*
@@ -236,8 +236,8 @@ contract SortedTroves is ISortedTroves {
      * @param _prevId Id of previous node for the insert position
      * @param _nextId Id of next node for the insert position
      */
-    function validInsertPosition(uint256 _NICR, address _prevId, address _nextId) external view returns (bool) {
-        return _validInsertPosition(troveManager, _NICR, _prevId, _nextId);
+    function validInsertPosition(uint256 _NICR, address _prevId, address _nextId) external view returns (bool result) {
+        result = _validInsertPosition(troveManager, _NICR, _prevId, _nextId);
     }
 
     function _validInsertPosition(
@@ -245,19 +245,19 @@ contract SortedTroves is ISortedTroves {
         uint256 _NICR,
         address _prevId,
         address _nextId
-    ) internal view returns (bool) {
+    ) internal view returns (bool result) {
         if (_prevId == address(0) && _nextId == address(0)) {
             // `(null, null)` is a valid insert position if the list is empty
-            return isEmpty();
+            result = isEmpty();
         } else if (_prevId == address(0)) {
             // `(null, _nextId)` is a valid insert position if `_nextId` is the head of the list
-            return data.head == _nextId && _NICR >= _troveManager.getNominalICR(_nextId);
+            result = data.head == _nextId && _NICR >= _troveManager.getNominalICR(_nextId);
         } else if (_nextId == address(0)) {
             // `(_prevId, null)` is a valid insert position if `_prevId` is the tail of the list
-            return data.tail == _prevId && _NICR <= _troveManager.getNominalICR(_prevId);
+            result = data.tail == _prevId && _NICR <= _troveManager.getNominalICR(_prevId);
         } else {
             // `(_prevId, _nextId)` is a valid insert position if they are adjacent nodes and `_NICR` falls between the two nodes' NICRs
-            return
+            result =
                 data.nodes[_prevId].nextId == _nextId &&
                 _troveManager.getNominalICR(_prevId) >= _NICR &&
                 _NICR >= _troveManager.getNominalICR(_nextId);
@@ -274,22 +274,20 @@ contract SortedTroves is ISortedTroves {
         ITroveManager _troveManager,
         uint256 _NICR,
         address _startId
-    ) internal view returns (address, address) {
+    ) internal view returns (address prevId, address nextId) {
         // If `_startId` is the head, check if the insert position is before the head
         if (data.head == _startId && _NICR >= _troveManager.getNominalICR(_startId)) {
             return (address(0), _startId);
         }
 
-        address prevId = _startId;
-        address nextId = data.nodes[prevId].nextId;
+        prevId = _startId;
+        nextId = data.nodes[prevId].nextId;
 
         // Descend the list until we reach the end or until we find a valid insert position
         while (prevId != address(0) && !_validInsertPosition(_troveManager, _NICR, prevId, nextId)) {
             prevId = data.nodes[prevId].nextId;
             nextId = data.nodes[prevId].nextId;
         }
-
-        return (prevId, nextId);
     }
 
     /*
@@ -302,22 +300,20 @@ contract SortedTroves is ISortedTroves {
         ITroveManager _troveManager,
         uint256 _NICR,
         address _startId
-    ) internal view returns (address, address) {
+    ) internal view returns (address prevId, address nextId) {
         // If `_startId` is the tail, check if the insert position is after the tail
         if (data.tail == _startId && _NICR <= _troveManager.getNominalICR(_startId)) {
             return (_startId, address(0));
         }
 
-        address nextId = _startId;
-        address prevId = data.nodes[nextId].prevId;
+        nextId = _startId;
+        prevId = data.nodes[nextId].prevId;
 
         // Ascend the list until we reach the end or until we find a valid insertion point
         while (nextId != address(0) && !_validInsertPosition(_troveManager, _NICR, prevId, nextId)) {
             nextId = data.nodes[nextId].prevId;
             prevId = data.nodes[nextId].prevId;
         }
-
-        return (prevId, nextId);
     }
 
     /*
@@ -330,8 +326,8 @@ contract SortedTroves is ISortedTroves {
         uint256 _NICR,
         address _prevId,
         address _nextId
-    ) external view returns (address, address) {
-        return _findInsertPosition(troveManager, _NICR, _prevId, _nextId);
+    ) external view returns (address prevId, address nextId) {
+        (prevId, nextId) = _findInsertPosition(troveManager, _NICR, _prevId, _nextId);
     }
 
     function _findInsertPosition(
@@ -339,9 +335,9 @@ contract SortedTroves is ISortedTroves {
         uint256 _NICR,
         address _prevId,
         address _nextId
-    ) internal view returns (address, address) {
-        address prevId = _prevId;
-        address nextId = _nextId;
+    ) internal view returns (address prevId, address nextId) {
+        prevId = _prevId;
+        nextId = _nextId;
 
         if (prevId != address(0)) {
             if (!contains(prevId) || _NICR > _troveManager.getNominalICR(prevId)) {
@@ -359,16 +355,16 @@ contract SortedTroves is ISortedTroves {
 
         if (prevId == address(0) && nextId == address(0)) {
             // No hint - descend list starting from head
-            return _descendList(_troveManager, _NICR, data.head);
+            (prevId, nextId) = _descendList(_troveManager, _NICR, data.head);
         } else if (prevId == address(0)) {
             // No `prevId` for hint - ascend list starting from `nextId`
-            return _ascendList(_troveManager, _NICR, nextId);
+            (prevId, nextId) = _ascendList(_troveManager, _NICR, nextId);
         } else if (nextId == address(0)) {
             // No `nextId` for hint - descend list starting from `prevId`
-            return _descendList(_troveManager, _NICR, prevId);
+            (prevId, nextId) = _descendList(_troveManager, _NICR, prevId);
         } else {
             // Descend list starting from `prevId`
-            return _descendList(_troveManager, _NICR, prevId);
+            (prevId, nextId) = _descendList(_troveManager, _NICR, prevId);
         }
     }
 

@@ -95,8 +95,8 @@ contract AdminVoting is DelegatedOps, SystemStart {
     /**
         @notice The total number of votes created
      */
-    function getProposalCount() external view returns (uint256) {
-        return proposalData.length;
+    function getProposalCount() external view returns (uint256 count) {
+        count = proposalData.length;
     }
 
     function minCreateProposalWeight() external view returns (uint256 weight) {
@@ -148,52 +148,48 @@ contract AdminVoting is DelegatedOps, SystemStart {
             proposal.canExecuteAfter < block.timestamp &&
             proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
 
-        return (
-            proposal.week,
-            proposal.createdAt,
-            proposal.currentWeight,
-            proposal.requiredWeight,
-            proposal.canExecuteAfter,
-            proposal.processed,
-            canExecute,
-            payload
-        );
+        week = proposal.week;
+        createdAt = proposal.createdAt;
+        currentWeight = proposal.currentWeight;
+        requiredWeight = proposal.requiredWeight;
+        canExecuteAfter = proposal.canExecuteAfter;
+        executed = proposal.processed;
     }
 
     // helper functions added because getProposalData returns a lot of fields
     // which can result in "stack too deep" errors
-    function getProposalWeek(uint256 id) external view returns(uint256) {
-        return proposalData[id].week;
+    function getProposalWeek(uint256 id) external view returns(uint256 week) {
+        week = proposalData[id].week;
     }
-    function getProposalCreatedAt(uint256 id) external view returns(uint32) {
-        return proposalData[id].createdAt;
+    function getProposalCreatedAt(uint256 id) external view returns(uint32 createdAt) {
+        createdAt = proposalData[id].createdAt;
     }
-    function getProposalCurrentWeight(uint256 id) external view returns(uint256) {
-        return proposalData[id].currentWeight;
+    function getProposalCurrentWeight(uint256 id) external view returns(uint256 currentWeight) {
+        currentWeight = proposalData[id].currentWeight;
     }
-    function getProposalRequiredWeight(uint256 id) external view returns(uint256) {
-        return proposalData[id].requiredWeight;
+    function getProposalRequiredWeight(uint256 id) external view returns(uint256 requiredWeight) {
+        requiredWeight = proposalData[id].requiredWeight;
     }
-    function getProposalCanExecuteAfter(uint256 id) external view returns(uint32) {
-        return proposalData[id].canExecuteAfter;
+    function getProposalCanExecuteAfter(uint256 id) external view returns(uint32 canExecAfter) {
+        canExecAfter = proposalData[id].canExecuteAfter;
     }
-    function getProposalProcessed(uint256 id) external view returns(bool) {
-        return proposalData[id].processed;
+    function getProposalProcessed(uint256 id) external view returns(bool processed) {
+        processed = proposalData[id].processed;
     }
-    function getProposalCanExecute(uint256 id) external view returns(bool) {
+    function getProposalCanExecute(uint256 id) external view returns(bool canExec) {
         Proposal memory proposal = proposalData[id];
 
-        return (!proposal.processed &&
-                proposal.currentWeight >= proposal.requiredWeight &&
-                proposal.canExecuteAfter < block.timestamp &&
-                proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
+        canExec = (!proposal.processed &&
+                   proposal.currentWeight >= proposal.requiredWeight &&
+                   proposal.canExecuteAfter < block.timestamp &&
+                   proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
     }
-    function getProposalPayload(uint256 id) external view returns(Action[] memory) {
-        return proposalPayloads[id];
+    function getProposalPayload(uint256 id) external view returns(Action[] memory payload) {
+        payload = proposalPayloads[id];
     }
-    function getProposalPassed(uint256 id) external view returns(bool) {
+    function getProposalPassed(uint256 id) external view returns(bool passed) {
         Proposal memory proposal = proposalData[id];
-        return proposal.currentWeight >= proposal.requiredWeight;
+        passed = proposal.currentWeight >= proposal.requiredWeight;
     }
 
 
@@ -413,7 +409,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         @dev Only callable via a passing proposal that includes a call
              to this contract and function within it's payload
      */
-    function setMinCreateProposalPct(uint256 pct) external returns (bool) {
+    function setMinCreateProposalPct(uint256 pct) external returns (bool success) {
         // enforce this function can only be called by this contract
         require(msg.sender == address(this), "Only callable via proposal");
 
@@ -424,7 +420,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         minCreateProposalPct = pct;
 
         emit ProposalCreationMinPctSet(pct);
-        return true;
+        success = true;
     }
 
     /**
@@ -433,7 +429,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         @dev Only callable via a passing proposal that includes a call
              to this contract and function within it's payload
      */
-    function setPassingPct(uint256 pct) external returns (bool) {
+    function setPassingPct(uint256 pct) external returns (bool success) {
         // enforce this function can only be called by this contract
         require(msg.sender == address(this), "Only callable via proposal");
 
@@ -444,7 +440,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         passingPct = pct;
 
         emit ProposalPassingPctSet(pct);
-        return true;
+        success = true;
     }
 
     /**
@@ -455,7 +451,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         babelCore.acceptTransferOwnership();
     }
 
-    function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal pure returns (bool) {
+    function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal pure returns (bool success) {
         // iterate through every payload
         for(uint256 i; i<payloadLength; i++) {
             bytes memory data = payload[i].data;
@@ -470,6 +466,6 @@ contract AdminVoting is DelegatedOps, SystemStart {
             if(sig == IBabelCore.setGuardian.selector) return true;
         }
 
-        return false;
+        // if reach here return default false
     }
 }

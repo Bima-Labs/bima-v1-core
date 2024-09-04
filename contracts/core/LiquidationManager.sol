@@ -433,7 +433,6 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             TroveManagerOperation.liquidateInNormalMode
         );
         emit TroveUpdated(_borrower, 0, 0, 0, TroveManagerOperation.liquidateInNormalMode);
-        return singleLiquidation;
     }
 
     /**
@@ -491,8 +490,6 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             TroveManagerOperation.liquidateInRecoveryMode
         );
         emit TroveUpdated(_borrower, 0, 0, 0, TroveManagerOperation.liquidateInRecoveryMode);
-
-        return singleLiquidation;
     }
 
     /**
@@ -532,7 +529,6 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             TroveManagerOperation.liquidateInRecoveryMode
         );
         emit TroveUpdated(_borrower, 0, 0, 0, TroveManagerOperation.liquidateInRecoveryMode);
-        return singleLiquidation;
     }
 
     /* In a full liquidation, returns the values for a trove's coll and debt to be offset, and coll and debt to be

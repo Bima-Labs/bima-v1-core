@@ -34,16 +34,16 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
     storkOracle.getTemporalNumericValueV1(encodedAssetId);
   }
 
-  function decimals() external pure returns (uint8) {
-    return 8;
+  function decimals() external pure returns (uint8 dec) {
+    dec = 8;
   }
 
-  function description() external pure returns (string memory) {
-    return "AggregatorV3Interface Wrapper for Stork Oracle";
+  function description() external pure returns (string memory desc) {
+    desc = "AggregatorV3Interface Wrapper for Stork Oracle";
   }
 
-  function version() external pure returns (uint256) {
-    return 1;
+  function version() external pure returns (uint256 ver) {
+    ver = 1;
   }
 
   function getRoundData(
