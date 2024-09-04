@@ -16,6 +16,6 @@ contract SystemStart is ISystemStart {
     }
 
     function getWeek() public view returns (uint256 week) {
-        return (block.timestamp - startTime) / 1 weeks;
+        week = (block.timestamp - startTime) / 1 weeks;
     }
 }

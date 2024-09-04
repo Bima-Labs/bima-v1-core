@@ -24,17 +24,17 @@ contract BabelBase is IBabelBase {
     // --- Gas compensation functions ---
 
     // Returns the composite debt (drawn debt + gas compensation) of a trove, for the purpose of ICR calculation
-    function _getCompositeDebt(uint256 _debt) internal view returns (uint256) {
-        return _debt + DEBT_GAS_COMPENSATION;
+    function _getCompositeDebt(uint256 _debt) internal view returns (uint256 result) {
+        result = _debt + DEBT_GAS_COMPENSATION;
     }
 
-    function _getNetDebt(uint256 _debt) internal view returns (uint256) {
-        return _debt - DEBT_GAS_COMPENSATION;
+    function _getNetDebt(uint256 _debt) internal view returns (uint256 result) {
+        result = _debt - DEBT_GAS_COMPENSATION;
     }
 
     // Return the amount of collateral to be drawn from a trove's collateral and sent as gas compensation.
-    function _getCollGasCompensation(uint256 _entireColl) internal pure returns (uint256) {
-        return _entireColl / PERCENT_DIVISOR;
+    function _getCollGasCompensation(uint256 _entireColl) internal pure returns (uint256 result) {
+        result = _entireColl / PERCENT_DIVISOR;
     }
 
     function _requireUserAcceptsFee(uint256 _fee, uint256 _amount, uint256 _maxFeePercentage) internal pure {
