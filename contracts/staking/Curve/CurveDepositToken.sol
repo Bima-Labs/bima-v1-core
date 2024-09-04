@@ -72,16 +72,16 @@ contract CurveDepositToken {
         periodFinish = uint32(block.timestamp - 1);
     }
 
-    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool) {
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
         require(msg.sender == address(vault));
         require(emissionId == 0, "Already registered");
         require(assignedIds.length == 1, "Incorrect ID count");
         emissionId = assignedIds[0];
 
-        return true;
+        success = true;
     }
 
-    function deposit(address receiver, uint256 amount) external returns (bool) {
+    function deposit(address receiver, uint256 amount) external returns (bool success) {
         require(amount > 0, "Cannot deposit zero");
         lpToken.transferFrom(msg.sender, address(this), amount);
         gauge.deposit(amount, address(curveProxy));
@@ -96,10 +96,10 @@ contract CurveDepositToken {
         emit Transfer(address(0), receiver, amount);
         emit LPTokenDeposited(address(lpToken), receiver, amount);
 
-        return true;
+        success = true;
     }
 
-    function withdraw(address receiver, uint256 amount) external returns (bool) {
+    function withdraw(address receiver, uint256 amount) external returns (bool success) {
         require(amount > 0, "Cannot withdraw zero");
         uint256 balance = balanceOf[msg.sender];
         uint256 supply = totalSupply;
@@ -113,7 +113,7 @@ contract CurveDepositToken {
         emit Transfer(msg.sender, address(0), amount);
         emit LPTokenWithdrawn(address(lpToken), receiver, amount);
 
-        return true;
+        success = true;
     }
 
     function _claimReward(address claimant, address receiver) internal returns (uint128[2] memory amounts) {
@@ -122,7 +122,6 @@ contract CurveDepositToken {
         delete storedPendingReward[claimant];
 
         CRV.transfer(receiver, amounts[1]);
-        return amounts;
     }
 
     function claimReward(address receiver) external returns (uint256 babelAmount, uint256 crvAmount) {
@@ -130,15 +129,17 @@ contract CurveDepositToken {
         vault.transferAllocatedTokens(msg.sender, receiver, amounts[0]);
 
         emit RewardClaimed(receiver, amounts[0], amounts[1]);
-        return (amounts[0], amounts[1]);
+
+        babelAmount = amounts[0];
+        crvAmount = amounts[1];
     }
 
-    function vaultClaimReward(address claimant, address receiver) external returns (uint256) {
+    function vaultClaimReward(address claimant, address receiver) external returns (uint256 amount) {
         require(msg.sender == address(vault));
         uint128[2] memory amounts = _claimReward(claimant, receiver);
 
         emit RewardClaimed(receiver, 0, amounts[1]);
-        return amounts[0];
+        amount = amounts[0];
     }
 
     function claimableReward(address account) external view returns (uint256 babelAmount, uint256 crvAmount) {
@@ -157,13 +158,15 @@ contract CurveDepositToken {
             uint256 integralFor = rewardIntegralFor[account][i];
             amounts[i] = storedPendingReward[account][i] + ((balance * (integral - integralFor)) / 1e18);
         }
-        return (amounts[0], amounts[1]);
+
+        babelAmount = amounts[0];
+        crvAmount = amounts[1];
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool) {
+    function approve(address _spender, uint256 _value) public returns (bool success) {
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
-        return true;
+        success = true;
     }
 
     function _transfer(address _from, address _to, uint256 _value) internal {
@@ -180,18 +183,18 @@ contract CurveDepositToken {
         emit Transfer(_from, _to, _value);
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value) public returns (bool success) {
         _transfer(msg.sender, _to, _value);
-        return true;
+        success = true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         uint256 allowed = allowance[_from][msg.sender];
         if (allowed != type(uint256).max) {
             allowance[_from][msg.sender] = allowed - _value;
         }
         _transfer(_from, _to, _value);
-        return true;
+        success = true;
     }
 
     function _updateIntegrals(address account, uint256 balance, uint256 supply) internal {

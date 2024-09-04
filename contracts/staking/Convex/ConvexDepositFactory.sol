@@ -35,7 +35,7 @@ contract ConvexFactory is BabelOwnable {
         emit NewDeployment(pid, depositToken);
     }
 
-    function getDepositToken(uint256 pid) external view returns (address) {
-        return Clones.predictDeterministicAddress(depositTokenImpl, bytes32(pid));
+    function getDepositToken(uint256 pid) external view returns (address addr) {
+        addr = Clones.predictDeterministicAddress(depositTokenImpl, bytes32(pid));
     }
 }

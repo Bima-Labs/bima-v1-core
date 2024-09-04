@@ -89,41 +89,41 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         address target,
         bytes4[] memory selectors,
         bool permitted
-    ) external onlyOwner returns (bool) {
+    ) external onlyOwner returns (bool success) {
         mapping(bytes4 => bool) storage _executePermission = executePermissions[caller][target];
         for (uint256 i; i < selectors.length; i++) {
             _executePermission[selectors[i]] = permitted;
         }
-        return true;
+        success = true;
     }
 
     /**
         @notice Set the fee percent taken on all CRV earned through this contract
         @dev CRV earned as fees is periodically added to the contract's locked position
      */
-    function setCrvFeePct(uint64 _feePct) external onlyOwner returns (bool) {
+    function setCrvFeePct(uint64 _feePct) external onlyOwner returns (bool success) {
         require(_feePct <= 10000, "Invalid setting");
         crvFeePct = _feePct;
         emit CrvFeePctSet(_feePct);
-        return true;
+        success = true;
     }
 
-    function setVoteManager(address _voteManager) external onlyOwner returns (bool) {
+    function setVoteManager(address _voteManager) external onlyOwner returns (bool success) {
         voteManager = _voteManager;
 
-        return true;
+        success = true;
     }
 
-    function setDepositManager(address _depositManager) external onlyOwner returns (bool) {
+    function setDepositManager(address _depositManager) external onlyOwner returns (bool success) {
         depositManager = _depositManager;
 
-        return true;
+        success = true;
     }
 
-    function setPerGaugeApproval(address caller, address gauge) external onlyDepositManager returns (bool) {
+    function setPerGaugeApproval(address caller, address gauge) external onlyDepositManager returns (bool success) {
         perGaugeApproval[caller] = gauge;
 
-        return true;
+        success = true;
     }
 
     /**
@@ -131,13 +131,11 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
                 and transfer the fees onward to the fee receiver
         @dev This method is intentionally left unguarded
      */
-    function claimFees() external returns (uint256) {
+    function claimFees() external returns (uint256 amount) {
         feeDistributor.claim();
-        uint256 amount = feeToken.balanceOf(address(this));
+        amount = feeToken.balanceOf(address(this));
 
         feeToken.transfer(BABEL_CORE.feeReceiver(), amount);
-
-        return amount;
     }
 
     /**
@@ -145,13 +143,13 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
                 the unlock time to the maximum possible
         @dev This method is intentionally left unguarded
      */
-    function lockCRV() external returns (bool) {
+    function lockCRV() external returns (bool success) {
         uint256 maxUnlock = ((block.timestamp / WEEK) * WEEK) + MAX_LOCK_DURATION;
         uint256 amount = CRV.balanceOf(address(this));
 
         _updateLock(amount, unlockTime, maxUnlock);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -159,12 +157,12 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         @dev Once per week, also locks any CRV balance within the contract and extends the lock duration
         @param gauge Address of the gauge to mint CRV for
         @param receiver Address to send the minted CRV to
-        @return uint256 Amount of CRV send to the receiver (after the fee)
+        @return amount uint256 Amount of CRV send to the receiver (after the fee)
      */
-    function mintCRV(address gauge, address receiver) external onlyApprovedGauge(gauge) returns (uint256) {
+    function mintCRV(address gauge, address receiver) external onlyApprovedGauge(gauge) returns (uint256 amount) {
         uint256 initial = CRV.balanceOf(address(this));
         minter.mint(gauge);
-        uint256 amount = CRV.balanceOf(address(this)) - initial;
+        amount = CRV.balanceOf(address(this)) - initial;
 
         // apply fee prior to transfer
         uint256 fee = (amount * crvFeePct) / 10000;
@@ -178,48 +176,46 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         if (unlock < maxUnlock) {
             _updateLock(initial + fee, unlock, maxUnlock);
         }
-
-        return amount;
     }
 
     /**
         @notice Submit one or more gauge weight votes
      */
-    function voteForGaugeWeights(GaugeWeightVote[] calldata votes) external ownerOrVoteManager returns (bool) {
+    function voteForGaugeWeights(GaugeWeightVote[] calldata votes) external ownerOrVoteManager returns (bool success) {
         for (uint256 i; i < votes.length; i++) {
             gaugeController.vote_for_gauge_weights(votes[i].gauge, votes[i].weight);
         }
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Submit a vote within the Curve DAO
      */
-    function voteInCurveDao(IAragon aragon, uint256 id, bool support) external ownerOrVoteManager returns (bool) {
+    function voteInCurveDao(IAragon aragon, uint256 id, bool support) external ownerOrVoteManager returns (bool success) {
         aragon.vote(id, support, false);
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Approve a 3rd-party caller to deposit into a specific gauge
         @dev Only required for some older Curve gauges
      */
-    function approveGaugeDeposit(address gauge, address depositor) external onlyApprovedGauge(gauge) returns (bool) {
+    function approveGaugeDeposit(address gauge, address depositor) external onlyApprovedGauge(gauge) returns (bool success) {
         ILiquidityGauge(gauge).set_approve_deposit(depositor, true);
 
-        return true;
+        success = true;
     }
 
     /**
         @notice Set the default receiver for extra rewards on a specific gauge
         @dev Only works on some gauge versions
      */
-    function setGaugeRewardsReceiver(address gauge, address receiver) external onlyApprovedGauge(gauge) returns (bool) {
+    function setGaugeRewardsReceiver(address gauge, address receiver) external onlyApprovedGauge(gauge) returns (bool success) {
         ILiquidityGauge(gauge).set_rewards_receiver(receiver);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -235,11 +231,11 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         IERC20 lpToken,
         uint256 amount,
         address receiver
-    ) external onlyApprovedGauge(gauge) returns (bool) {
+    ) external onlyApprovedGauge(gauge) returns (bool success) {
         ILiquidityGauge(gauge).withdraw(amount);
         lpToken.transfer(receiver, amount);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -249,12 +245,12 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
     function transferTokens(
         address receiver,
         TokenBalance[] calldata balances
-    ) external onlyDepositManager returns (bool) {
+    ) external onlyDepositManager returns (bool success) {
         for (uint256 i; i < balances.length; i++) {
             balances[i].token.safeTransfer(receiver, balances[i].amount);
         }
 
-        return true;
+        success = true;
     }
 
     /**
@@ -262,12 +258,12 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         @dev Callable via the owner, or if explicit permission is given
              to the caller for this target and function selector
      */
-    function execute(address target, bytes calldata data) external returns (bytes memory) {
+    function execute(address target, bytes calldata data) external returns (bytes memory retData) {
         if (msg.sender != owner()) {
             bytes4 selector = bytes4(data[:4]);
             require(executePermissions[msg.sender][target][selector], "Not permitted");
         }
-        return target.functionCall(data);
+        retData = target.functionCall(data);
     }
 
     function _updateLock(uint256 amount, uint256 unlock, uint256 maxUnlock) internal {
