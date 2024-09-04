@@ -5,6 +5,7 @@ import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extens
 import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
 import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
+import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 
 /**
@@ -14,7 +15,7 @@ import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
             burned to receive the LP tokens back. Holders may claim BABEL emissions
             on top of the earned CRV.
  */
-contract CurveDepositToken {
+contract CurveDepositToken is IEmissionReceiver {
     IERC20 public immutable BABEL;
     IERC20 public immutable CRV;
     ICurveProxy public immutable curveProxy;

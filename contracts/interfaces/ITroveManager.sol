@@ -8,9 +8,10 @@ import {IDebtToken} from "./IDebtToken.sol";
 import {IBabelVault} from "./IVault.sol";
 import {IPriceFeed} from "./IPriceFeed.sol";
 import {ISortedTroves} from "./ISortedTroves.sol";
+import {IEmissionReceiver} from "./IEmissionReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
+interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionReceiver {
     event BaseRateUpdated(uint256 _baseRate);
     event CollateralSent(address _to, uint256 _amount);
     event LTermsUpdated(uint256 _L_collateral, uint256 _L_debt);
@@ -75,8 +76,6 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
     function getEntireSystemBalances() external returns (uint256, uint256, uint256);
 
     function movePendingTroveRewardsToActiveBalances(uint256 _debt, uint256 _collateral) external;
-
-    function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool);
 
     function openTrove(
         address _borrower,

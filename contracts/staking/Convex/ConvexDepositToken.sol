@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
+import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
 
 interface IBooster {
@@ -35,7 +36,7 @@ interface IConvexStash {
             Tokens are minted by depositing Curve LP tokens, and burned to receive the LP
             tokens back. Holders may claim BABEL emissions on top of the earned CRV and CVX.
  */
-contract ConvexDepositToken {
+contract ConvexDepositToken is IEmissionReceiver {
     IERC20 public immutable BABEL;
     IERC20 public immutable CRV;
     IERC20 public immutable CVX;

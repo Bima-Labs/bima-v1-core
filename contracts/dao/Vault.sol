@@ -6,12 +6,9 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
+import {IEmissionReceiver} from "../interfaces/IEmissionReceiver.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-interface IEmissionReceiver {
-    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool);
-}
 
 /**
     @title Babel Vault
