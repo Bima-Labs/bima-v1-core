@@ -71,6 +71,10 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     IERC20[] public collateralTokens;
 
     // mappings
+    //
+    // collateral -> (index+1) in collateralTokens
+    // sunsetting collateral has index = 0
+    // newest collateral has index = collateralTokens.length
     mapping(IERC20 collateral => uint256 index) public indexByCollateral;
 
     mapping(address depositor => AccountDeposit) public accountDeposits;
@@ -141,41 +145,68 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     function enableCollateral(IERC20 _collateral) external {
+        // factory always calls this function when deploying new
+        // instances of `TroveManager` and `SortedTroves` to enable
         require(msg.sender == factory, "Not factory");
+
+        // search through all existing collateral tokens to determine
+        // whether this collateral token is already enabled
         uint256 length = collateralTokens.length;
-        bool collateralEnabled;
+        bool alreadyEnabled;
+
         for (uint256 i; i < length; i++) {
             if (collateralTokens[i] == _collateral) {
-                collateralEnabled = true;
+                alreadyEnabled = true;
                 break;
             }
         }
-        if (!collateralEnabled) {
+
+        // if collateral is not already enabled
+        if (!alreadyEnabled) {
+            // cache the sunset queue
             Queue memory queueCached = queue;
+
+            // if possible, over-write a sunsetting collateral
+            // ready to be removed with this new collateral
             if (queueCached.nextSunsetIndexKey > queueCached.firstSunsetIndexKey) {
                 SunsetIndex memory sIdx = _sunsetIndexes[queueCached.firstSunsetIndexKey];
+
                 if (sIdx.expiry < block.timestamp) {
-                    delete _sunsetIndexes[queue.firstSunsetIndexKey++];
+                    delete _sunsetIndexes[queueCached.firstSunsetIndexKey];
+                    ++queue.firstSunsetIndexKey;
+
                     _overwriteCollateral(_collateral, sIdx.idx);
                     return;
                 }
             }
+
+            // otherwise just add new collateral
             collateralTokens.push(_collateral);
-            indexByCollateral[_collateral] = collateralTokens.length;
-        } else {
-            // revert if the factory is trying to deploy a new TM with a sunset collateral
+            indexByCollateral[_collateral] = length + 1;
+        }
+        // if collateral was already enabled, then revert if the factory is trying
+        // to deploy a new TroveManager with a sunsetting collateral
+        else {
             require(indexByCollateral[_collateral] > 0, "Collateral is sunsetting");
         }
     }
 
     function _overwriteCollateral(IERC20 _newCollateral, uint256 idx) internal {
+        // only sunset collateral can be overwritten
         require(indexByCollateral[_newCollateral] == 0, "Collateral must be sunset");
+
+        // cache number of collateral tokens
         uint256 length = collateralTokens.length;
+
+        // index to remove must be valid
         require(idx < length, "Index too large");
+
         uint256 externalLoopEnd = currentEpoch;
         uint256 internalLoopEnd = currentScale;
+
         for (uint128 i; i <= externalLoopEnd; ) {
             for (uint128 j; j <= internalLoopEnd; ) {
+                // reset collateral gain sum 'S' for collateral being removed
                 epochToScaleToSums[i][j][idx] = 0;
                 unchecked {
                     ++j;
@@ -185,8 +216,15 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
                 ++i;
             }
         }
+
+        // update index of new collateral; note that `indexByCollateral`
+        // stores (index + 1) eg [1...collateralTokens.length]
         indexByCollateral[_newCollateral] = idx + 1;
+
+        // emit event(old, new) prior to over-writing
         emit CollateralOverwritten(collateralTokens[idx], _newCollateral);
+
+        // overwrite old collateral with new one
         collateralTokens[idx] = _newCollateral;
     }
 
@@ -199,12 +237,33 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
      */
     function startCollateralSunset(IERC20 collateral) external onlyOwner {
-        require(indexByCollateral[collateral] > 0, "Collateral already sunsetting");
+        uint256 indexCache = indexByCollateral[collateral];
+
+        // can't sunset an already sunsetting collateral
+        require(indexCache > 0, "Collateral already sunsetting");
+
+        // add sunsetting collateral to sunset mapping
         _sunsetIndexes[queue.nextSunsetIndexKey++] = SunsetIndex(
-            uint128(indexByCollateral[collateral] - 1),
+            uint128(indexCache - 1),
             uint128(block.timestamp + SUNSET_DURATION)
         );
-        delete indexByCollateral[collateral]; //This will prevent calls to the SP in case of liquidations
+
+        // prevents calls to the StabilityPool in case of liquidations
+        delete indexByCollateral[collateral];
+    }
+
+    function getNumCollateralTokens() external view returns (uint256 count) {
+        count = collateralTokens.length;
+    }
+
+    function getSunsetQueueKeys() external view returns(uint16 firstSunsetIndexKey, uint16 nextSunsetIndexKey) {
+        Queue memory data = queue;
+        (firstSunsetIndexKey, nextSunsetIndexKey) = (data.firstSunsetIndexKey, data.nextSunsetIndexKey);
+    }
+
+    function getSunsetIndexes(uint16 indexKey) external view returns(uint128 idx, uint128 expiry) {
+        SunsetIndex memory data = _sunsetIndexes[indexKey];
+        (idx, expiry) = (data.idx, data.expiry);
     }
 
     function getTotalDebtTokenDeposits() external view returns (uint256 output) {
