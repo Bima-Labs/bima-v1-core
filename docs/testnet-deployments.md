@@ -255,6 +255,7 @@
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | uniBTC          | 0x16221CaD160b441db008eF6DA2d3d89a32A05859 | 0x7fa611d05cDA27E7c6a1B030721d7781F15e19cb | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
+| Bima Mocked BTC | 0x691F17519E79866b5f1f6963D7Ed860900f8508a | 0x5458BBB093Ee676d118da44b95124C687D8F574a | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
 
 ## BEVM Testnet
 
