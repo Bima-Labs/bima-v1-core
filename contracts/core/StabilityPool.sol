@@ -5,7 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
-import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
+import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR} from "../dependencies/Constants.sol";
 import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 /**
@@ -27,8 +27,6 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // in BabelVault::constructor
     uint256 public constant SP_EMISSION_ID = 0;
 
-    uint256 public constant SCALE_FACTOR = 1e9;
-
     // immutable
     IDebtToken public immutable debtToken;
     IBabelVault public immutable vault;
@@ -43,7 +41,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // here for storage packing
     Queue queue;
 
-    // Each time the scale of P shifts by SCALE_FACTOR, the scale is incremented by 1
+    // Each time the scale of P shifts by BIMA_SCALE_FACTOR, the scale is incremented by 1
     uint128 public currentScale;
 
     // With each offset that fully empties the Pool, the epoch is incremented by 1
@@ -113,14 +111,12 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint128 amount;
         uint128 timestamp; // timestamp of the last deposit
     }
-
     struct Snapshots {
         uint256 P;
         uint256 G;
         uint128 scale;
         uint128 epoch;
     }
-
     struct SunsetIndex {
         uint128 idx;
         uint128 expiry;
@@ -477,8 +473,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             newP = BIMA_DECIMAL_PRECISION;
 
             // If multiplying P by a non-zero product factor would reduce P below the scale boundary, increment the scale
-        } else if ((currentP * newProductFactor) / BIMA_DECIMAL_PRECISION < SCALE_FACTOR) {
-            newP = (currentP * newProductFactor * SCALE_FACTOR) / BIMA_DECIMAL_PRECISION;
+        } else if ((currentP * newProductFactor) / BIMA_DECIMAL_PRECISION < BIMA_SCALE_FACTOR) {
+            newP = (currentP * newProductFactor * BIMA_SCALE_FACTOR) / BIMA_DECIMAL_PRECISION;
             currentScale = currentScaleCached + 1;
             emit ScaleUpdated(currentScale);
         } else {
@@ -520,7 +516,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             collateralGains[i] = depositorGains[i];
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
-            uint256 secondPortion = nextSums[i] / SCALE_FACTOR;
+            uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
             collateralGains[i] += (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
         }
     }
@@ -546,7 +542,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             hasGains = true;
             uint256 firstPortion = sums[i] - depSums[i];
-            uint256 secondPortion = nextSums[i] / SCALE_FACTOR;
+            uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
             depositorGains[i] += uint80(
                 (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
             );
@@ -577,10 +573,10 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 secondPortion;
         if (scaleSnapshot == currentScale) {
             firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G + marginalBabelGain;
-            secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / SCALE_FACTOR;
+            secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
         } else {
             firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G;
-            secondPortion = (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBabelGain) / SCALE_FACTOR;
+            secondPortion = (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBabelGain) / BIMA_SCALE_FACTOR;
         }
 
         reward = (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / BIMA_DECIMAL_PRECISION;
@@ -612,7 +608,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 P_Snapshot = snapshots.P;
 
         uint256 firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - G_Snapshot;
-        uint256 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / SCALE_FACTOR;
+        uint256 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
 
         babelGain = (initialStake * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
     }
@@ -651,7 +647,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             if (scaleDiff == 0) {
                 compoundedStake = (initialStake * P) / snapshots.P;
             } else if (scaleDiff == 1) {
-                compoundedStake = (initialStake * P) / snapshots.P / SCALE_FACTOR;
+                compoundedStake = (initialStake * P) / snapshots.P / BIMA_SCALE_FACTOR;
             } 
             // if scaleDiff >= 2, return default zero value
         }

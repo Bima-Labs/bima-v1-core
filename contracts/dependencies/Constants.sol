@@ -7,3 +7,6 @@ uint256 constant BIMA_100_PCT = 10_000;
 
 // BIMA's default decimal precision
 uint256 constant BIMA_DECIMAL_PRECISION = 1e18;
+
+// BIMA's default scale factor
+uint256 constant BIMA_SCALE_FACTOR = 1e9;

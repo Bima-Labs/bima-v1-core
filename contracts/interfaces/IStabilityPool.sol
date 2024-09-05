@@ -38,8 +38,6 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function P() external view returns (uint256);
 
-    function SCALE_FACTOR() external view returns (uint256);
-
     function SUNSET_DURATION() external view returns (uint128);
 
     function accountDeposits(address) external view returns (uint128 amount, uint128 timestamp);
