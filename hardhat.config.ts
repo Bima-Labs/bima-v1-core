@@ -301,6 +301,14 @@ const config: HardhatUserConfig = {
 
       },
       {
+        network:"polygon_zkevm_cardona",
+        chainId:2442,
+        urls: {
+          browserURL: "https://cardona-zkevm.polygonscan.com/",
+          apiURL: "https://etherscan.cardona.zkevm-rpc.com/",
+        },
+      },
+      {
         network:"rootstock_testnet",
         chainId:31,
         urls: {
@@ -437,6 +445,10 @@ const config: HardhatUserConfig = {
     },
     rootstock_testnet: {
       url: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    polygon_zkevm_cardona: {
+      url: "https://etherscan.cardona.zkevm-rpc.com/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
