@@ -31,6 +31,7 @@
 - [Aurora Testnet](#Aurora-Testnet)
 - [Soneium Minato Testnet](#Soneium-Minato-Testnet)
 - [Rootstock Testnet](#rootstock-testnet)
+- [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -799,6 +800,31 @@
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
+
+## Polygon zkEVM Cardona Testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| PriceFeed          | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
+| FeeReceiver        | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
+| InterimAdmin       | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
+| Gas Pool           | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
+| Factory            | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
+| LiquidationManager | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
+| DebtToken          | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
+| BorrowerOperations | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
+| StabilityPool      | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
+| TroveManager       | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
+| SortedTroves       | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
+| TokenLocker        | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
+| IncentiveVoting    | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
+| BabelToken         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
+| BabelVault         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
