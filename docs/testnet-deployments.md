@@ -629,6 +629,7 @@
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | SolvBTC         | 0x1cf0e51005971c5b78b4a8fee419832cfccd8cf9 | 0x28F577a0419b5AA0E338A60bb68f9f5F3bb42FD0 | 0x5741306c21795FdCBb9b265Ea0255F499DFe515C |
+| Bima Mock BTC   | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 | 0xC31738748270e564BBD6200746FEDB4aC874B55F | 0x5741306c21795FdCBb9b265Ea0255F499DFe515C |
 
 ## Fantom Testnet
 
