@@ -326,7 +326,7 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     ethereum_sepolia_testnet: {
-      url: "https://eth-sepolia.g.alchemy.com/v2/29b6W9IbhFqdunO5kwC7nUP507eJAlZI",
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_SEPOLIA_TESTNET_KEY}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     aurora_testnet: {
