@@ -181,7 +181,7 @@
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
 
-| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | stBTC (mocked)  | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 
@@ -853,6 +853,6 @@
 | BabelToken         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
 | BabelVault         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
 
-| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 | 0xe94baa7890A81e6873632c95D0FCB29604C10C12 | 0xa24A68DD788e1D7eb4CA517765CFb2b7e217e7a3 |
