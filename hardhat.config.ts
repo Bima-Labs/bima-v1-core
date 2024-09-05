@@ -31,7 +31,8 @@ const config: HardhatUserConfig = {
       bnb_testnet: "",
       godwoken_testnet: "",
       fantom_testnet: "",
-      aurora_testnet:"",
+      aurora_testnet: "",
+      ethereum_sepolia_testnet: "",
     },
     customChains: [
       {
@@ -41,6 +42,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "ethereum_sepolia_testnet",
+        chainId: 11155111,
+
+        urls: {
+          browserURL: "https://sepolia.etherscan.io/",
+          apiURL: "https://api-sepolia.etherscan.io/api",
         },
       },
       {
@@ -183,7 +193,7 @@ const config: HardhatUserConfig = {
         chainId: 111,
 
         urls: {
-          browserURL: "https://testnet.rpc.gobob.xyz/",
+          browserURL: "https://bob-sepolia.explorer.gobob.xyz/",
           apiURL: "https://testnet.rpc.gobob.xyz/",
         },
       },
@@ -291,18 +301,25 @@ const config: HardhatUserConfig = {
           apiURL: "https://rpc-holesky.morphl2.io",
         },
       },
-      { 
-        network:"minato_testnet",
-        chainId:1946,
+      {
+        network: "minato_testnet",
+        chainId: 1946,
         urls: {
           browserURL: "https://explorer-testnet.soneium.org/",
           apiURL: "https://rpc.minato.soneium.org/",
         },
-
       },
       {
-        network:"rootstock_testnet",
-        chainId:31,
+        network: "polygon_zkevm_cardona",
+        chainId: 2442,
+        urls: {
+          browserURL: "https://cardona-zkevm.polygonscan.com/",
+          apiURL: "https://etherscan.cardona.zkevm-rpc.com/",
+        },
+      },
+      {
+        network: "rootstock_testnet",
+        chainId: 31,
         urls: {
           browserURL: "https://explorer.testnet.rootstock.io/",
           apiURL: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
@@ -321,6 +338,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    ethereum_sepolia_testnet: {
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_SEPOLIA_TESTNET_KEY}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     aurora_testnet: {
@@ -450,7 +471,11 @@ const config: HardhatUserConfig = {
     merlin_testnet:{
       url : "https://testnet-rpc.merlinchain.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    }
+    },
+    polygon_zkevm_cardona: {
+      url: "https://etherscan.cardona.zkevm-rpc.com/",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
   },
   solidity: {
     compilers: [
