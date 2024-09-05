@@ -582,30 +582,36 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     function _accrueDepositorCollateralGain(address _depositor) private returns (bool hasGains) {
+        // get storage reference to user's collateral gains
         uint80[256] storage depositorGains = collateralGainsByDepositor[_depositor];
+
+        // cache number of collateral tokens
         uint256 collaterals = collateralTokens.length;
+
+        // cache user's initial deposit amount
         uint256 initialDeposit = accountDeposits[_depositor].amount;
-        hasGains = false;
-        if (initialDeposit == 0) {
-            return hasGains;
-        }
 
-        uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
-        uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
-        uint256 P_Snapshot = depositSnapshots[_depositor].P;
+        if(initialDeposit != 0) {
+            uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
+            uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
+            uint256 P_Snapshot = depositSnapshots[_depositor].P;
 
-        uint256[256] storage sums = epochToScaleToSums[epochSnapshot][scaleSnapshot];
-        uint256[256] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
-        uint256[256] storage depSums = depositSums[_depositor];
+            uint256[256] storage sumS = epochToScaleToSums[epochSnapshot][scaleSnapshot];
+            uint256[256] storage nextSumS = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
+            uint256[256] storage depSums = depositSums[_depositor];
 
-        for (uint256 i; i < collaterals; i++) {
-            if (sums[i] == 0) continue; // Collateral was overwritten or not gains
-            hasGains = true;
-            uint256 firstPortion = sums[i] - depSums[i];
-            uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
-            depositorGains[i] += uint80(
-                (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
-            );
+            for (uint256 i; i < collaterals; i++) {
+                if (sumS[i] == 0) continue; // Collateral was overwritten or not gains
+
+                hasGains = true;
+
+                uint256 firstPortion = sumS[i] - depSums[i];
+                uint256 secondPortion = nextSumS[i] / BIMA_SCALE_FACTOR;
+
+                depositorGains[i] += uint80(
+                    (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
+                );
+            }
         }
     }
 
