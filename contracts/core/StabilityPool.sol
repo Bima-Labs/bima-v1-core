@@ -19,6 +19,7 @@ import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/ISt
 contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
+    // constants
     uint128 public constant SUNSET_DURATION = 180 days;
     uint256 constant REWARD_DURATION = 1 weeks;
 
@@ -26,30 +27,33 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // in BabelVault::constructor
     uint256 public constant SP_EMISSION_ID = 0;
 
+    uint256 public constant SCALE_FACTOR = 1e9;
+
+    // immutable
     IDebtToken public immutable debtToken;
     IBabelVault public immutable vault;
     address public immutable factory;
     address public immutable liquidationManager;
 
+    // public
     uint128 public rewardRate;
     uint32 public lastUpdate;
     uint32 public periodFinish;
 
-    mapping(IERC20 collateral => uint256 index) public indexByCollateral;
-    IERC20[] public collateralTokens;
+    // here for storage packing
+    Queue queue;
 
-    // Tracker for Debt held in the pool. Changes when users deposit/withdraw, and when Trove debt is offset.
-    uint256 internal totalDebtTokenDeposits;
+    // Each time the scale of P shifts by SCALE_FACTOR, the scale is incremented by 1
+    uint128 public currentScale;
 
-    mapping(address => AccountDeposit) public accountDeposits; // depositor address -> initial deposit
-    mapping(address => Snapshots) public depositSnapshots; // depositor address -> snapshots struct
+    // With each offset that fully empties the Pool, the epoch is incremented by 1
+    uint128 public currentEpoch;
 
-    // index values are mapped against the values within `collateralTokens`
-    mapping(address => uint256[256]) public depositSums; // depositor address -> sums
-
-    mapping(address depositor => uint80[256] gains) public collateralGainsByDepositor;
-
-    mapping(address depositor => uint256 rewards) private storedPendingReward;
+    // Error tracker for the error correction in the Babel issuance calculation
+    uint256 public lastBabelError;
+    // Error trackers for the error correction in the offset calculation
+    uint256 public lastCollateralError_Offset;
+    uint256 public lastDebtLossError_Offset;
 
     /*  Product 'P': Running product by which to multiply an initial deposit, in order to find the current compounded deposit,
      * after a series of liquidations have occurred, each of which cancel some debt with the deposit.
@@ -59,13 +63,27 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      */
     uint256 public P = BIMA_DECIMAL_PRECISION;
 
-    uint256 public constant SCALE_FACTOR = 1e9;
+    // internal
+    //
+    // Tracker for Debt held in the pool, changes when users deposit/withdraw
+    // and when Trove debt is offset
+    uint256 internal totalDebtTokenDeposits;
 
-    // Each time the scale of P shifts by SCALE_FACTOR, the scale is incremented by 1
-    uint128 public currentScale;
+    // public array
+    IERC20[] public collateralTokens;
 
-    // With each offset that fully empties the Pool, the epoch is incremented by 1
-    uint128 public currentEpoch;
+    // mappings
+    mapping(IERC20 collateral => uint256 index) public indexByCollateral;
+
+    mapping(address depositor => AccountDeposit) public accountDeposits;
+    mapping(address depositor => Snapshots) public depositSnapshots;
+
+    // index values are mapped against the values within `collateralTokens`
+    mapping(address depositor => uint256[256] deposits) public depositSums;
+
+    mapping(address depositor => uint80[256] gains) public collateralGainsByDepositor;
+
+    mapping(address depositor => uint256 rewards) private storedPendingReward;
 
     /* collateral Gain sum 'S': During its lifetime, each deposit d_t earns a collateral gain of ( d_t * [S - S_t] )/P_t, where S_t
      * is the depositor's snapshot of S taken at the time t when the deposit was made.
@@ -77,7 +95,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      */
 
     // index values are mapped against the values within `collateralTokens`
-    mapping(uint128 => mapping(uint128 => uint256[256])) public epochToScaleToSums;
+    mapping(uint128 epoch => mapping(uint128 scale => uint256[256] sumS)) public epochToScaleToSums;
 
     /*
      * Similarly, the sum 'G' is used to calculate Babel gains. During it's lifetime, each deposit d_t earns a Babel gain of
@@ -86,17 +104,11 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      *  Babel reward events occur are triggered by depositor operations (new deposit, topup, withdrawal), and liquidations.
      *  In each case, the Babel reward is issued (i.e. G is updated), before other state changes are made.
      */
-    mapping(uint128 => mapping(uint128 => uint256)) public epochToScaleToG;
+    mapping(uint128 epoch => mapping(uint128 scale => uint256 sumG)) public epochToScaleToG;
 
-    // Error tracker for the error correction in the Babel issuance calculation
-    uint256 public lastBabelError;
-    // Error trackers for the error correction in the offset calculation
-    uint256 public lastCollateralError_Offset;
-    uint256 public lastDebtLossError_Offset;
+    mapping(uint16 indexKey => SunsetIndex) _sunsetIndexes;
 
-    mapping(uint16 => SunsetIndex) _sunsetIndexes;
-    Queue queue;
-
+    // structs
     struct AccountDeposit {
         uint128 amount;
         uint128 timestamp; // timestamp of the last deposit
