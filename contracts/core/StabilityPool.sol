@@ -22,7 +22,9 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     uint128 public constant SUNSET_DURATION = 180 days;
     uint256 constant REWARD_DURATION = 1 weeks;
 
-    uint256 public constant emissionId = 0;
+    // stability pool is registered with receiver ID 0
+    // in BabelVault::constructor
+    uint256 public constant SP_EMISSION_ID = 0;
 
     IDebtToken public immutable debtToken;
     IBabelVault public immutable vault;
@@ -285,7 +287,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 lastUpdateWeek = (_periodFinish - startTime) / 1 weeks;
         // If the last claim was a week earlier we reclaim
         if (getWeek() >= lastUpdateWeek) {
-            uint256 amount = vault.allocateNewEmissions(emissionId);
+            uint256 amount = vault.allocateNewEmissions(SP_EMISSION_ID);
             if (amount > 0) {
                 // If the previous period is not finished we combine new and pending old rewards
                 if (block.timestamp < _periodFinish) {

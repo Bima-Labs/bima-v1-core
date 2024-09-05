@@ -60,7 +60,7 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function depositSums(address, uint256) external view returns (uint256);
 
-    function emissionId() external view returns (uint256);
+    function SP_EMISSION_ID() external view returns (uint256);
 
     function epochToScaleToG(uint128, uint128) external view returns (uint256);
 
