@@ -28,6 +28,20 @@ contract StabilityPoolTest is TestSetup {
         assertEq(address(stabilityPool.collateralTokens(1)), address(newCollateral));
     }
 
+    function test_enableCollateral_failToAddMoreThanMaxCollaterals() external {
+        for(uint160 i=1; i<=255; i++) {
+            address newCollateral = address(i);
+
+            vm.prank(address(factory));
+            stabilityPool.enableCollateral(IERC20(newCollateral));
+        }
+
+        // try to add one more
+        vm.expectRevert("Maximum collateral length reached");
+        vm.prank(address(factory));
+        stabilityPool.enableCollateral(IERC20(address(uint160(256))));
+    }
+
     function test_startCollateralSunset() public returns(IERC20 sunsetCollateral) {
         // first add new collateral
         sunsetCollateral = test_enableCollateral();
@@ -93,5 +107,4 @@ contract StabilityPoolTest is TestSetup {
         (uint16 firstSunsetIndexKeyPost, ) = stabilityPool.getSunsetQueueKeys();
         assertEq(firstSunsetIndexKeyPost, firstSunsetIndexKeyPre + 1);
     }
-
 }

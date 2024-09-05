@@ -22,6 +22,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // constants
     uint128 public constant SUNSET_DURATION = 180 days;
     uint256 constant REWARD_DURATION = 1 weeks;
+    uint256 constant MAX_COLLATERAL_COUNT = 256;
 
     // stability pool is registered with receiver ID 0
     // in BabelVault::constructor
@@ -81,9 +82,9 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     mapping(address depositor => Snapshots) public depositSnapshots;
 
     // index values are mapped against the values within `collateralTokens`
-    mapping(address depositor => uint256[256] deposits) public depositSums;
+    mapping(address depositor => uint256[MAX_COLLATERAL_COUNT] deposits) public depositSums;
 
-    mapping(address depositor => uint80[256] gains) public collateralGainsByDepositor;
+    mapping(address depositor => uint80[MAX_COLLATERAL_COUNT] gains) public collateralGainsByDepositor;
 
     mapping(address depositor => uint256 rewards) private storedPendingReward;
 
@@ -97,7 +98,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      */
 
     // index values are mapped against the values within `collateralTokens`
-    mapping(uint128 epoch => mapping(uint128 scale => uint256[256] sumS)) public epochToScaleToSums;
+    mapping(uint128 epoch => mapping(uint128 scale => uint256[MAX_COLLATERAL_COUNT] sumS)) public epochToScaleToSums;
 
     /*
      * Similarly, the sum 'G' is used to calculate Babel gains. During it's lifetime, each deposit d_t earns a Babel gain of
@@ -152,6 +153,10 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         // search through all existing collateral tokens to determine
         // whether this collateral token is already enabled
         uint256 length = collateralTokens.length;
+
+        // enforce maximum number of collaterals
+        require(length != MAX_COLLATERAL_COUNT, "Maximum collateral length reached");
+
         bool alreadyEnabled;
 
         for (uint256 i; i < length; i++) {
@@ -564,13 +569,13 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
         uint256 P_Snapshot = depositSnapshots[_depositor].P;
         if (P_Snapshot == 0) return collateralGains;
-        uint80[256] storage depositorGains = collateralGainsByDepositor[_depositor];
+        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[_depositor];
         uint256 initialDeposit = accountDeposits[_depositor].amount;
         uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
         uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
-        uint256[256] storage sums = epochToScaleToSums[epochSnapshot][scaleSnapshot];
-        uint256[256] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
-        uint256[256] storage depSums = depositSums[_depositor];
+        uint256[MAX_COLLATERAL_COUNT] storage sums = epochToScaleToSums[epochSnapshot][scaleSnapshot];
+        uint256[MAX_COLLATERAL_COUNT] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
+        uint256[MAX_COLLATERAL_COUNT] storage depSums = depositSums[_depositor];
 
         for (uint256 i; i < collateralGains.length; i++) {
             collateralGains[i] = depositorGains[i];
@@ -583,7 +588,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     function _accrueDepositorCollateralGain(address _depositor) private returns (bool hasGains) {
         // get storage reference to user's collateral gains
-        uint80[256] storage depositorGains = collateralGainsByDepositor[_depositor];
+        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[_depositor];
 
         // cache number of collateral tokens
         uint256 collaterals = collateralTokens.length;
@@ -596,9 +601,9 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
             uint256 P_Snapshot = depositSnapshots[_depositor].P;
 
-            uint256[256] storage sumS = epochToScaleToSums[epochSnapshot][scaleSnapshot];
-            uint256[256] storage nextSumS = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
-            uint256[256] storage depSums = depositSums[_depositor];
+            uint256[MAX_COLLATERAL_COUNT] storage sumS = epochToScaleToSums[epochSnapshot][scaleSnapshot];
+            uint256[MAX_COLLATERAL_COUNT] storage nextSumS = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
+            uint256[MAX_COLLATERAL_COUNT] storage depSums = depositSums[_depositor];
 
             for (uint256 i; i < collaterals; i++) {
                 if (sumS[i] == 0) continue; // Collateral was overwritten or not gains
@@ -730,7 +735,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
         uint256[] memory collateralGains = new uint256[](collateralTokens.length);
 
-        uint80[256] storage depositorGains = collateralGainsByDepositor[msg.sender];
+        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[msg.sender];
 
         // more efficient not to cache calldata input length
         for (uint256 i; i < collateralIndexes.length; ) {
@@ -767,7 +772,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 currentP = P;
 
         // Get S and G for the current epoch and current scale
-        uint256[256] storage currentS = epochToScaleToSums[currentEpochCached][currentScaleCached];
+        uint256[MAX_COLLATERAL_COUNT] storage currentS = epochToScaleToSums[currentEpochCached][currentScaleCached];
         uint256 currentG = epochToScaleToG[currentEpochCached][currentScaleCached];
 
         // Record new snapshots of the latest running product P, sum S, and sum G, for the depositor
