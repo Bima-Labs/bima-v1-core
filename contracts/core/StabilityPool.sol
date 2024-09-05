@@ -619,27 +619,31 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 totalDebt = totalDebtTokenDeposits;
         uint256 initialDeposit = accountDeposits[_depositor].amount;
 
-        if (totalDebt == 0 || initialDeposit == 0) {
-            return 0;
-        }
-        uint256 babelNumerator = (_vestedEmissions() * BIMA_DECIMAL_PRECISION) + lastBabelError;
-        uint256 babelPerUnitStaked = babelNumerator / totalDebt;
-        uint256 marginalBabelGain = babelPerUnitStaked * P;
+        // first output stored pending reward
+        reward = storedPendingReward[_depositor];
 
-        Snapshots memory snapshots = depositSnapshots[_depositor];
-        uint128 epochSnapshot = snapshots.epoch;
-        uint128 scaleSnapshot = snapshots.scale;
-        uint256 firstPortion;
-        uint256 secondPortion;
-        if (scaleSnapshot == currentScale) {
-            firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G + marginalBabelGain;
-            secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
-        } else {
-            firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G;
-            secondPortion = (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBabelGain) / BIMA_SCALE_FACTOR;
-        }
+        // if depositor has deposits & debt perform additional calculations
+        if(totalDebt != 0 && initialDeposit != 0) {
+            uint256 babelNumerator = (_vestedEmissions() * BIMA_DECIMAL_PRECISION) + lastBabelError;
+            uint256 babelPerUnitStaked = babelNumerator / totalDebt;
+            uint256 marginalBabelGain = babelPerUnitStaked * P;
 
-        reward = (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / BIMA_DECIMAL_PRECISION;
+            Snapshots memory snapshots = depositSnapshots[_depositor];
+            uint128 epochSnapshot = snapshots.epoch;
+            uint128 scaleSnapshot = snapshots.scale;
+            uint256 firstPortion;
+            uint256 secondPortion;
+            if (scaleSnapshot == currentScale) {
+                firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G + marginalBabelGain;
+                secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
+            } else {
+                firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G;
+                secondPortion = (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBabelGain) / BIMA_SCALE_FACTOR;
+            }
+
+            // add additional calculation to stored pending reward already in output
+            reward += (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / BIMA_DECIMAL_PRECISION;
+        }
     }
 
     function _claimableReward(address _depositor) private view returns (uint256 reward) {
