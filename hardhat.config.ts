@@ -32,6 +32,7 @@ const config: HardhatUserConfig = {
       godwoken_testnet: "",
       fantom_testnet: "",
       aurora_testnet:"",
+      ethereum_sepolia_testnet:"",
     },
     customChains: [
       {
@@ -41,6 +42,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "ethereum_sepolia_testnet",
+        chainId: 11155111,
+
+        urls: {
+          browserURL: "https://sepolia.etherscan.io/",
+          apiURL: "https://api-sepolia.etherscan.io/api",
         },
       },
       {
@@ -321,6 +331,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    ethereum_sepolia_testnet: {
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_SEPOLIA_TESTNET_KEY}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     aurora_testnet: {
