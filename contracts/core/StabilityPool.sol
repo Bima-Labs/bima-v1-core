@@ -714,7 +714,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     // --- Sender functions for Debt deposit, collateral gains and Babel gains ---
-    function claimCollateralGains(address recipient, uint256[] calldata collateralIndexes) external virtual {
+    function claimCollateralGains(address recipient, uint256[] calldata collateralIndexes) external {
         // accrue user collateral gains prior to claiming
         _accrueDepositorCollateralGain(msg.sender);
 
