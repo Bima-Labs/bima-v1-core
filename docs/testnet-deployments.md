@@ -881,6 +881,6 @@
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
  
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
 | --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E|0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B|0xE20B0B5E240910Ca1461893542C6F226793aAD25|
+|  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
