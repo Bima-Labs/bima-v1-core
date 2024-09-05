@@ -274,7 +274,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     /*  provideToSP():
      *
-     * - Triggers a Babel issuance, based on time passed since the last issuance. The Babel issuance is shared between *all* depositors and front ends
+     * - Triggers a Babel issuance, based on time passed since the last issuance.
+     *   The Babel issuance is shared between *all* depositors and front ends
      * - Tags the deposit with the provided front end tag param, if it's a new deposit
      * - Sends depositor's accumulated gains (Babel, collateral) to depositor
      * - Sends the tagged front end's accumulated Babel gains to the tagged front end
@@ -714,10 +715,9 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     // --- Sender functions for Debt deposit, collateral gains and Babel gains ---
     function claimCollateralGains(address recipient, uint256[] calldata collateralIndexes) external virtual {
-        _claimCollateralGains(recipient, collateralIndexes);
-    }
+        // accrue user collateral gains prior to claiming
+        _accrueDepositorCollateralGain(msg.sender);
 
-    function _claimCollateralGains(address recipient, uint256[] calldata collateralIndexes) internal {
         uint256[] memory collateralGains = new uint256[](collateralTokens.length);
 
         uint80[256] storage depositorGains = collateralGainsByDepositor[msg.sender];
