@@ -107,5 +107,7 @@ contract Factory is IFactory, BabelOwnable {
     function setImplementations(address _troveManagerImpl, address _sortedTrovesImpl) external onlyOwner {
         troveManagerImpl = _troveManagerImpl;
         sortedTrovesImpl = _sortedTrovesImpl;
+
+        emit ImplementationContractsChanged(_troveManagerImpl, _sortedTrovesImpl);
     }
 }
