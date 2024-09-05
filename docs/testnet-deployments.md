@@ -880,6 +880,7 @@
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaFaucet         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
  
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
 | --------------- | ------------------ | -------------------- | -------------- |
