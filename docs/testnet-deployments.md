@@ -277,10 +277,13 @@
 | IncentiveVoting    | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BabelToken         | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
 | BabelVault         | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| BimaFaucet         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 | 0xB9663857186D9355d2b01B45822EE3B8f0660758 | 0x4260121248Db5c3330A55A415A6A5C8aF4936182 |
+------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 | 0x72C56eD0D46364C08257F8502b7cf17CB8f596D6 | 0x4260121248Db5c3330A55A415A6A5C8aF4936182 |
 
 ## Avalanche Fuji Testnet
 
