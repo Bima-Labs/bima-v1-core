@@ -31,6 +31,7 @@
 - [Aurora Testnet](#Aurora-Testnet)
 - [Soneium Minato Testnet](#Soneium-Minato-Testnet)
 - [Rootstock Testnet](#rootstock-testnet)
+- [Ethereum Sepolia Testnet](#Ethereum-Sepolia-Testnet)
 
 
 ## Arbitrum Sepolia Testnet
@@ -806,3 +807,27 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
 
+## Ethereum Sepolia Testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
+| PriceFeed          | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
+| FeeReceiver        | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
+| InterimAdmin       | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| Gas Pool           | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
+| Factory            | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| LiquidationManager | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
+| DebtToken          | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
+| BorrowerOperations | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
+| StabilityPool      | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E |
+| TroveManager       | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
+| SortedTroves       | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
+| TokenLocker        | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
+| IncentiveVoting    | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
+| BabelToken         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| BabelVault         | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
