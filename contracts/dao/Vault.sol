@@ -300,9 +300,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             weeklyEmissions[week] = SafeCast.toUint128(weeklyAmount);
 
             // update working data
-            unallocated = unallocated - weeklyAmount;
-            
-            emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
+            if(weeklyAmount > 0) {
+                unallocated = unallocated - weeklyAmount;
+                
+                emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
+            }
         }
 
         // update storage
