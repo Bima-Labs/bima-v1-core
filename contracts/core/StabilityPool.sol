@@ -8,6 +8,8 @@ import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR} from "../dependencies/Constants.sol";
 import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
     @title Babel Stability Pool
     @notice Based on Liquity's `StabilityPool`
@@ -35,12 +37,19 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     address public immutable liquidationManager;
 
     // public
+    //
+    // reward issuance rate for all depositors
     uint128 public rewardRate;
+
+    // used with rewardRate to calculate actual rewards
+    // based on time duration since last update
     uint32 public lastUpdate;
+
+    // used to periodically trigger calls to BabelVault::allocateNewEmissions
     uint32 public periodFinish;
 
     // here for storage packing
-    Queue queue;
+    SunsetQueue queue;
 
     // Each time the scale of P shifts by BIMA_SCALE_FACTOR, the scale is incremented by 1
     uint128 public currentScale;
@@ -126,7 +135,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint128 idx;
         uint128 expiry;
     }
-    struct Queue {
+    struct SunsetQueue {
         uint16 firstSunsetIndexKey;
         uint16 nextSunsetIndexKey;
     }
@@ -169,7 +178,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         // if collateral is not already enabled
         if (!alreadyEnabled) {
             // cache the sunset queue
-            Queue memory queueCached = queue;
+            SunsetQueue memory queueCached = queue;
 
             // if possible, over-write a sunsetting collateral
             // ready to be removed with this new collateral
@@ -262,7 +271,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     function getSunsetQueueKeys() external view returns(uint16 firstSunsetIndexKey, uint16 nextSunsetIndexKey) {
-        Queue memory data = queue;
+        SunsetQueue memory data = queue;
         (firstSunsetIndexKey, nextSunsetIndexKey) = (data.firstSunsetIndexKey, data.nextSunsetIndexKey);
     }
 
@@ -273,6 +282,10 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     function getTotalDebtTokenDeposits() external view returns (uint256 output) {
         output = totalDebtTokenDeposits;
+    }
+
+    function getStoredPendingReward(address depositor) external view returns (uint256 reward) {
+        reward = storedPendingReward[depositor];
     }
 
     // --- External Depositor Functions ---
@@ -290,32 +303,37 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         require(!BABEL_CORE.paused(), "Deposits are paused");
         require(_amount > 0, "StabilityPool: Amount must be non-zero");
 
+        // perform processes prior to crediting new deposit
         _triggerRewardIssuance();
-
         _accrueDepositorCollateralGain(msg.sender);
 
         uint256 compoundedDebtDeposit = getCompoundedDebtDeposit(msg.sender);
-
         _accrueRewards(msg.sender);
 
+        // transfer the tokens being deposited
         debtToken.sendToSP(msg.sender, _amount);
+
+        // update storage increase total debt tokens deposited
         uint256 newTotalDebtTokenDeposits = totalDebtTokenDeposits + _amount;
         totalDebtTokenDeposits = newTotalDebtTokenDeposits;
         emit StabilityPoolDebtBalanceUpdated(newTotalDebtTokenDeposits);
 
-        uint256 newDeposit = compoundedDebtDeposit + _amount;
+        // update storage user deposit record
+        uint256 newTotalDeposited = compoundedDebtDeposit + _amount;
+
         accountDeposits[msg.sender] = AccountDeposit({
-            amount: uint128(newDeposit),
+            amount: SafeCast.toUint128(newTotalDeposited),
             timestamp: uint128(block.timestamp)
         });
 
-        _updateSnapshots(msg.sender, newDeposit);
-        emit UserDepositChanged(msg.sender, newDeposit);
+        _updateSnapshots(msg.sender, newTotalDeposited);
+        emit UserDepositChanged(msg.sender, newTotalDeposited);
     }
 
     /*  withdrawFromSP():
      *
-     * - Triggers a Babel issuance, based on time passed since the last issuance. The Babel issuance is shared between *all* depositors and front ends
+     * - Triggers a Babel issuance, based on time passed since the last issuance.
+     *   The Babel issuance is shared between *all* depositors and front ends
      * - Removes the deposit's front end tag if it is a full withdrawal
      * - Sends all depositor's accumulated gains (Babel, collateral) to depositor
      * - Sends the tagged front end's accumulated Babel gains to the tagged front end
@@ -324,31 +342,37 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      * If _amount > userDeposit, the user withdraws all of their compounded deposit.
      */
     function withdrawFromSP(uint256 _amount) external {
-        uint256 initialDeposit = accountDeposits[msg.sender].amount;
-        uint128 depositTimestamp = accountDeposits[msg.sender].timestamp;
-        require(initialDeposit > 0, "StabilityPool: User must have a non-zero deposit");
-        require(depositTimestamp < block.timestamp, "!Deposit and withdraw same block");
+        // 1 SLOAD since amount & timestamp fit in same slot
+        AccountDeposit memory accountCache = accountDeposits[msg.sender];
 
+        require(accountCache.amount > 0, "StabilityPool: User must have a non-zero deposit");
+        require(accountCache.timestamp < block.timestamp, "!Deposit and withdraw same block");
+
+        // perform processes prior to debiting new withdrawal
         _triggerRewardIssuance();
-
         _accrueDepositorCollateralGain(msg.sender);
 
         uint256 compoundedDebtDeposit = getCompoundedDebtDeposit(msg.sender);
         uint256 debtToWithdraw = BabelMath._min(_amount, compoundedDebtDeposit);
-
         _accrueRewards(msg.sender);
 
+        // transfer the tokens being withdrawn
         if (debtToWithdraw > 0) {
             debtToken.returnFromPool(address(this), msg.sender, debtToWithdraw);
+
+            // update storage decrease total debt tokens deposited
             _decreaseDebt(debtToWithdraw);
         }
 
-        // Update deposit
-        uint256 newDeposit = compoundedDebtDeposit - debtToWithdraw;
-        accountDeposits[msg.sender] = AccountDeposit({ amount: uint128(newDeposit), timestamp: depositTimestamp });
+        // update storage user deposit record
+        uint256 newTotalDeposited = compoundedDebtDeposit - debtToWithdraw;
 
-        _updateSnapshots(msg.sender, newDeposit);
-        emit UserDepositChanged(msg.sender, newDeposit);
+        // note: timestamp doesn't change as it is always timestamp
+        // of last deposit, so withdrawal doesn't change this
+        accountDeposits[msg.sender].amount = SafeCast.toUint128(newTotalDeposited);
+
+        _updateSnapshots(msg.sender, newTotalDeposited);
+        emit UserDepositChanged(msg.sender, newTotalDeposited);
     }
 
     // --- Babel issuance functions ---
@@ -358,50 +382,65 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
         uint256 _periodFinish = periodFinish;
         uint256 lastUpdateWeek = (_periodFinish - startTime) / 1 weeks;
-        // If the last claim was a week earlier we reclaim
+
+        // if the current system week is the same as the last update week
+        // or if the last update week was in the past, then claim new
+        // emissions from BabelVault
         if (getWeek() >= lastUpdateWeek) {
             uint256 amount = vault.allocateNewEmissions(SP_EMISSION_ID);
+
             if (amount > 0) {
                 // If the previous period is not finished we combine new and pending old rewards
                 if (block.timestamp < _periodFinish) {
                     uint256 remaining = _periodFinish - block.timestamp;
                     amount += remaining * rewardRate;
                 }
-                rewardRate = uint128(amount / REWARD_DURATION);
+
+                rewardRate = SafeCast.toUint128(amount / REWARD_DURATION);
                 periodFinish = uint32(block.timestamp + REWARD_DURATION);
             }
         }
+
         lastUpdate = uint32(block.timestamp);
     }
 
-    function _vestedEmissions() internal view returns (uint256 result) {
+    function _vestedEmissions() internal view returns (uint256 babelIssuance) {
         uint256 updated = periodFinish;
+
         // Period is not ended we max at current timestamp
         if (updated > block.timestamp) updated = block.timestamp;
-        // if the last update was after the current update time it means all rewards have been vested already
+        
+        // if the last update was after the current update time
+        // it means all rewards have been vested already so return
+        // default zero
         uint256 lastUpdateCached = lastUpdate;
-        if (lastUpdateCached >= updated) return 0; //Nothing to claim
-        uint256 duration = updated - lastUpdateCached;
-        result = duration * rewardRate;
+
+        // otherwise calculate vested emissions
+        if (lastUpdateCached < updated) {
+            uint256 duration = updated - lastUpdateCached;
+            babelIssuance = duration * rewardRate;
+        }
     }
 
     function _updateG(uint256 _babelIssuance) internal {
-        uint256 totalDebt = totalDebtTokenDeposits; // cached to save an SLOAD
-        /*
-         * When total deposits is 0, G is not updated. In this case, the Babel issued can not be obtained by later
-         * depositors - it is missed out on, and remains in the balanceof the Treasury contract.
-         *
-         */
+        uint256 totalDebt = totalDebtTokenDeposits;
+
+        // When total deposits is 0, G is not updated. In this case
+        // the Babel issued can not be obtained by later depositors;
+        // it is missed out on, and remains in the balanceOf the Treasury contract.
         if (totalDebt == 0 || _babelIssuance == 0) {
             return;
         }
 
         uint256 babelPerUnitStaked;
         babelPerUnitStaked = _computeBabelPerUnitStaked(_babelIssuance, totalDebt);
+
         uint128 currentEpochCached = currentEpoch;
         uint128 currentScaleCached = currentScale;
+        
         uint256 marginalBabelGain = babelPerUnitStaked * P;
         uint256 newG = epochToScaleToG[currentEpochCached][currentScaleCached] + marginalBabelGain;
+
         epochToScaleToG[currentEpochCached][currentScaleCached] = newG;
 
         emit G_Updated(newG, currentEpochCached, currentScaleCached);
@@ -442,7 +481,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 idx = indexByCollateral[collateral];
         idx -= 1;
 
-        uint256 totalDebt = totalDebtTokenDeposits; // cached to save an SLOAD
+        uint256 totalDebt = totalDebtTokenDeposits;
         if (totalDebt == 0 || _debtToOffset == 0) {
             return;
         }
@@ -455,7 +494,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             totalDebt
         );
 
-        _updateRewardSumAndProduct(collateralGainPerUnitStaked, debtLossPerUnitStaked, idx); // updates S and P
+        // update S and P
+        _updateRewardSumAndProduct(collateralGainPerUnitStaked, debtLossPerUnitStaked, idx);
 
         // Cancel the liquidated Debt debt with the Debt in the stability pool
         _decreaseDebt(_debtToOffset);
@@ -658,14 +698,15 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     function _claimableReward(address _depositor) private view returns (uint256 reward) {
-        uint256 initialDeposit = accountDeposits[_depositor].amount;
-        if (initialDeposit == 0) {
-            return 0;
+        // output account deposit
+        reward = accountDeposits[_depositor].amount;
+
+        // only process reward calculation if account has > 0 deposit
+        if (reward != 0) {
+            Snapshots memory snapshots = depositSnapshots[_depositor];
+
+            reward = _getBabelGainFromSnapshots(reward, snapshots);
         }
-
-        Snapshots memory snapshots = depositSnapshots[_depositor];
-
-        reward = _getBabelGainFromSnapshots(initialDeposit, snapshots);
     }
 
     function _getBabelGainFromSnapshots(
@@ -673,12 +714,14 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         Snapshots memory snapshots
     ) internal view returns (uint256 babelGain) {
         /*
-         * Grab the sum 'G' from the epoch at which the stake was made. The Babel gain may span up to one scale change.
+         * Grab the sum 'G' from the epoch at which the stake was made.
+         * The Babel gain may span up to one scale change.
          * If it does, the second portion of the Babel gain is scaled by 1e9.
          * If the gain spans no scale change, the second portion will be 0.
          */
         uint128 epochSnapshot = snapshots.epoch;
         uint128 scaleSnapshot = snapshots.scale;
+
         uint256 G_Snapshot = snapshots.G;
         uint256 P_Snapshot = snapshots.P;
 
@@ -695,14 +738,15 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
      * where P(0) is the depositor's snapshot of the product P, taken when they last updated their deposit.
      */
     function getCompoundedDebtDeposit(address _depositor) public view returns (uint256 compoundedDeposit) {
-        uint256 initialDeposit = accountDeposits[_depositor].amount;
-        if (initialDeposit == 0) {
-            return 0;
+        // output account deposit
+        compoundedDeposit = accountDeposits[_depositor].amount;
+
+        // only process compounded deposit if account has > 0 deposit
+        if (compoundedDeposit != 0) {
+            Snapshots memory snapshots = depositSnapshots[_depositor];
+
+            compoundedDeposit = _getCompoundedStakeFromSnapshots(compoundedDeposit, snapshots);
         }
-
-        Snapshots memory snapshots = depositSnapshots[_depositor];
-
-        compoundedDeposit = _getCompoundedStakeFromSnapshots(initialDeposit, snapshots);
     }
 
     // Internal function, used to calculcate compounded deposits and compounded front end stakes.
@@ -741,65 +785,75 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         for (uint256 i; i < collateralIndexes.length; ) {
             uint256 collateralIndex = collateralIndexes[i];
             uint256 gains = depositorGains[collateralIndex];
+
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
                 depositorGains[collateralIndex] = 0;
+
                 collateralTokens[collateralIndex].safeTransfer(recipient, gains);
             }
             unchecked {
                 ++i;
             }
         }
+
         emit CollateralGainWithdrawn(msg.sender, collateralGains);
     }
 
     // --- Stability Pool Deposit Functionality ---
 
     function _updateSnapshots(address _depositor, uint256 _newValue) internal {
-        uint256 length;
+        // if resetting depositor snapshots when the depositor withdraws everything
         if (_newValue == 0) {
             delete depositSnapshots[_depositor];
 
-            length = collateralTokens.length;
+            uint256 length = collateralTokens.length;
+            
             for (uint256 i; i < length; i++) {
                 depositSums[_depositor][i] = 0;
             }
+            
             emit DepositSnapshotUpdated(_depositor, 0, 0);
-            return;
         }
-        uint128 currentScaleCached = currentScale;
-        uint128 currentEpochCached = currentEpoch;
-        uint256 currentP = P;
+        else {
+            uint128 currentScaleCached = currentScale;
+            uint128 currentEpochCached = currentEpoch;
+            uint256 currentP = P;
 
-        // Get S and G for the current epoch and current scale
-        uint256[MAX_COLLATERAL_COUNT] storage currentS = epochToScaleToSums[currentEpochCached][currentScaleCached];
-        uint256 currentG = epochToScaleToG[currentEpochCached][currentScaleCached];
+            // Get S and G for the current epoch and current scale
+            uint256[MAX_COLLATERAL_COUNT] storage currentS = epochToScaleToSums[currentEpochCached][currentScaleCached];
+            uint256 currentG = epochToScaleToG[currentEpochCached][currentScaleCached];
 
-        // Record new snapshots of the latest running product P, sum S, and sum G, for the depositor
-        depositSnapshots[_depositor].P = currentP;
-        depositSnapshots[_depositor].G = currentG;
-        depositSnapshots[_depositor].scale = currentScaleCached;
-        depositSnapshots[_depositor].epoch = currentEpochCached;
+            // Record new snapshots of the latest running product P, sum S, and sum G, for the depositor
+            depositSnapshots[_depositor].P = currentP;
+            depositSnapshots[_depositor].G = currentG;
+            depositSnapshots[_depositor].scale = currentScaleCached;
+            depositSnapshots[_depositor].epoch = currentEpochCached;
 
-        length = collateralTokens.length;
-        for (uint256 i; i < length; i++) {
-            depositSums[_depositor][i] = currentS[i];
+            uint256 length = collateralTokens.length;
+            
+            for (uint256 i; i < length; i++) {
+                depositSums[_depositor][i] = currentS[i];
+            }
+
+            emit DepositSnapshotUpdated(_depositor, currentP, currentG);
         }
-
-        emit DepositSnapshotUpdated(_depositor, currentP, currentG);
     }
 
-    //This assumes the snapshot gets updated in the caller
+    // This assumes the snapshot gets updated in the caller
     function _accrueRewards(address _depositor) internal {
         uint256 amount = _claimableReward(_depositor);
-        storedPendingReward[_depositor] = storedPendingReward[_depositor] + amount;
+
+        storedPendingReward[_depositor] += amount;
     }
 
     function claimReward(address recipient) external returns (uint256 amount) {
         amount = _claimReward(msg.sender);
+
         if (amount > 0) {
             vault.transferAllocatedTokens(msg.sender, recipient, amount);
         }
+
         emit RewardClaimed(msg.sender, recipient, amount);
     }
 
@@ -813,7 +867,6 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 initialDeposit = accountDeposits[account].amount;
 
         if (initialDeposit > 0) {
-            uint128 depositTimestamp = accountDeposits[account].timestamp;
             _triggerRewardIssuance();
             bool hasGains = _accrueDepositorCollateralGain(account);
 
@@ -821,15 +874,17 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             uint256 debtLoss = initialDeposit - compoundedDebtDeposit;
 
             amount = _claimableReward(account);
+
             // we update only if the snapshot has changed
             if (debtLoss > 0 || hasGains || amount > 0) {
                 // Update deposit
-                uint256 newDeposit = compoundedDebtDeposit;
-                accountDeposits[account] = AccountDeposit({ amount: uint128(newDeposit), timestamp: depositTimestamp });
-                _updateSnapshots(account, newDeposit);
+                accountDeposits[account].amount = SafeCast.toUint128(compoundedDebtDeposit);
+                _updateSnapshots(account, compoundedDebtDeposit);
             }
         }
+
         uint256 pending = storedPendingReward[account];
+
         if (pending > 0) {
             amount += pending;
             storedPendingReward[account] = 0;

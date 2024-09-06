@@ -107,4 +107,137 @@ contract StabilityPoolTest is TestSetup {
         (uint16 firstSunsetIndexKeyPost, ) = stabilityPool.getSunsetQueueKeys();
         assertEq(firstSunsetIndexKeyPost, firstSunsetIndexKeyPre + 1);
     }
+
+    // used to get around "stack too deep errors"
+    struct DepositWithdrawState {
+        uint128 accountTotalDep;
+        uint128 accountLastDepositTime;
+        uint256 totalDebtTokenDeposits;
+        uint128 scale;
+        uint128 epoch;
+        uint256 userDebtTokenBalance;
+        uint256 poolDebtTokenBalance;
+    }
+    function _getDepositWithdrawState(address user) internal view returns (DepositWithdrawState memory state) {
+        (state.accountTotalDep, state.accountLastDepositTime) = stabilityPool.accountDeposits(user);
+        state.totalDebtTokenDeposits = stabilityPool.getTotalDebtTokenDeposits();
+        state.scale = stabilityPool.currentScale();
+        state.epoch = stabilityPool.currentEpoch();
+        state.userDebtTokenBalance = debtToken.balanceOf(user);
+        state.poolDebtTokenBalance = debtToken.balanceOf(address(stabilityPool));
+    }
+
+    // helper function to execute one or more successful deposits into the stability pool
+    function _provideToSP(address user, uint96 depositAmount, uint256 numDeposits) internal {
+        // cache state before call
+        DepositWithdrawState memory statePre = _getDepositWithdrawState(user);
+
+        for(uint256 i=1; i<=numDeposits; i++) {
+            // mint user1 some tokens
+            vm.prank(address(borrowerOps));
+            debtToken.mint(user, depositAmount);
+            assertEq(debtToken.balanceOf(user), depositAmount);
+
+            // user1 deposits them into stability pool
+            vm.prank(user);
+            stabilityPool.provideToSP(depositAmount);
+
+            // verify depositor lost tokens so balance remains the same as
+            // tokens were just minted to the user
+            assertEq(debtToken.balanceOf(user), statePre.userDebtTokenBalance);
+
+            // verify stability pool received tokens
+            assertEq(debtToken.balanceOf(address(stabilityPool)),
+                     statePre.poolDebtTokenBalance + depositAmount*i);
+
+            // verify storage updates
+            assertEq(stabilityPool.getTotalDebtTokenDeposits(),
+                     statePre.totalDebtTokenDeposits + depositAmount*i);
+
+            (uint128 accountTotalDepPost, uint128 accountLastDepositTimePost) = stabilityPool.accountDeposits(user);
+            assertEq(accountTotalDepPost, statePre.accountTotalDep + depositAmount*i);
+            assertEq(accountLastDepositTimePost, block.timestamp);
+
+            assertEq(stabilityPool.getStoredPendingReward(user), 0);
+
+            assertEq(stabilityPool.currentScale(), statePre.scale);
+            assertEq(stabilityPool.currentEpoch(), statePre.epoch);
+
+            (uint256 depositorP, uint256 depositorG, uint128 depositorScale, uint128 depositorEpoch)
+                = stabilityPool.depositSnapshots(user);
+            
+            assertEq(depositorP, stabilityPool.P());
+            assertEq(depositorG, stabilityPool.epochToScaleToG(statePre.epoch, statePre.scale));
+            assertEq(depositorScale, statePre.scale);
+            assertEq(depositorEpoch, statePre.epoch);
+        }
+    }
+
+    function test_provideToSP(uint96 depositAmount, uint256 numDeposits) external {
+        // bound fuzz inputs
+        depositAmount = uint96(bound(depositAmount, 1, type(uint96).max));
+        numDeposits   = bound(numDeposits, 1, 10);
+
+        _provideToSP(users.user1, depositAmount, numDeposits);
+    }
+
+    // helper function to execute a successful withdrawal from the stability pool
+    function _withdrawFromToSP(address user, uint96 withdrawAmount) internal {
+        // cache state before call
+        DepositWithdrawState memory statePre = _getDepositWithdrawState(user);
+
+        // then perform the withdrawal
+        vm.prank(user);
+        stabilityPool.withdrawFromSP(withdrawAmount);
+
+        // verify depositor received withdrawn tokens
+        assertEq(debtToken.balanceOf(user), statePre.userDebtTokenBalance + withdrawAmount);
+
+        // verify stability pool sent tokens
+        assertEq(debtToken.balanceOf(address(stabilityPool)),
+                 statePre.poolDebtTokenBalance - withdrawAmount);
+
+        // verify storage updates
+        assertEq(stabilityPool.getTotalDebtTokenDeposits(),
+                 statePre.totalDebtTokenDeposits - withdrawAmount);
+
+        (uint128 accountTotalDepPost, uint128 accountLastDepositTimePost) = stabilityPool.accountDeposits(user);
+        assertEq(accountTotalDepPost, statePre.accountTotalDep - withdrawAmount);
+        assertEq(accountLastDepositTimePost, statePre.accountLastDepositTime);
+
+        assertEq(stabilityPool.getStoredPendingReward(user), 0);
+
+        assertEq(stabilityPool.currentScale(), statePre.scale);
+        assertEq(stabilityPool.currentEpoch(), statePre.epoch);
+
+        (uint256 depositorP, uint256 depositorG, uint128 depositorScale, uint128 depositorEpoch)
+            = stabilityPool.depositSnapshots(user);
+        
+        if(accountTotalDepPost == 0) {
+            assertEq(depositorP, 0);
+            assertEq(depositorG, 0);
+            assertEq(depositorScale, 0);
+            assertEq(depositorEpoch, 0);
+        }
+        else {
+            assertEq(depositorP, stabilityPool.P());
+            assertEq(depositorG, stabilityPool.epochToScaleToG(statePre.epoch, statePre.scale));
+            assertEq(depositorScale, statePre.scale);
+            assertEq(depositorEpoch, statePre.epoch);
+        }
+    }
+
+    function test_withdrawFromSP(uint96 depositAmount, uint96 withdrawAmount) external {
+        // bound fuzz inputs
+        depositAmount  = uint96(bound(depositAmount, 1, type(uint96).max));
+        withdrawAmount = uint96(bound(withdrawAmount, 1, depositAmount));
+
+        // first perform a deposit
+        _provideToSP(users.user1, depositAmount, 1);
+
+        // warp forward since deposits & withdraws not allowed in same block
+        vm.warp(block.timestamp + 1);
+
+        _withdrawFromToSP(users.user1, withdrawAmount);
+    }
 }
