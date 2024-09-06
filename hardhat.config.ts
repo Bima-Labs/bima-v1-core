@@ -325,6 +325,14 @@ const config: HardhatUserConfig = {
           apiURL: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
         },
       },
+      {
+        network:"merlin_testnet",
+        chainId:686868,
+        urls: {
+          browserURL: "https://testnet-explorer.merlinchain.io/",
+          apiURL: "https://testnet-rpc.merlinchain.io/",
+        },
+        }
     ],
   },
   networks: {
@@ -458,6 +466,10 @@ const config: HardhatUserConfig = {
     },
     rootstock_testnet: {
       url: "https://rpc.testnet.rootstock.io/peahiFglhq1BRIz3Sz6ilSCrvTlsXP-T",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    merlin_testnet:{
+      url : "https://testnet-rpc.merlinchain.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     polygon_zkevm_cardona: {

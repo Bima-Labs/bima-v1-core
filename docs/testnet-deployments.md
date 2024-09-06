@@ -33,6 +33,8 @@
 - [Rootstock Testnet](#rootstock-testnet)
 - [Ethereum Sepolia Testnet](#Ethereum-Sepolia-Testnet)
 - [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
+- [Merlin Testnet](#merlin-testnet)
+
 
 ## Arbitrum Sepolia Testnet
 
@@ -857,3 +859,29 @@
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 | 0xe94baa7890A81e6873632c95D0FCB29604C10C12 | 0xa24A68DD788e1D7eb4CA517765CFb2b7e217e7a3 |
+
+## Merlin Testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
+| FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
+| InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
+| Gas Pool           | 0x340460Fdf8b8173fBfA0Ede60c0E013dF23bc81A |
+| Factory            | 0xbDC10467B80C8CF86243D818c10a23Da6af85f2B |
+| LiquidationManager | 0x4B2e2E04CeF598cAE566359897559B2cF6678d3f |
+| DebtToken          | 0x5F4aF136342B4A56fB2dAb7B8a453F9CB8900663 |
+| BorrowerOperations | 0x98cb20D30da0389028EB71eF299B688979F5cB8b |
+| StabilityPool      | 0x4608fb6aBCf7841855A8E797B7E1fc08Ab9a1E67 |
+| TroveManager       | 0x6539C23868dc9Ac70f78a6034af853476477BcEc |
+| SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
+| TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
+| IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
+| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaFaucet         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
+ 
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
+| --------------- | ------------------ | -------------------- | -------------- |
+|  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
