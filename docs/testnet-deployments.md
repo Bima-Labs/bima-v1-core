@@ -35,7 +35,6 @@
 - [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
 - [Merlin Testnet](#merlin-testnet)
 
-
 ## Arbitrum Sepolia Testnet
 
 | Core Contracts     | Address                                    |
@@ -281,7 +280,7 @@
 | BabelVault         | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 | BimaFaucet         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 
-| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork)                 |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork)                     |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 | 0xB9663857186D9355d2b01B45822EE3B8f0660758 | 0x4260121248Db5c3330A55A415A6A5C8aF4936182 |
 | Bima Mock BTC   | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 | 0x72C56eD0D46364C08257F8502b7cf17CB8f596D6 | 0x4260121248Db5c3330A55A415A6A5C8aF4936182 |
@@ -833,9 +832,10 @@
 | BabelToken         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | BabelVault         | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
-| --------------- | ------------------ | -------------------- | -------------- |
-| -               | -                  | -                    | -              |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 | 0xB39403dE269198651837f54501Bc28f55Cfc4ee2 | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
+| SolvBTC         | 0xE33109766662932a26d978123383ff9E7bdeF346 | 0x509aAb1A2501Ee6ce056De0D517Fc1ee44D45933 | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
 
 ## Polygon zkEVM Cardona Testnet
 
@@ -883,7 +883,7 @@
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
- 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
+
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
