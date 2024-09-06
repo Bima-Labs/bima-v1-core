@@ -248,8 +248,8 @@ const config: HardhatUserConfig = {
         chainId: 80002,
 
         urls: {
-          browserURL: "https://rpc-amoy.polygon.technology",
-          apiURL: "https://rpc-amoy.polygon.technology",
+          browserURL: "https://www.oklink.com/amoy",
+          apiURL: "https://www.oklink.com/amoy/api",
         },
       },
       {
