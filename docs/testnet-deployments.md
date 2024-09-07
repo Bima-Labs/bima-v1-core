@@ -408,7 +408,7 @@
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
 | --------------- | ------------------ | -------------------- | -------------- |
 |  Bima Mock BTC | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0x87dce67002e66C17BC0d723Fe20D736b80CAaFda |
 
