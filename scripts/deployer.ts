@@ -162,8 +162,8 @@ async function main() {
   console.log("LiquidationManager deployed!: ", liqudiationManagerAddress);
 
   const debtToken = await DebtTokenDeployer.deploy(
-    "USDB", //mkUSD or ULTRA name
-    "USDB", // symbol
+    "US Bitcoin Dollar", //mkUSD or ULTRA name
+    "USBD", // symbol
     stabilityPoolAddress,
     borrowerOperationsAddress,
     babelCoreAddress,

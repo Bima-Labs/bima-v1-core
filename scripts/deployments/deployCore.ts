@@ -129,8 +129,8 @@ async function deployCore() {
   await deployContract(
     factories.DebtToken,
     "DebtToken",
-    "USDB", //mkUSD or ULTRA name
-    "USDB", // symbol
+    "US Bitcoin Dollar", //mkUSD or ULTRA name
+    "USBD", // symbol
     stabilityPoolAddress,
     borrowerOperationsAddress,
     babelCoreAddress,
