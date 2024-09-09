@@ -72,12 +72,12 @@ contract AirdropDistributor is Ownable {
         emit SweepUnclaimedTokens(amount);
     }
 
-    function isClaimed(uint256 index) public view returns (bool) {
+    function isClaimed(uint256 index) public view returns (bool output) {
         uint256 claimedWordIndex = index / 256;
         uint256 claimedBitIndex = index % 256;
         uint256 claimedWord = claimedBitMap[claimedWordIndex];
         uint256 mask = (1 << claimedBitIndex);
-        return claimedWord & mask == mask;
+        output = claimedWord & mask == mask;
     }
 
     function _setClaimed(uint256 index) private {
@@ -126,11 +126,11 @@ contract AirdropDistributor is Ownable {
         @notice Set a claim callback contract
         @dev When set, claims directed to the caller trigger a callback to this address
      */
-    function setClaimCallback(address _callback) external returns (bool) {
+    function setClaimCallback(address _callback) external returns (bool success) {
         claimCallback[msg.sender] = _callback;
 
         emit SetClaimCallback(msg.sender, _callback);
 
-        return true;
+        success = true;
     }
 }

@@ -36,11 +36,7 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function withdrawFromSP(uint256 _amount) external;
 
-    function DECIMAL_PRECISION() external view returns (uint256);
-
     function P() external view returns (uint256);
-
-    function SCALE_FACTOR() external view returns (uint256);
 
     function SUNSET_DURATION() external view returns (uint128);
 
@@ -62,7 +58,7 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function depositSums(address, uint256) external view returns (uint256);
 
-    function emissionId() external view returns (uint256);
+    function SP_EMISSION_ID() external view returns (uint256);
 
     function epochToScaleToG(uint128, uint128) external view returns (uint256);
 

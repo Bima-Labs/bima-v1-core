@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {IEmissionSchedule, IIncentiveVoting, IBabelVault} from "../interfaces/IEmissionSchedule.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 /**
     @title Babel Emission Schedule
@@ -13,8 +14,6 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
             but should not reach zero for a Very Long Time.
  */
 contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
-    // number representing 100% in `weeklyPct`
-    uint256 constant MAX_PCT = 10000;
     uint256 public constant MAX_LOCK_WEEKS = 52;
 
     IIncentiveVoting public immutable voter;
@@ -51,8 +50,8 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         emit LockParametersSet(_initialLockWeeks, _lockDecayWeeks);
     }
 
-    function getWeeklyPctSchedule() external view returns (uint64[2][] memory) {
-        return scheduledWeeklyPct;
+    function getWeeklyPctSchedule() external view returns (uint64[2][] memory output) {
+        output = scheduledWeeklyPct;
     }
 
     /**
@@ -61,15 +60,15 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         @param _schedule Dynamic array of (week, weeklyPct) ordered by week descending.
                          Each `week` indicates the number of weeks after the current week.
      */
-    function setWeeklyPctSchedule(uint64[2][] calldata _schedule) external onlyOwner returns (bool) {
+    function setWeeklyPctSchedule(uint64[2][] calldata _schedule) external onlyOwner returns (bool success) {
         _setWeeklyPctSchedule(_schedule);
-        return true;
+        success = true;
     }
 
     /**
         @notice Set the number of lock weeks and rate at which lock weeks decay
      */
-    function setLockParameters(uint64 _lockWeeks, uint64 _lockDecayWeeks) external onlyOwner returns (bool) {
+    function setLockParameters(uint64 _lockWeeks, uint64 _lockDecayWeeks) external onlyOwner returns (bool success) {
         // enforce max number of lock weeks
         require(_lockWeeks <= MAX_LOCK_WEEKS, "Cannot exceed MAX_LOCK_WEEKS");
 
@@ -81,7 +80,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         lockDecayWeeks = _lockDecayWeeks;
 
         emit LockParametersSet(_lockWeeks, _lockDecayWeeks);
-        return true;
+        success = true;
     }
 
     function getReceiverWeeklyEmissions(
@@ -149,7 +148,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         }
 
         // calculate the weekly emissions as a percentage of the unallocated supply
-        amount = (unallocatedTotal * pct) / MAX_PCT;
+        amount = (unallocatedTotal * pct) / BIMA_100_PCT;
     }
 
     function _setWeeklyPctSchedule(uint64[2][] memory _scheduledWeeklyPct) internal {
@@ -179,7 +178,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
                 _scheduledWeeklyPct[i][0] = uint64(week + currentWeek);
 
                 // enforce maximum 100% distribution of remaining supply 
-                require(_scheduledWeeklyPct[i][1] <= MAX_PCT, "Cannot exceed MAX_PCT");
+                require(_scheduledWeeklyPct[i][1] <= BIMA_100_PCT, "Cannot exceed MAX_PCT");
             }
 
             // enforce week inputs as number of weeks from current week (ie > 0)

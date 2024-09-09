@@ -39,6 +39,9 @@ interface ICurveProxy {
     }
 
     event CrvFeePctSet(uint256 feePct);
+    event SetVoteManager(address voteManager);
+    event SetDepositManager(address depositManager);
+    event SetPerGaugeApproval(address caller, address gauge);
 
     function approveGaugeDeposit(address gauge, address depositor) external returns (bool);
 

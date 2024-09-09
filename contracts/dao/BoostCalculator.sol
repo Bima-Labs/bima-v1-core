@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IBoostCalculator, ITokenLocker} from "../interfaces/IBoostCalculator.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BIMA_SCALE_FACTOR} from "../dependencies/Constants.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
@@ -55,8 +56,6 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
     // constants used
     // use 1 to indicate no lock weight -> no boost
     uint256 internal constant NO_LOCK_WEIGHT = 1;
-    // used to scale values during % calculation represents 100%
-    uint256 internal constant SCALE_FACTOR = 1e9;
 
     // initial number of weeks where all accounts recieve max boost
     uint256 public immutable MAX_BOOST_GRACE_WEEKS;
@@ -64,7 +63,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
     // week -> total weekly lock weight
     // tracked locally to avoid repeated external calls
     uint40[65535] totalWeeklyWeights;
-    // account -> week -> % of lock weight (where SCALE_FACTOR represents 100%)
+    // account -> week -> % of lock weight (where BIMA_SCALE_FACTOR represents 100%)
     mapping(address account => uint32[65535] weeklyLockPercent) accountWeeklyLockPct;
 
     constructor(address _babelCore, ITokenLocker _locker, uint256 _graceWeeks) SystemStart(_babelCore) {
@@ -111,7 +110,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
         if (totalWeight == 0) totalWeight = 1;
 
         // calculate % account had of total weight that week
-        uint256 pct = (SCALE_FACTOR * accountWeight) / totalWeight;
+        uint256 pct = (BIMA_SCALE_FACTOR * accountWeight) / totalWeight;
 
         // 0 = none
         if (pct == 0) pct = NO_LOCK_WEIGHT;
@@ -160,7 +159,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
             if (totalWeight == 0) totalWeight = 1;
 
             // calculate % account had of total weight that week
-            uint256 pct = (SCALE_FACTOR * accountWeight) / totalWeight;
+            uint256 pct = (BIMA_SCALE_FACTOR * accountWeight) / totalWeight;
 
             // if account had 0%, give them 0; since output variables are
             // initialized to default values, no need to explicit return
@@ -169,7 +168,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
                 // perform additional processing
 
                 // calculate account's max boostable and decay
-                uint256 maxBoostable = (totalWeeklyEmissions * pct) / SCALE_FACTOR;
+                uint256 maxBoostable = (totalWeeklyEmissions * pct) / BIMA_SCALE_FACTOR;
                 uint256 fullDecay = maxBoostable * 2;
 
                 // output maxBoosted
@@ -233,7 +232,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
             uint256 accountWeight = locker.getAccountWeightAt(account, week);
 
             // calculate % account had of total weight that week
-            pct = (SCALE_FACTOR * accountWeight) / totalWeight;
+            pct = (BIMA_SCALE_FACTOR * accountWeight) / totalWeight;
 
             // 0 = none
             if (pct == 0) pct = NO_LOCK_WEIGHT;
@@ -256,7 +255,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
         if (pct == NO_LOCK_WEIGHT) return amount / 2;
 
         uint256 total = amount + previousAmount;
-        uint256 maxBoostable = (totalWeeklyEmissions * pct) / SCALE_FACTOR;
+        uint256 maxBoostable = (totalWeeklyEmissions * pct) / BIMA_SCALE_FACTOR;
         uint256 fullDecay = maxBoostable * 2;
 
         // entire claim receives max boost

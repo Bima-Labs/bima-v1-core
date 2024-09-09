@@ -8,9 +8,10 @@ import {IDebtToken} from "./IDebtToken.sol";
 import {IBabelVault} from "./IVault.sol";
 import {IPriceFeed} from "./IPriceFeed.sol";
 import {ISortedTroves} from "./ISortedTroves.sol";
+import {IEmissionReceiver} from "./IEmissionReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
+interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionReceiver {
     event BaseRateUpdated(uint256 _baseRate);
     event CollateralSent(address _to, uint256 _amount);
     event LTermsUpdated(uint256 _L_collateral, uint256 _L_debt);
@@ -27,6 +28,19 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
     event TroveIndexUpdated(address _borrower, uint256 _newIndex);
     event TroveSnapshotsUpdated(uint256 _L_collateral, uint256 _L_debt);
     event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 _stake, TroveManagerOperation _operation);
+    event Paused();
+    event Unpaused();
+    event SetPriceFeed(address);
+    event StartSunset();
+    event SetParameters(uint256 _minuteDecayFactor,
+                        uint256 _redemptionFeeFloor,
+                        uint256 _maxRedemptionFee,
+                        uint256 _borrowingFeeFloor,
+                        uint256 _maxBorrowingFee,
+                        uint256 _interestRateInBPS,
+                        uint256 _maxSystemDebt,
+                        uint256 _MCR);
+    event CollectedInterest(uint256 amount);
 
     enum Status {
         nonExistent,
@@ -75,8 +89,6 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
     function getEntireSystemBalances() external returns (uint256, uint256, uint256);
 
     function movePendingTroveRewardsToActiveBalances(uint256 _debt, uint256 _collateral) external;
-
-    function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool);
 
     function openTrove(
         address _borrower,
@@ -226,7 +238,7 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart {
 
     function getTroveStake(address _borrower) external view returns (uint256);
 
-    function getTroveStatus(address _borrower) external view returns (uint256);
+    function getTroveStatus(address _borrower) external view returns (Status);
 
     function getWeekAndDay() external view returns (uint256, uint256);
 

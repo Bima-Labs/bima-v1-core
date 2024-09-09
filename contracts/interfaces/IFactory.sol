@@ -21,6 +21,7 @@ interface IFactory is IBabelOwnable {
     }
 
     event NewDeployment(address collateral, address priceFeed, address troveManager, address sortedTroves);
+    event ImplementationContractsChanged(address newTroveManagerImpl, address newSortedTrovesImpl);
 
     function deployNewInstance(
         address collateral,

@@ -21,11 +21,11 @@ contract BabelOwnable is IBabelOwnable {
         _;
     }
 
-    function owner() public view returns (address) {
-        return BABEL_CORE.owner();
+    function owner() public view returns (address result) {
+        result = BABEL_CORE.owner();
     }
 
-    function guardian() public view returns (address) {
-        return BABEL_CORE.guardian();
+    function guardian() public view returns (address result) {
+        result = BABEL_CORE.guardian();
     }
 }

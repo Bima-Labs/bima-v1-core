@@ -39,7 +39,7 @@ contract CurveFactory is BabelOwnable {
         emit NewDeployment(gauge, depositToken);
     }
 
-    function getDepositToken(address gauge) external view returns (address) {
-        return Clones.predictDeterministicAddress(depositTokenImpl, bytes32(bytes20(gauge)));
+    function getDepositToken(address gauge) external view returns (address addr) {
+        addr = Clones.predictDeterministicAddress(depositTokenImpl, bytes32(bytes20(gauge)));
     }
 }

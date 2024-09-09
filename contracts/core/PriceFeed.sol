@@ -5,6 +5,7 @@ import {IPriceFeed, IAggregatorV3Interface} from "../interfaces/IPriceFeed.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 
 /**
     @title Babel Multi Token Price Feed
@@ -125,34 +126,37 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         @dev You can obtain these values by calling `TroveManager.fetchPrice()`
              rather than directly interacting with this contract.
         @param _token Token to fetch the price for
-        @return The latest valid price for the requested token
+        @return price The latest valid price for the requested token
      */
-    function fetchPrice(address _token) public returns (uint256) {
+    function fetchPrice(address _token) public returns (uint256 price) {
         PriceRecord memory priceRecord = priceRecords[_token];
 
         if (priceRecord.lastUpdated == block.timestamp) {
             // We short-circuit only if the price was already correct in the current block
-            return priceRecord.scaledPrice;
+            price = priceRecord.scaledPrice;
         }
-        if (priceRecord.lastUpdated == 0) {
-            revert PriceFeed__UnknownFeedError(_token);
-        }
-
-        OracleRecord storage oracle = oracleRecords[_token];
-
-        (FeedResponse memory currResponse, FeedResponse memory prevResponse, bool updated) = _fetchFeedResponses(
-            oracle.chainLinkOracle,
-            priceRecord.roundId
-        );
-
-        if (!updated) {
-            if (_isPriceStale(priceRecord.timestamp, oracle.heartbeat)) {
-                revert PriceFeed__FeedFrozenError(_token);
+        else {
+            if (priceRecord.lastUpdated == 0) {
+                revert PriceFeed__UnknownFeedError(_token);
             }
-            return priceRecord.scaledPrice;
-        }
 
-        return _processFeedResponses(_token, oracle, currResponse, prevResponse, priceRecord);
+            OracleRecord storage oracle = oracleRecords[_token];
+
+            (FeedResponse memory currResponse, FeedResponse memory prevResponse, bool updated) = _fetchFeedResponses(
+                oracle.chainLinkOracle,
+                priceRecord.roundId
+            );
+
+            if (!updated) {
+                if (_isPriceStale(priceRecord.timestamp, oracle.heartbeat)) {
+                    revert PriceFeed__FeedFrozenError(_token);
+                }
+                price = priceRecord.scaledPrice;
+            }
+            else {
+                price = _processFeedResponses(_token, oracle, currResponse, prevResponse, priceRecord);
+            }
+        }
     }
 
     // Internal functions -----------------------------------------------------------------------------------------------
@@ -163,13 +167,15 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         FeedResponse memory _currResponse,
         FeedResponse memory _prevResponse,
         PriceRecord memory priceRecord
-    ) internal returns (uint256) {
+    ) internal returns (uint256 scaledPrice) {
         uint8 decimals = oracle.decimals;
         bool isValidResponse = _isFeedWorking(_currResponse, _prevResponse) &&
             !_isPriceStale(_currResponse.timestamp, oracle.heartbeat) &&
             !_isPriceChangeAboveMaxDeviation(_currResponse, _prevResponse, decimals);
+
         if (isValidResponse) {
-            uint256 scaledPrice = _scalePriceByDigits(uint256(_currResponse.answer), decimals);
+            scaledPrice = _scalePriceByDigits(uint256(_currResponse.answer), decimals);
+
             if (oracle.sharePriceSignature != 0) {
                 (bool success, bytes memory returnData) = _token.staticcall(abi.encode(oracle.sharePriceSignature));
                 require(success, "Share price not available");
@@ -183,21 +189,21 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
                 _updateFeedStatus(_token, oracle, true);
             }
             _storePrice(_token, scaledPrice, _currResponse.timestamp, _currResponse.roundId);
-            return scaledPrice;
-        } else {
+        } 
+        else {
             if (oracle.isFeedWorking) {
                 _updateFeedStatus(_token, oracle, false);
             }
             if (_isPriceStale(priceRecord.timestamp, oracle.heartbeat)) {
                 revert PriceFeed__FeedFrozenError(_token);
             }
-            return priceRecord.scaledPrice;
+            scaledPrice = priceRecord.scaledPrice;
         }
     }
 
-    function _calcEthPrice(uint256 ethAmount) internal returns (uint256) {
+    function _calcEthPrice(uint256 ethAmount) internal returns (uint256 price) {
         uint256 ethPrice = fetchPrice(address(0));
-        return (ethPrice * ethAmount) / 1 ether;
+        price = (ethPrice * ethAmount) / 1 ether;
     }
 
     function _fetchFeedResponses(
@@ -211,19 +217,19 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         }
     }
 
-    function _isPriceStale(uint256 _priceTimestamp, uint256 _heartbeat) internal view returns (bool) {
-        return block.timestamp - _priceTimestamp > _heartbeat + RESPONSE_TIMEOUT_BUFFER;
+    function _isPriceStale(uint256 _priceTimestamp, uint256 _heartbeat) internal view returns (bool isPriceStale) {
+        isPriceStale = block.timestamp - _priceTimestamp > _heartbeat + RESPONSE_TIMEOUT_BUFFER;
     }
 
     function _isFeedWorking(
         FeedResponse memory _currentResponse,
         FeedResponse memory _prevResponse
-    ) internal view returns (bool) {
-        return _isValidResponse(_currentResponse) && _isValidResponse(_prevResponse);
+    ) internal view returns (bool isFeedWorking) {
+        isFeedWorking = _isValidResponse(_currentResponse) && _isValidResponse(_prevResponse);
     }
 
-    function _isValidResponse(FeedResponse memory _response) internal view returns (bool) {
-        return
+    function _isValidResponse(FeedResponse memory _response) internal view returns (bool isValidResponse) {
+        isValidResponse =
             (_response.success) &&
             (_response.roundId != 0) &&
             (_response.timestamp != 0) &&
@@ -235,7 +241,7 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         FeedResponse memory _currResponse,
         FeedResponse memory _prevResponse,
         uint8 decimals
-    ) internal pure returns (bool) {
+    ) internal pure returns (bool isPriceChangeAboveMaxDeviation) {
         uint256 currentScaledPrice = _scalePriceByDigits(uint256(_currResponse.answer), decimals);
         uint256 prevScaledPrice = _scalePriceByDigits(uint256(_prevResponse.answer), decimals);
 
@@ -247,20 +253,20 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
          * - If price decreased, the percentage deviation is in relation to the previous price.
          * - If price increased, the percentage deviation is in relation to the current price.
          */
-        uint256 percentDeviation = ((maxPrice - minPrice) * BabelMath.DECIMAL_PRECISION) / maxPrice;
+        uint256 percentDeviation = ((maxPrice - minPrice) * BIMA_DECIMAL_PRECISION) / maxPrice;
 
-        return percentDeviation > MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND;
+        isPriceChangeAboveMaxDeviation = percentDeviation > MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND;
     }
 
-    function _scalePriceByDigits(uint256 _price, uint256 _answerDigits) internal pure returns (uint256) {
+    function _scalePriceByDigits(uint256 _price, uint256 _answerDigits) internal pure returns (uint256 scaledPrice) {
         if (_answerDigits == TARGET_DIGITS) {
-            return _price;
+            scaledPrice = _price;
         } else if (_answerDigits < TARGET_DIGITS) {
             // Scale the returned price value up to target precision
-            return _price * (10 ** (TARGET_DIGITS - _answerDigits));
+            scaledPrice = _price * (10 ** (TARGET_DIGITS - _answerDigits));
         } else {
             // Scale the returned price value down to target precision
-            return _price / (10 ** (_answerDigits - TARGET_DIGITS));
+            scaledPrice = _price / (10 ** (_answerDigits - TARGET_DIGITS));
         }
     }
 
@@ -295,8 +301,8 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
             response.timestamp = timestamp;
             response.success = true;
         } catch {
-            // If call to Chainlink aggregator reverts, return a zero response with success = false
-            return response;
+            // If call to Chainlink aggregator reverts
+            // return default zero response with success = false
         }
     }
 
@@ -304,22 +310,21 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         IAggregatorV3Interface _priceAggregator,
         uint80 _currentRoundId
     ) internal view returns (FeedResponse memory prevResponse) {
-        if (_currentRoundId == 0) {
-            return prevResponse;
-        }
-        unchecked {
-            try _priceAggregator.getRoundData(_currentRoundId - 1) returns (
-                uint80 roundId,
-                int256 answer,
-                uint256 /* startedAt */,
-                uint256 timestamp,
-                uint80 /* answeredInRound */
-            ) {
-                prevResponse.roundId = roundId;
-                prevResponse.answer = answer;
-                prevResponse.timestamp = timestamp;
-                prevResponse.success = true;
-            } catch {}
+        if (_currentRoundId != 0) {
+            unchecked {
+                try _priceAggregator.getRoundData(_currentRoundId - 1) returns (
+                    uint80 roundId,
+                    int256 answer,
+                    uint256 /* startedAt */,
+                    uint256 timestamp,
+                    uint80 /* answeredInRound */
+                ) {
+                    prevResponse.roundId = roundId;
+                    prevResponse.answer = answer;
+                    prevResponse.timestamp = timestamp;
+                    prevResponse.success = true;
+                } catch {}
+            }
         }
     }
 }

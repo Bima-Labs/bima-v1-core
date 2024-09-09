@@ -10,9 +10,10 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelBase} from "../dependencies/BabelBase.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BIMA_100_PCT, BIMA_DECIMAL_PRECISION, BIMA_REWARD_DURATION} from "../dependencies/Constants.sol";
 
-// todo: remove before production
-import {console} from "hardhat/console.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
     @title Babel Trove Manager
     @notice Based on Liquity's `TroveManager`
@@ -28,8 +29,34 @@ import {console} from "hardhat/console.sol";
 contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
-    // --- Connected contract declarations ---
+    // --- Constants ---
+    //
+    // Minimum Collateral Ratio for individual troves
+    uint256 public MCR;
 
+    uint256 constant SECONDS_IN_ONE_MINUTE = 60;
+    uint256 constant INTEREST_PRECISION = 1e27;
+    uint256 constant SECONDS_IN_YEAR = 365 days;
+
+    // volume-based amounts are divided by this value to allow storing as uint32
+    uint256 constant VOLUME_MULTIPLIER = 1e20;
+
+    // Maximum interest rate must be lower than the minimum LST staking yield
+    // so that over time the actual TCR becomes greater than the calculated TCR
+    uint256 public constant MAX_INTEREST_RATE_IN_BPS = 400; // 4%
+    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) /
+                                                       (BIMA_100_PCT * SECONDS_IN_YEAR); //50%
+
+    // During bootsrap period redemptions are not allowed
+    uint256 public constant BOOTSTRAP_PERIOD = 14 days;
+
+    /*
+     * BETA: 18 digit decimal. Parameter by which to divide the redeemed fraction, in order to calc the new base rate from a redemption.
+     * Corresponds to (1 / ALPHA) in the white paper.
+     */
+    uint256 constant BETA = 2;
+
+    // --- Connected contract declarations ---
     address public immutable borrowerOperationsAddress;
     address public immutable liquidationManager;
     address immutable gasPoolAddress;
@@ -42,38 +69,14 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     // A doubly linked list of Troves, sorted by their collateral ratios
     ISortedTroves public sortedTroves;
 
-    EmissionId public emissionId;
-    // Minimum collateral ratio for individual troves
-    uint256 public MCR;
-
-    uint256 constant SECONDS_IN_ONE_MINUTE = 60;
-    uint256 constant INTEREST_PRECISION = 1e27;
-    uint256 constant SECONDS_IN_YEAR = 365 days;
-    uint256 constant REWARD_DURATION = 1 weeks;
-
-    // volume-based amounts are divided by this value to allow storing as uint32
-    uint256 constant VOLUME_MULTIPLIER = 1e20;
-
-    // Maximum interest rate must be lower than the minimum LST staking yield
-    // so that over time the actual TCR becomes greater than the calculated TCR.
-    uint256 public constant MAX_INTEREST_RATE_IN_BPS = 400; // 4%
-    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) / (10000 * SECONDS_IN_YEAR); //50%
-
-    // During bootsrap period redemptions are not allowed
-    uint256 public constant BOOTSTRAP_PERIOD = 14 days;
-
-    /*
-     * BETA: 18 digit decimal. Parameter by which to divide the redeemed fraction, in order to calc the new base rate from a redemption.
-     * Corresponds to (1 / ALPHA) in the white paper.
-     */
-    uint256 constant BETA = 2;
-
+    // --- public ---
+    //
     // commented values are Liquity's fixed settings for each parameter
     uint256 public minuteDecayFactor; // 999037758833783000  (half-life of 12 hours)
-    uint256 public redemptionFeeFloor; // DECIMAL_PRECISION / 1000 * 5  (0.5%)
-    uint256 public maxRedemptionFee; // DECIMAL_PRECISION  (100%)
-    uint256 public borrowingFeeFloor; // DECIMAL_PRECISION / 1000 * 5  (0.5%)
-    uint256 public maxBorrowingFee; // DECIMAL_PRECISION / 100 * 5  (5%)
+    uint256 public redemptionFeeFloor; // BIMA_DECIMAL_PRECISION / 1000 * 5  (0.5%)
+    uint256 public maxRedemptionFee; // BIMA_DECIMAL_PRECISION  (100%)
+    uint256 public borrowingFeeFloor; // BIMA_DECIMAL_PRECISION / 1000 * 5  (0.5%)
+    uint256 public maxBorrowingFee; // BIMA_DECIMAL_PRECISION / 100 * 5  (5%)
     uint256 public maxSystemDebt;
 
     uint256 public interestRate;
@@ -81,8 +84,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     uint256 public lastActiveIndexUpdate;
 
     uint256 public systemDeploymentTime;
-    bool public sunsetting;
-    bool public paused;
 
     uint256 public baseRate;
 
@@ -124,26 +125,36 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     uint32 public lastUpdate;
     uint32 public periodFinish;
 
-    mapping(address => uint256) public rewardIntegralFor;
-    mapping(address => uint256) private storedPendingReward;
+    // here for storage packing
+    bool public sunsetting;
+    bool public paused;
+    EmissionId public emissionId;
 
+    // --- array ---
+    //
     // week -> total available rewards for 1 day within this week
     uint256[65535] public dailyMintReward;
 
     // week -> day -> total amount redeemed this day
     uint32[7][65535] private totalMints;
 
-    // account -> data for latest activity
-    mapping(address => VolumeData) public accountLatestMint;
+    // Array of all active trove addresses - used to to compute
+    // an approximate hint off-chain, for the sorted list insertion
+    address[] TroveOwners;
 
-    mapping(address => Trove) public Troves;
-    mapping(address => uint256) public surplusBalances;
+    // --- mapping ---
+    //
+    mapping(address account => uint256 rewardIntegral) public rewardIntegralFor;
+    mapping(address account => uint256 pendingReward) private storedPendingReward;
+
+    // account -> data for latest activity
+    mapping(address account => VolumeData mintData) public accountLatestMint;
+
+    mapping(address borrower => Trove borrowerData) public Troves;
+    mapping(address borrower => uint256 surplusCollateral) public surplusBalances;
 
     // Map addresses with active troves to their RewardSnapshot
-    mapping(address => RewardSnapshot) public rewardSnapshots;
-
-    // Array of all active trove addresses - used to to compute an approximate hint off-chain, for the sorted list insertion
-    address[] TroveOwners;
+    mapping(address borrower => RewardSnapshot) public rewardSnapshots;
 
     struct VolumeData {
         uint32 amount;
@@ -211,7 +222,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function setAddresses(address _priceFeedAddress, address _sortedTrovesAddress, address _collateralToken) external {
+        // Factory::deployNewInstance calls this once when new TroveManager
+        // deployed so even without access control it can't be called again
         require(address(sortedTroves) == address(0));
+
         priceFeed = IPriceFeed(_priceFeedAddress);
         sortedTroves = ISortedTroves(_sortedTrovesAddress);
         collateralToken = IERC20(_collateralToken);
@@ -222,15 +236,23 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         lastActiveIndexUpdate = block.timestamp;
     }
 
-    function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool) {
+    function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool success) {
+        // called by BabelVault when the TroveManager is registered
+        // as an emissions receiver
         require(msg.sender == address(vault));
+
+        // prevent vault from calling this multiple times
         require(emissionId.debt == 0, "Already assigned");
-        uint256 length = _assignedIds.length;
-        require(length == 2, "Incorrect ID count");
-        emissionId = EmissionId({ debt: uint16(_assignedIds[0]), minting: uint16(_assignedIds[1]) });
+
+        // enforce that both debt & mint ids have been provided
+        require(_assignedIds.length == 2, "Incorrect ID count");
+
+        emissionId = EmissionId({ debt: SafeCast.toUint16(_assignedIds[0]),
+                                  minting: SafeCast.toUint16(_assignedIds[1]) });
+
         periodFinish = uint32(((block.timestamp / 1 weeks) + 1) * 1 weeks);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -244,6 +266,12 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     function setPaused(bool _paused) external {
         require((_paused && msg.sender == guardian()) || msg.sender == owner(), "Unauthorized");
         paused = _paused;
+
+        if (_paused) {
+            emit Paused();
+        } else {
+            emit Unpaused();
+        }
     }
 
     /**
@@ -252,6 +280,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     function setPriceFeed(address _priceFeedAddress) external onlyOwner {
         priceFeed = IPriceFeed(_priceFeedAddress);
+        emit SetPriceFeed(_priceFeedAddress);
     }
 
     /**
@@ -266,12 +295,17 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     function startSunset() external onlyOwner {
         sunsetting = true;
+
+        // important to call this first before re-setting parameters
         _accrueActiveInterests();
+
         interestRate = SUNSETTING_INTEREST_RATE;
         // accrual function doesn't update timestamp if interest was 0
         lastActiveIndexUpdate = block.timestamp;
         redemptionFeeFloor = 0;
         maxSystemDebt = 0;
+
+        emit StartSunset();
     }
 
     /*
@@ -291,19 +325,29 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 _maxSystemDebt,
         uint256 _MCR
     ) public {
-        require(!sunsetting, "Cannot change after sunset");
-        console.log("Collateral ratio", _MCR, CCR);
+        // checks without storage reads first - fail fast
         require(_MCR <= CCR && _MCR >= 1.1e18, "MCR cannot be > CCR or < 110%");
 
-        if (minuteDecayFactor != 0) {
-            require(msg.sender == owner(), "Only owner");
-        }
+        require(_interestRateInBPS <= MAX_INTEREST_RATE_IN_BPS, "Interest > Maximum");
+
         require(
             _minuteDecayFactor >= 977159968434245000 && // half-life of 30 minutes
                 _minuteDecayFactor <= 999931237762985000 // half-life of 1 week
         );
-        require(_redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= DECIMAL_PRECISION);
-        require(_borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= DECIMAL_PRECISION);
+        require(_redemptionFeeFloor <= _maxRedemptionFee &&
+                _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
+        require(_borrowingFeeFloor <= _maxBorrowingFee &&
+                _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
+
+        // checks with storage reads next
+        require(!sunsetting, "Cannot change after sunset");
+
+        // Factory::deployNewInstance calls this once when new TroveManager
+        // deployed so even without access control it can't be called again
+        // by anyone else apart from the owner
+        if (minuteDecayFactor != 0) {
+            require(msg.sender == owner(), "Only owner");
+        }
 
         _decayBaseRate();
 
@@ -314,60 +358,78 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         maxBorrowingFee = _maxBorrowingFee;
         maxSystemDebt = _maxSystemDebt;
 
-        require(_interestRateInBPS <= MAX_INTEREST_RATE_IN_BPS, "Interest > Maximum");
+        // calculate interest rate using input bps
+        uint256 newInterestRate = (INTEREST_PRECISION * _interestRateInBPS) /
+                                  (BIMA_100_PCT * SECONDS_IN_YEAR);
 
-        uint256 newInterestRate = (INTEREST_PRECISION * _interestRateInBPS) / (10000 * SECONDS_IN_YEAR);
+        // if rate is changing, accrue interest under the old rate first
+        // before updating to the new interest rate
         if (newInterestRate != interestRate) {
             _accrueActiveInterests();
             // accrual function doesn't update timestamp if interest was 0
             lastActiveIndexUpdate = block.timestamp;
             interestRate = newInterestRate;
         }
+
         MCR = _MCR;
+
+        emit SetParameters(_minuteDecayFactor,
+                           _redemptionFeeFloor,
+                           _maxRedemptionFee,
+                           _borrowingFeeFloor,
+                           _maxBorrowingFee,
+                           _interestRateInBPS,
+                           _maxSystemDebt,
+                           _MCR);
     }
 
     function collectInterests() external {
+        // checks
         uint256 interestPayableCached = interestPayable;
         require(interestPayableCached > 0, "Nothing to collect");
-        debtToken.mint(BABEL_CORE.feeReceiver(), interestPayableCached);
+
+        // effects
         interestPayable = 0;
+        emit CollectedInterest(interestPayableCached);
+
+        // interactions
+        debtToken.mint(BABEL_CORE.feeReceiver(), interestPayableCached);
     }
 
     // --- Getters ---
 
-    function fetchPrice() public returns (uint256) {
+    function fetchPrice() public returns (uint256 price) {
         IPriceFeed _priceFeed = priceFeed;
         if (address(_priceFeed) == address(0)) {
             _priceFeed = IPriceFeed(BABEL_CORE.priceFeed());
         }
-        return _priceFeed.fetchPrice(address(collateralToken));
+        price = _priceFeed.fetchPrice(address(collateralToken));
     }
 
-    function getWeekAndDay() public view returns (uint256, uint256) {
+    function getWeekAndDay() public view returns (uint256 week, uint256 day) {
         uint256 duration = (block.timestamp - startTime);
-        uint256 week = duration / 1 weeks;
-        uint256 day = (duration % 1 weeks) / 1 days;
-        return (week, day);
+        week = duration / 1 weeks;
+        day = (duration % 1 weeks) / 1 days;
     }
 
-    function getTotalMints(uint256 week) external view returns (uint32[7] memory) {
-        return totalMints[week];
+    function getTotalMints(uint256 week) external view returns (uint32[7] memory mints) {
+        mints = totalMints[week];
     }
 
-    function getTroveOwnersCount() external view returns (uint256) {
-        return TroveOwners.length;
+    function getTroveOwnersCount() external view returns (uint256 count) {
+        count = TroveOwners.length;
     }
 
-    function getTroveFromTroveOwnersArray(uint256 _index) external view returns (address) {
-        return TroveOwners[_index];
+    function getTroveFromTroveOwnersArray(uint256 _index) external view returns (address owners) {
+        owners = TroveOwners[_index];
     }
 
-    function getTroveStatus(address _borrower) external view returns (uint256) {
-        return uint256(Troves[_borrower].status);
+    function getTroveStatus(address _borrower) external view returns (Status status) {
+        status = Troves[_borrower].status;
     }
 
-    function getTroveStake(address _borrower) external view returns (uint256) {
-        return Troves[_borrower].stake;
+    function getTroveStake(address _borrower) external view returns (uint256 stake) {
+        stake = Troves[_borrower].stake;
     }
 
     /**
@@ -376,7 +438,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     function getTroveCollAndDebt(address _borrower) public view returns (uint256 coll, uint256 debt) {
         (debt, coll, , ) = getEntireDebtAndColl(_borrower);
-        return (coll, debt);
     }
 
     /**
@@ -402,58 +463,62 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         coll = coll + pendingCollateralReward;
     }
 
-    function getEntireSystemColl() public view returns (uint256) {
-        return totalActiveCollateral + defaultedCollateral;
+    // includes defaulted collateral
+    function getEntireSystemColl() public view returns (uint256 coll) {
+        coll = totalActiveCollateral + defaultedCollateral;
     }
 
-    function getEntireSystemDebt() public view returns (uint256) {
-        uint256 currentActiveDebt = totalActiveDebt;
+    // includes defaulted debt
+    function getEntireSystemDebt() public view returns (uint256 debt) {
+        debt = totalActiveDebt;
+
         (, uint256 interestFactor) = _calculateInterestIndex();
         if (interestFactor > 0) {
-            uint256 activeInterests = Math.mulDiv(currentActiveDebt, interestFactor, INTEREST_PRECISION);
-            currentActiveDebt = currentActiveDebt + activeInterests;
+            debt += Math.mulDiv(debt, interestFactor, INTEREST_PRECISION);
         }
-        return currentActiveDebt + defaultedDebt;
+
+        debt += defaultedDebt;
     }
 
-    function getEntireSystemBalances() external returns (uint256, uint256, uint256) {
-        return (getEntireSystemColl(), getEntireSystemDebt(), fetchPrice());
+    function getEntireSystemBalances() external returns (uint256 coll, uint256 debt, uint256 price) {
+        coll = getEntireSystemColl();
+        debt = getEntireSystemDebt();
+        price = fetchPrice();
     }
 
     // --- Helper functions ---
 
     // Return the nominal collateral ratio (ICR) of a given Trove, without the price. Takes a trove's pending coll and debt rewards from redistributions into account.
-    function getNominalICR(address _borrower) public view returns (uint256) {
+    function getNominalICR(address _borrower) public view returns (uint256 NICR) {
         (uint256 currentCollateral, uint256 currentDebt) = getTroveCollAndDebt(_borrower);
 
-        uint256 NICR = BabelMath._computeNominalCR(currentCollateral, currentDebt);
-        return NICR;
+        NICR = BabelMath._computeNominalCR(currentCollateral, currentDebt);
     }
 
     // Return the current collateral ratio (ICR) of a given Trove. Takes a trove's pending coll and debt rewards from redistributions into account.
-    function getCurrentICR(address _borrower, uint256 _price) public view returns (uint256) {
+    function getCurrentICR(address _borrower, uint256 _price) public view returns (uint256 ICR) {
         (uint256 currentCollateral, uint256 currentDebt) = getTroveCollAndDebt(_borrower);
 
-        uint256 ICR = BabelMath._computeCR(currentCollateral, currentDebt, _price);
-        return ICR;
+        ICR = BabelMath._computeCR(currentCollateral, currentDebt, _price);
     }
 
-    function getTotalActiveCollateral() public view returns (uint256) {
-        return totalActiveCollateral;
+    // excludes defaulted collateral
+    function getTotalActiveCollateral() public view returns (uint256 currentActiveCollateral) {
+        currentActiveCollateral = totalActiveCollateral;
     }
 
-    function getTotalActiveDebt() public view returns (uint256) {
-        uint256 currentActiveDebt = totalActiveDebt;
+    // excludes defaulted debt
+    function getTotalActiveDebt() public view returns (uint256 currentActiveDebt) {
+        currentActiveDebt = totalActiveDebt;
+
         (, uint256 interestFactor) = _calculateInterestIndex();
         if (interestFactor > 0) {
-            uint256 activeInterests = Math.mulDiv(currentActiveDebt, interestFactor, INTEREST_PRECISION);
-            currentActiveDebt = currentActiveDebt + activeInterests;
+            currentActiveDebt += Math.mulDiv(currentActiveDebt, interestFactor, INTEREST_PRECISION);
         }
-        return currentActiveDebt;
     }
 
     // Get the borrower's pending accumulated collateral and debt rewards, earned by their stake
-    function getPendingCollAndDebtRewards(address _borrower) public view returns (uint256, uint256) {
+    function getPendingCollAndDebtRewards(address _borrower) public view returns (uint256 pendingColl, uint256 pendingDebt) {
         RewardSnapshot memory snapshot = rewardSnapshots[_borrower];
 
         uint256 coll = L_collateral - snapshot.collateral;
@@ -462,20 +527,20 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         if (coll + debt == 0 || Troves[_borrower].status != Status.active) return (0, 0);
 
         uint256 stake = Troves[_borrower].stake;
-        return ((stake * coll) / DECIMAL_PRECISION, (stake * debt) / DECIMAL_PRECISION);
+
+        pendingColl = (stake * coll) / BIMA_DECIMAL_PRECISION;
+        pendingDebt = (stake * debt) / BIMA_DECIMAL_PRECISION;
     }
 
-    function hasPendingRewards(address _borrower) public view returns (bool) {
+    function hasPendingRewards(address _borrower) public view returns (bool output) {
         /*
          * A Trove has pending rewards if its snapshot is less than the current rewards per-unit-staked sum:
          * this indicates that rewards have occured since the snapshot was made, and the user therefore has
          * pending rewards
          */
-        if (Troves[_borrower].status != Status.active) {
-            return false;
+        if (Troves[_borrower].status == Status.active) {
+            output = (rewardSnapshots[_borrower].collateral < L_collateral);
         }
-
-        return (rewardSnapshots[_borrower].collateral < L_collateral);
     }
 
     // --- Redemption fee functions ---
@@ -490,75 +555,72 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 _collateralDrawn,
         uint256 _price,
         uint256 _totalDebtSupply
-    ) internal returns (uint256) {
+    ) internal returns (uint256 newBaseRate) {
         uint256 decayedBaseRate = _calcDecayedBaseRate();
 
         /* Convert the drawn collateral back to debt at face value rate (1 debt:1 USD), in order to get
          * the fraction of total supply that was redeemed at face value. */
         uint256 redeemedDebtFraction = (_collateralDrawn * _price) / _totalDebtSupply;
 
-        uint256 newBaseRate = decayedBaseRate + (redeemedDebtFraction / BETA);
-        newBaseRate = BabelMath._min(newBaseRate, DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
+        newBaseRate = decayedBaseRate + (redeemedDebtFraction / BETA);
+        newBaseRate = BabelMath._min(newBaseRate, BIMA_DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
 
         // Update the baseRate state variable
         baseRate = newBaseRate;
         emit BaseRateUpdated(newBaseRate);
 
         _updateLastFeeOpTime();
-
-        return newBaseRate;
     }
 
-    function getRedemptionRate() public view returns (uint256) {
-        return _calcRedemptionRate(baseRate);
+    function getRedemptionRate() public view returns (uint256 rate) {
+        rate = _calcRedemptionRate(baseRate);
     }
 
-    function getRedemptionRateWithDecay() public view returns (uint256) {
-        return _calcRedemptionRate(_calcDecayedBaseRate());
+    function getRedemptionRateWithDecay() public view returns (uint256 rateWithDecay) {
+        rateWithDecay = _calcRedemptionRate(_calcDecayedBaseRate());
     }
 
-    function _calcRedemptionRate(uint256 _baseRate) internal view returns (uint256) {
-        return
+    function _calcRedemptionRate(uint256 _baseRate) internal view returns (uint256 rate) {
+        rate =
             BabelMath._min(
                 redemptionFeeFloor + _baseRate,
                 maxRedemptionFee // cap at a maximum of 100%
             );
     }
 
-    function getRedemptionFeeWithDecay(uint256 _collateralDrawn) external view returns (uint256) {
-        return _calcRedemptionFee(getRedemptionRateWithDecay(), _collateralDrawn);
+    function getRedemptionFeeWithDecay(uint256 _collateralDrawn) external view returns (uint256 feeWithDecay) {
+        feeWithDecay = _calcRedemptionFee(getRedemptionRateWithDecay(), _collateralDrawn);
     }
 
-    function _calcRedemptionFee(uint256 _redemptionRate, uint256 _collateralDrawn) internal pure returns (uint256) {
-        uint256 redemptionFee = (_redemptionRate * _collateralDrawn) / DECIMAL_PRECISION;
+    function _calcRedemptionFee(uint256 _redemptionRate, uint256 _collateralDrawn) internal pure returns (uint256 redemptionFee) {
+        redemptionFee = (_redemptionRate * _collateralDrawn) / BIMA_DECIMAL_PRECISION;
         require(redemptionFee < _collateralDrawn, "Fee exceeds returned collateral");
-        return redemptionFee;
     }
 
     // --- Borrowing fee functions ---
 
-    function getBorrowingRate() public view returns (uint256) {
-        return _calcBorrowingRate(baseRate);
+    function getBorrowingRate() public view returns (uint256 rate) {
+        rate = _calcBorrowingRate(baseRate);
     }
 
-    function getBorrowingRateWithDecay() public view returns (uint256) {
-        return _calcBorrowingRate(_calcDecayedBaseRate());
+    function getBorrowingRateWithDecay() public view returns (uint256 rateWithDecay) {
+        rateWithDecay = _calcBorrowingRate(_calcDecayedBaseRate());
     }
 
-    function _calcBorrowingRate(uint256 _baseRate) internal view returns (uint256) {
-        return BabelMath._min(borrowingFeeFloor + _baseRate, maxBorrowingFee);
+    function _calcBorrowingRate(uint256 _baseRate) internal view returns (uint256 rate) {
+        rate = BabelMath._min(borrowingFeeFloor + _baseRate, maxBorrowingFee);
     }
 
-    function getBorrowingFee(uint256 _debt) external view returns (uint256) {
-        return _calcBorrowingFee(getBorrowingRate(), _debt);
+    function getBorrowingFee(uint256 _debt) external view returns (uint256 fee) {
+        fee = _calcBorrowingFee(getBorrowingRate(), _debt);
     }
 
-    function getBorrowingFeeWithDecay(uint256 _debt) external view returns (uint256) {
-        return _calcBorrowingFee(getBorrowingRateWithDecay(), _debt);
+    function getBorrowingFeeWithDecay(uint256 _debt) external view returns (uint256 feeWithDecay) {
+        feeWithDecay = _calcBorrowingFee(getBorrowingRateWithDecay(), _debt);
     }
 
-    function _calcBorrowingFee(uint256 _borrowingRate, uint256 _debt) internal pure returns (uint256) {
-        return (_borrowingRate * _debt) / DECIMAL_PRECISION;
+    function _calcBorrowingFee(uint256 _borrowingRate, uint256 _debt) internal pure returns (uint256 fee) {
+        fee = (_borrowingRate * _debt) / BIMA_DECIMAL_PRECISION;
     }
 
     // --- Internal fee functions ---
@@ -573,11 +635,11 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         }
     }
 
-    function _calcDecayedBaseRate() internal view returns (uint256) {
+    function _calcDecayedBaseRate() internal view returns (uint256 rate) {
         uint256 minutesPassed = (block.timestamp - lastFeeOperationTime) / SECONDS_IN_ONE_MINUTE;
         uint256 decayFactor = BabelMath._decPow(minuteDecayFactor, minutesPassed);
 
-        return (baseRate * decayFactor) / DECIMAL_PRECISION;
+        rate = (baseRate * decayFactor) / BIMA_DECIMAL_PRECISION;
     }
 
     // --- Redemption functions ---
@@ -612,19 +674,24 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 _maxIterations,
         uint256 _maxFeePercentage
     ) external {
-        ISortedTroves _sortedTrovesCached = sortedTroves;
-        RedemptionTotals memory totals;
+        // checks without storage reads first - fail fast
+        require(_debtAmount > 0, "Amount must be greater than zero");
 
+        // checks with storage reads next
+        require(debtToken.balanceOf(msg.sender) >= _debtAmount, "Insufficient balance");
+        require(block.timestamp >= systemDeploymentTime + BOOTSTRAP_PERIOD, "BOOTSTRAP_PERIOD");
+        uint256 _MCR = MCR;
+        require(IBorrowerOperations(borrowerOperationsAddress).getTCR() >= _MCR, "Cannot redeem when TCR < MCR");
         require(
             _maxFeePercentage >= redemptionFeeFloor && _maxFeePercentage <= maxRedemptionFee,
             "Max fee 0.5% to 100%"
         );
-        require(block.timestamp >= systemDeploymentTime + BOOTSTRAP_PERIOD, "BOOTSTRAP_PERIOD");
+
+        ISortedTroves _sortedTrovesCached = sortedTroves;
+
+        RedemptionTotals memory totals;        
         totals.price = fetchPrice();
-        uint256 _MCR = MCR;
-        require(IBorrowerOperations(borrowerOperationsAddress).getTCR() >= _MCR, "Cannot redeem when TCR < MCR");
-        require(_debtAmount > 0, "Amount must be greater than zero");
-        require(debtToken.balanceOf(msg.sender) >= _debtAmount, "Insufficient balance");
+
         _updateBalances();
         totals.totalDebtSupplyAtStart = getEntireSystemDebt();
 
@@ -661,7 +728,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
                 _partialRedemptionHintNICR
             );
 
-            if (singleRedemption.cancelledPartial) break; // Partial redemption was cancelled (out-of-date hint, or new net debt < minimum), therefore we could not redeem from the last Trove
+            // Partial redemption was cancelled (out-of-date hint, or new net debt < minimum)
+            // therefore we could not redeem from the last Trove
+            if (singleRedemption.cancelledPartial) break; 
 
             totals.totalDebtToRedeem = totals.totalDebtToRedeem + singleRedemption.debtLot;
             totals.totalCollateralDrawn = totals.totalCollateralDrawn + singleRedemption.collateralLot;
@@ -669,6 +738,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             totals.remainingDebt = totals.remainingDebt - singleRedemption.debtLot;
             currentBorrower = nextUserToCheck;
         }
+
         require(totals.totalCollateralDrawn > 0, "Unable to redeem any amount");
 
         // Decay the baseRate due to time passed, and then increase it according to the size of this redemption.
@@ -688,9 +758,11 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         // Burn the total debt that is cancelled with debt, and send the redeemed collateral to msg.sender
         debtToken.burn(msg.sender, totals.totalDebtToRedeem);
+
         // Update Trove Manager debt, and send collateral to account
         totalActiveDebt = totalActiveDebt - totals.totalDebtToRedeem;
         _sendCollateral(msg.sender, totals.collateralToSendToRedeemer);
+
         _resetState();
     }
 
@@ -709,7 +781,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         singleRedemption.debtLot = BabelMath._min(_maxDebtAmount, t.debt - DEBT_GAS_COMPENSATION);
 
         // Get the CollateralLot of equivalent value in USD
-        singleRedemption.collateralLot = (singleRedemption.debtLot * DECIMAL_PRECISION) / _price;
+        singleRedemption.collateralLot = (singleRedemption.debtLot * BIMA_DECIMAL_PRECISION) / _price;
 
         // Decrease the debt and collateral of the current Trove according to the debt lot and corresponding collateral to send
         uint256 newDebt = (t.debt) - singleRedemption.debtLot;
@@ -752,8 +824,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
             emit TroveUpdated(_borrower, newDebt, newColl, t.stake, TroveManagerOperation.redeemCollateral);
         }
-
-        return singleRedemption;
     }
 
     /*
@@ -776,7 +846,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         address _firstRedemptionHint,
         uint256 _price,
         uint256 _MCR
-    ) internal view returns (bool) {
+    ) internal view returns (bool isValid) {
         if (
             _firstRedemptionHint == address(0) ||
             !_sortedTroves.contains(_firstRedemptionHint) ||
@@ -786,7 +856,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         }
 
         address nextTrove = _sortedTroves.getNext(_firstRedemptionHint);
-        return nextTrove == address(0) || getCurrentICR(nextTrove, _price) < _MCR;
+        isValid = nextTrove == address(0) || getCurrentICR(nextTrove, _price) < _MCR;
     }
 
     /**
@@ -803,27 +873,26 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
     // --- Reward Claim functions ---
 
-    function claimReward(address receiver) external returns (uint256) {
-        uint256 amount = _claimReward(msg.sender);
+    function claimReward(address receiver) external returns (uint256 amount) {
+        amount = _claimReward(msg.sender);
 
         if (amount > 0) {
             vault.transferAllocatedTokens(msg.sender, receiver, amount);
         }
         emit RewardClaimed(msg.sender, receiver, amount);
-        return amount;
     }
 
-    function vaultClaimReward(address claimant, address) external returns (uint256) {
+    function vaultClaimReward(address claimant, address) external returns (uint256 amount) {
         require(msg.sender == address(vault));
 
-        return _claimReward(claimant);
+        amount = _claimReward(claimant);
     }
 
-    function _claimReward(address account) internal returns (uint256) {
+    function _claimReward(address account) internal returns (uint256 amount) {
         require(emissionId.debt > 0, "Rewards not active");
         // update active debt rewards
         _applyPendingRewards(account);
-        uint256 amount = storedPendingReward[account];
+        amount = storedPendingReward[account];
         if (amount > 0) storedPendingReward[account] = 0;
 
         // add pending mint awards
@@ -832,13 +901,11 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             amount += mintAmount;
             delete accountLatestMint[account];
         }
-
-        return amount;
     }
 
-    function claimableReward(address account) external view returns (uint256) {
+    function claimableReward(address account) external view returns (uint256 amount) {
         // previously calculated rewards
-        uint256 amount = storedPendingReward[account];
+        amount = storedPendingReward[account];
 
         // pending active debt rewards
         uint256 updated = periodFinish;
@@ -859,16 +926,14 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         // pending mint rewards
         amount += _getPendingMintReward(account);
-
-        return amount;
     }
 
-    function _getPendingMintReward(address account) internal view returns (uint256 amount) {
+    function _getPendingMintReward(address account) internal view returns (uint256 reward) {
         VolumeData memory data = accountLatestMint[account];
         if (data.amount > 0) {
             (uint256 week, uint256 day) = getWeekAndDay();
             if (data.day != day || data.week != week) {
-                return (dailyMintReward[data.week] * data.amount) / totalMints[data.week][data.day];
+                reward = (dailyMintReward[data.week] * data.amount) / totalMints[data.week][data.day];
             }
         }
     }
@@ -901,8 +966,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             }
         }
         _fetchRewards(_periodFinish);
-
-        return integral;
     }
 
     function _fetchRewards(uint256 _periodFinish) internal {
@@ -918,9 +981,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             uint256 remaining = _periodFinish - block.timestamp;
             amount += remaining * rewardRate;
         }
-        rewardRate = uint128(amount / REWARD_DURATION);
+        rewardRate = SafeCast.toUint128(amount / BIMA_REWARD_DURATION);
         lastUpdate = uint32(block.timestamp);
-        periodFinish = uint32(block.timestamp + REWARD_DURATION);
+        periodFinish = uint32(block.timestamp + BIMA_REWARD_DURATION);
 
         // minting rewards
         amount = vault.allocateNewEmissions(id.minting);
@@ -986,7 +1049,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         address _lowerHint,
         address _borrower,
         address _receiver
-    ) external returns (uint256, uint256, uint256) {
+    ) external returns (uint256 newColl, uint256 newDebt, uint256 newStake) {
         _requireCallerIsBO();
         if (_isCollIncrease || _isDebtIncrease) {
             require(!paused, "Collateral Paused");
@@ -996,7 +1059,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         Trove storage t = Troves[_borrower];
         require(t.status == Status.active, "Trove closed or does not exist");
 
-        uint256 newDebt = t.debt;
+        newDebt = t.debt;
         if (_debtChange > 0) {
             if (_isDebtIncrease) {
                 newDebt = newDebt + _netDebtChange;
@@ -1009,7 +1072,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             t.debt = newDebt;
         }
 
-        uint256 newColl = t.coll;
+        newColl = t.coll;
         if (_collChange > 0) {
             if (_isCollIncrease) {
                 newColl = newColl + _collChange;
@@ -1025,7 +1088,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 newNICR = BabelMath._computeNominalCR(newColl, newDebt);
         sortedTroves.reInsert(_borrower, newNICR, _upperHint, _lowerHint);
 
-        return (newColl, newDebt, _updateStakeAndTotalStakes(t));
+        newStake = _updateStakeAndTotalStakes(t);
     }
 
     function closeTrove(address _borrower, address _receiver, uint256 collAmount, uint256 debtAmount) external {
@@ -1109,27 +1172,25 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     // Updates the baseRate state variable based on time elapsed since the last redemption or debt borrowing operation.
-    function decayBaseRateAndGetBorrowingFee(uint256 _debt) external returns (uint256) {
+    function decayBaseRateAndGetBorrowingFee(uint256 _debt) external returns (uint256 fee) {
         _requireCallerIsBO();
         uint256 rate = _decayBaseRate();
 
-        return _calcBorrowingFee(_calcBorrowingRate(rate), _debt);
+        fee = _calcBorrowingFee(_calcBorrowingRate(rate), _debt);
     }
 
-    function _decayBaseRate() internal returns (uint256) {
-        uint256 decayedBaseRate = _calcDecayedBaseRate();
+    function _decayBaseRate() internal returns (uint256 decayedBaseRate) {
+        decayedBaseRate = _calcDecayedBaseRate();
 
         baseRate = decayedBaseRate;
         emit BaseRateUpdated(decayedBaseRate);
 
         _updateLastFeeOpTime();
-
-        return decayedBaseRate;
     }
 
     function applyPendingRewards(address _borrower) external returns (uint256 coll, uint256 debt) {
         _requireCallerIsBO();
-        return _applyPendingRewards(_borrower);
+        (coll, debt) = _applyPendingRewards(_borrower);
     }
 
     // Add the borrowers's coll and debt rewards earned from redistributions, to their Trove
@@ -1168,7 +1229,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             }
             _updateIntegrals(_borrower, prevDebt, supply);
         }
-        return (coll, debt);
     }
 
     function _updateTroveRewardSnapshots(address _borrower) internal {
@@ -1186,20 +1246,17 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     // Update borrower's stake based on their latest collateral value
-    function _updateStakeAndTotalStakes(Trove storage t) internal returns (uint256) {
-        uint256 newStake = _computeNewStake(t.coll);
+    function _updateStakeAndTotalStakes(Trove storage t) internal returns (uint256 newStake) {
+        newStake = _computeNewStake(t.coll);
         uint256 oldStake = t.stake;
         t.stake = newStake;
         uint256 newTotalStakes = totalStakes - oldStake + newStake;
         totalStakes = newTotalStakes;
         emit TotalStakesUpdated(newTotalStakes);
-
-        return newStake;
     }
 
     // Calculate a new stake based on the snapshots of the totalStakes and totalCollateral taken at the last liquidation
-    function _computeNewStake(uint256 _coll) internal view returns (uint256) {
-        uint256 stake;
+    function _computeNewStake(uint256 _coll) internal view returns (uint256 stake) {
         uint256 totalCollateralSnapshotCached = totalCollateralSnapshot;
         if (totalCollateralSnapshotCached == 0) {
             stake = _coll;
@@ -1214,7 +1271,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             assert(totalStakesSnapshotCached > 0);
             stake = (_coll * totalStakesSnapshotCached) / totalCollateralSnapshotCached;
         }
-        return stake;
     }
 
     // --- Liquidation Functions ---
@@ -1287,8 +1343,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
          * 4) Store these errors for use in the next correction when this function is called.
          * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
          */
-        uint256 collateralNumerator = (_coll * DECIMAL_PRECISION) + lastCollateralError_Redistribution;
-        uint256 debtNumerator = (_debt * DECIMAL_PRECISION) + lastDebtError_Redistribution;
+        uint256 collateralNumerator = (_coll * BIMA_DECIMAL_PRECISION) + lastCollateralError_Redistribution;
+        uint256 debtNumerator = (_debt * BIMA_DECIMAL_PRECISION) + lastDebtError_Redistribution;
         uint256 totalStakesCached = totalStakes;
         // Get the per-unit-staked terms
         uint256 collateralRewardPerUnitStaked = collateralNumerator / totalStakesCached;
@@ -1353,8 +1409,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     // This function must be called any time the debt or the interest changes
-    function _accrueActiveInterests() internal returns (uint256) {
-        (uint256 currentInterestIndex, uint256 interestFactor) = _calculateInterestIndex();
+    function _accrueActiveInterests() internal returns (uint256 currentInterestIndex) {
+        uint256 interestFactor;
+        (currentInterestIndex, interestFactor) = _calculateInterestIndex();
         if (interestFactor > 0) {
             uint256 currentDebt = totalActiveDebt;
             uint256 activeInterests = Math.mulDiv(currentDebt, interestFactor, INTEREST_PRECISION);
@@ -1363,7 +1420,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             activeInterestIndex = currentInterestIndex;
             lastActiveIndexUpdate = block.timestamp;
         }
-        return currentInterestIndex;
     }
 
     function _calculateInterestIndex() internal view returns (uint256 currentInterestIndex, uint256 interestFactor) {

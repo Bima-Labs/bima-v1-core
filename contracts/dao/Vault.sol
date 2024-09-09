@@ -5,13 +5,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
+import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
+import {IEmissionReceiver} from "../interfaces/IEmissionReceiver.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-interface IEmissionReceiver {
-    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool);
-}
 
 /**
     @title Babel Vault
@@ -23,8 +21,6 @@ interface IEmissionReceiver {
 contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     using Address for address;
     using SafeERC20 for IERC20;
-
-    uint256 constant MAX_FEE_PCT = 10000;
 
     IBabelToken public immutable babelToken;
     ITokenLocker public immutable locker;
@@ -304,9 +300,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             weeklyEmissions[week] = SafeCast.toUint128(weeklyAmount);
 
             // update working data
-            unallocated = unallocated - weeklyAmount;
-            
-            emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
+            if(weeklyAmount > 0) {
+                unallocated = unallocated - weeklyAmount;
+                
+                emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
+            }
         }
 
         // update storage
@@ -412,7 +410,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                              `address(0)` to use the boost of the claimer.
         @param rewardContracts Array of addresses of registered receiver contracts where
                                the caller has pending rewards to claim.
-        @param maxFeePct Maximum fee percent to pay to delegate, as a whole number out of MAX_FEE_PCT
+        @param maxFeePct Maximum fee percent to pay to delegate, as a whole number out of BIMA_100_PCT
         @return success bool
      */
     function batchClaimRewards(
@@ -422,7 +420,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         uint256 maxFeePct
     ) external returns (bool success) {
         // enforce max fee
-        require(maxFeePct <= MAX_FEE_PCT, "Invalid maxFeePct");
+        require(maxFeePct <= BIMA_100_PCT, "Invalid maxFeePct");
 
         // working data
         uint256 total;
@@ -505,7 +503,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                     fee = delegateCallback.getFeePct(account, receiver, amount, previousAmount, totalWeekly);
 
                     // enforce callback fee can't be greater than constant max fee
-                    require(fee <= MAX_FEE_PCT, "Invalid delegate fee");
+                    require(fee <= BIMA_100_PCT, "Invalid delegate fee");
                 }
                 // otherwise use fee percent in delegation data
                 else fee = data.feePct;
@@ -541,7 +539,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             // apply boost delegation fee; `fee` currently = fee percent
             if (fee != 0) {
                 // calculate actual fee amount using fee percent
-                fee = (adjustedAmount * fee) / MAX_FEE_PCT;
+                fee = (adjustedAmount * fee) / BIMA_100_PCT;
 
                 // deduced fee from adjusted amount
                 adjustedAmount -= fee;
@@ -661,20 +659,20 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             else fee = data.feePct;
 
             // enforce fee can't be greater than constant max fee
-            if (fee > MAX_FEE_PCT) return (0, 0);
+            if (fee > BIMA_100_PCT) return (0, 0);
         }
 
         adjustedAmount = boostCalculator.getBoostedAmount(claimant, amount, previousAmount, totalWeekly);
 
         // calculate actual fee amount using fee percent (`fee` currently = fee percent)
-        fee = (adjustedAmount * fee) / MAX_FEE_PCT;
+        fee = (adjustedAmount * fee) / BIMA_100_PCT;
     }
 
     /**
         @notice Enable or disable boost delegation, and set boost delegation parameters
         @param isEnabled is boost delegation enabled?
         @param feePct Fee % charged when claims are made that delegate to the caller's boost.
-                      Given as a whole number out of MAX_FEE_PCT. If set to type(uint16).max, the fee
+                      Given as a whole number out of BIMA_100_PCT. If set to type(uint16).max, the fee
                       is set by calling `IBoostDelegate(callback).getFeePct` prior to each claim.
         @param callback Optional contract address to receive a callback each time a claim is
                         made which delegates to the caller's boost.
@@ -682,7 +680,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     function setBoostDelegationParams(bool isEnabled, uint16 feePct, address callback) external returns (bool success) {
         if (isEnabled) {
             // enforce fee percent is either max(uint16) or <= constant max fee
-            require(feePct <= MAX_FEE_PCT || feePct == type(uint16).max, "Invalid feePct");
+            require(feePct <= BIMA_100_PCT || feePct == type(uint16).max, "Invalid feePct");
 
             // enforce callback address is a contract
             if (callback != address(0) || feePct == type(uint16).max) {

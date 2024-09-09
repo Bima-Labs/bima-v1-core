@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
 import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
+import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+import {BIMA_REWARD_DURATION} from "../../dependencies/Constants.sol";
+
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
     @title Babel Curve Deposit Wrapper
@@ -14,7 +18,7 @@ import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
             burned to receive the LP tokens back. Holders may claim BABEL emissions
             on top of the earned CRV.
  */
-contract CurveDepositToken {
+contract CurveDepositToken is IEmissionReceiver {
     IERC20 public immutable BABEL;
     IERC20 public immutable CRV;
     ICurveProxy public immutable curveProxy;
@@ -41,8 +45,6 @@ contract CurveDepositToken {
 
     mapping(address => uint256[2]) public rewardIntegralFor;
     mapping(address => uint128[2]) private storedPendingReward;
-
-    uint256 constant REWARD_DURATION = 1 weeks;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -72,16 +74,16 @@ contract CurveDepositToken {
         periodFinish = uint32(block.timestamp - 1);
     }
 
-    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool) {
+    function notifyRegisteredId(uint256[] calldata assignedIds) external returns (bool success) {
         require(msg.sender == address(vault));
         require(emissionId == 0, "Already registered");
         require(assignedIds.length == 1, "Incorrect ID count");
         emissionId = assignedIds[0];
 
-        return true;
+        success = true;
     }
 
-    function deposit(address receiver, uint256 amount) external returns (bool) {
+    function deposit(address receiver, uint256 amount) external returns (bool success) {
         require(amount > 0, "Cannot deposit zero");
         lpToken.transferFrom(msg.sender, address(this), amount);
         gauge.deposit(amount, address(curveProxy));
@@ -96,10 +98,10 @@ contract CurveDepositToken {
         emit Transfer(address(0), receiver, amount);
         emit LPTokenDeposited(address(lpToken), receiver, amount);
 
-        return true;
+        success = true;
     }
 
-    function withdraw(address receiver, uint256 amount) external returns (bool) {
+    function withdraw(address receiver, uint256 amount) external returns (bool success) {
         require(amount > 0, "Cannot withdraw zero");
         uint256 balance = balanceOf[msg.sender];
         uint256 supply = totalSupply;
@@ -113,7 +115,7 @@ contract CurveDepositToken {
         emit Transfer(msg.sender, address(0), amount);
         emit LPTokenWithdrawn(address(lpToken), receiver, amount);
 
-        return true;
+        success = true;
     }
 
     function _claimReward(address claimant, address receiver) internal returns (uint128[2] memory amounts) {
@@ -122,7 +124,6 @@ contract CurveDepositToken {
         delete storedPendingReward[claimant];
 
         CRV.transfer(receiver, amounts[1]);
-        return amounts;
     }
 
     function claimReward(address receiver) external returns (uint256 babelAmount, uint256 crvAmount) {
@@ -130,15 +131,17 @@ contract CurveDepositToken {
         vault.transferAllocatedTokens(msg.sender, receiver, amounts[0]);
 
         emit RewardClaimed(receiver, amounts[0], amounts[1]);
-        return (amounts[0], amounts[1]);
+
+        babelAmount = amounts[0];
+        crvAmount = amounts[1];
     }
 
-    function vaultClaimReward(address claimant, address receiver) external returns (uint256) {
+    function vaultClaimReward(address claimant, address receiver) external returns (uint256 amount) {
         require(msg.sender == address(vault));
         uint128[2] memory amounts = _claimReward(claimant, receiver);
 
         emit RewardClaimed(receiver, 0, amounts[1]);
-        return amounts[0];
+        amount = amounts[0];
     }
 
     function claimableReward(address account) external view returns (uint256 babelAmount, uint256 crvAmount) {
@@ -157,13 +160,15 @@ contract CurveDepositToken {
             uint256 integralFor = rewardIntegralFor[account][i];
             amounts[i] = storedPendingReward[account][i] + ((balance * (integral - integralFor)) / 1e18);
         }
-        return (amounts[0], amounts[1]);
+
+        babelAmount = amounts[0];
+        crvAmount = amounts[1];
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool) {
+    function approve(address _spender, uint256 _value) public returns (bool success) {
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
-        return true;
+        success = true;
     }
 
     function _transfer(address _from, address _to, uint256 _value) internal {
@@ -180,18 +185,18 @@ contract CurveDepositToken {
         emit Transfer(_from, _to, _value);
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value) public returns (bool success) {
         _transfer(msg.sender, _to, _value);
-        return true;
+        success = true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         uint256 allowed = allowance[_from][msg.sender];
         if (allowed != type(uint256).max) {
             allowance[_from][msg.sender] = allowed - _value;
         }
         _transfer(_from, _to, _value);
-        return true;
+        success = true;
     }
 
     function _updateIntegrals(address account, uint256 balance, uint256 supply) internal {
@@ -206,16 +211,20 @@ contract CurveDepositToken {
                 integral += (duration * rewardRate[i] * 1e18) / supply;
                 rewardIntegral[i] = integral;
             }
-            uint256 integralFor = rewardIntegralFor[account][i];
-            if (integral > integralFor) {
-                storedPendingReward[account][i] += uint128((balance * (integral - integralFor)) / 1e18);
-                rewardIntegralFor[account][i] = integral;
+
+            if (account != address(0)) {
+                uint256 integralFor = rewardIntegralFor[account][i];
+                if (integral > integralFor) {
+                    storedPendingReward[account][i] += SafeCast.toUint128((balance * (integral - integralFor)) / 1e18);
+                    rewardIntegralFor[account][i] = integral;
+                }
             }
         }
     }
 
     function fetchRewards() external {
         require(block.timestamp / 1 weeks >= periodFinish / 1 weeks, "Can only fetch once per week");
+        _updateIntegrals(address(0), 0, totalSupply);
         _fetchRewards();
     }
 
@@ -236,10 +245,10 @@ contract CurveDepositToken {
             babelAmount += remaining * rewardRate[0];
             crvAmount += remaining * rewardRate[1];
         }
-        rewardRate[0] = uint128(babelAmount / REWARD_DURATION);
-        rewardRate[1] = uint128(crvAmount / REWARD_DURATION);
+        rewardRate[0] = SafeCast.toUint128(babelAmount / BIMA_REWARD_DURATION);
+        rewardRate[1] = SafeCast.toUint128(crvAmount / BIMA_REWARD_DURATION);
 
         lastUpdate = uint32(block.timestamp);
-        periodFinish = uint32(block.timestamp + REWARD_DURATION);
+        periodFinish = uint32(block.timestamp + BIMA_REWARD_DURATION);
     }
 }

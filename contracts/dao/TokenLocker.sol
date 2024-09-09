@@ -96,7 +96,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         _;
     }
 
-    function setAllowPenaltyWithdrawAfter(uint256 _timestamp) external returns (bool) {
+    function setAllowPenaltyWithdrawAfter(uint256 _timestamp) external returns (bool success) {
         // only deployment manager can set penalty withdraw start time
         require(msg.sender == deploymentManager, "!deploymentManager");
 
@@ -110,13 +110,13 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         allowPenaltyWithdrawAfter = _timestamp;
 
         emit SetAllowPenaltyWithdrawAfter(_timestamp);
-        return true;
+        success = true;
     }
 
     /**
         @notice Allow or disallow early-exit of locks by paying a penalty
      */
-    function setPenaltyWithdrawalsEnabled(bool _enabled) external onlyOwner returns (bool) {
+    function setPenaltyWithdrawalsEnabled(bool _enabled) external onlyOwner returns (bool success) {
         // revert if start time has not been set or if the
         // start time is in the future (too early)
         uint256 start = allowPenaltyWithdrawAfter;
@@ -126,7 +126,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         penaltyWithdrawalsEnabled = _enabled;
 
         emit SetPenaltyWithdrawalsEnabled(_enabled);
-        return true;
+        success = true;
     }
 
     /**
@@ -190,30 +190,30 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         @notice Get account balances without any processing
      */
     function getAccountBalancesRaw(address account) external view returns(uint32 locked, uint32 unlocked, uint32 frozen) {
-        return(accountLockData[account].locked,
-               accountLockData[account].unlocked,
-               accountLockData[account].frozen);
+        (locked, unlocked, frozen) = (accountLockData[account].locked,
+                                      accountLockData[account].unlocked,
+                                      accountLockData[account].frozen);
     }
 
     /**
         @notice Get total unlocks for given week
      */
     function getTotalWeeklyUnlocks(uint256 week) public view returns(uint256 unlocks) {
-        return totalWeeklyUnlocks[week];
+        unlocks = totalWeeklyUnlocks[week];
     }
 
     /**
         @notice Get account unlocks for given week
      */
     function getAccountWeeklyUnlocks(address account, uint256 week) public view returns(uint256 unlocks) {
-        return accountWeeklyUnlocks[account][week];
+        unlocks = accountWeeklyUnlocks[account][week];
     }
 
     /**
         @notice Get the current lock weight for an account
      */
-    function getAccountWeight(address account) external view returns (uint256) {
-        return getAccountWeightAt(account, getWeek());
+    function getAccountWeight(address account) external view returns (uint256 weight) {
+        weight = getAccountWeightAt(account, getWeek());
     }
 
     /**
@@ -407,8 +407,8 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     /**
         @notice Get the current total lock weight
      */
-    function getTotalWeight() external view returns (uint256) {
-        return getTotalWeightAt(getWeek());
+    function getTotalWeight() external view returns (uint256 weight) {
+        weight = getTotalWeightAt(getWeek());
     }
 
     /**
@@ -453,8 +453,8 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
              this function over it's `view` counterpart is preferred for
              contract -> contract interactions.
      */
-    function getAccountWeightWrite(address account) external returns (uint256) {
-        return _weeklyWeightWrite(account);
+    function getAccountWeightWrite(address account) external returns (uint256 weight) {
+        weight = _weeklyWeightWrite(account);
     }
 
     /**
@@ -463,7 +463,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
              this function over it's `view` counterpart is preferred for
              contract -> contract interactions.
      */
-    function getTotalWeightWrite() public returns (uint256) {
+    function getTotalWeightWrite() public returns (uint256 weightOut) {
         // get current system week
         uint256 week = getWeek();
         
@@ -499,7 +499,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         totalDecayRate = rate;
         totalUpdatedWeek = SafeCast.toUint16(week);
 
-        return weight;
+        weightOut = weight;
     }
 
     /**
@@ -514,7 +514,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         @param _amount Amount of tokens to lock. This balance transfered from the caller.
         @param _weeks The number of weeks for the lock
      */
-    function lock(address _account, uint256 _amount, uint256 _weeks) external returns (bool) {
+    function lock(address _account, uint256 _amount, uint256 _weeks) external returns (bool success) {
         // enforce minimum lock time
         require(_weeks > 0, "Min 1 week");
 
@@ -527,7 +527,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         // then perform the lock
         _lock(_account, _amount, _weeks);
 
-        return true;
+        success = true;
     }
 
     function _lock(address _account, uint256 _amount, uint256 _weeks) internal {
@@ -606,7 +606,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         uint256 _amount,
         uint256 _weeks,
         uint256 _newWeeks
-    ) external notFrozen(msg.sender) returns (bool) {
+    ) external notFrozen(msg.sender) returns (bool success) {
         // enforce minimum lock time
         require(_weeks > 0, "Min 1 week");
 
@@ -671,7 +671,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         emit LockExtended(msg.sender, _amount, _weeks, _newWeeks);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -681,7 +681,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                         tokens to lock, and weeks is the number of weeks for the lock.
                         All tokens to be locked are transferred from the caller.
      */
-    function lockMany(address _account, LockData[] calldata newLocks) external notFrozen(_account) returns (bool) {
+    function lockMany(address _account, LockData[] calldata newLocks) external notFrozen(_account) returns (bool success) {
         // get storage references to account lock & unlock data
         AccountData storage accountData = accountLockData[_account];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[_account];
@@ -754,7 +754,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         emit LocksCreated(_account, newLocks);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -764,7 +764,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                               for the lock that is being extended, and newWeeks is the number of weeks
                               to extend the lock until.
      */
-    function extendMany(ExtendLockData[] calldata newExtendLocks) external notFrozen(msg.sender) returns (bool) {
+    function extendMany(ExtendLockData[] calldata newExtendLocks) external notFrozen(msg.sender) returns (bool success) {
         // get storage references for account lock & unlock data
         AccountData storage accountData = accountLockData[msg.sender];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
@@ -833,7 +833,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         emit LocksExtended(msg.sender, newExtendLocks);
 
-        return true;
+        success = true;
     }
 
     /**
@@ -960,7 +960,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                       If 0 the full amount is transferred back to the user.
 
      */
-    function withdrawExpiredLocks(uint256 _weeks) external returns (bool) {
+    function withdrawExpiredLocks(uint256 _weeks) external returns (bool success) {
         // trigger account & total weekly writes
         _weeklyWeightWrite(msg.sender);
         getTotalWeightWrite();
@@ -983,7 +983,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             
             emit LocksWithdrawn(msg.sender, unlocked, 0);
         }
-        return true;
+        success = true;
     }
 
     /**
@@ -1002,9 +1002,9 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                                 `type(uint256).max` withdrawals the entire available locked
                                 balance, excluding any lock at `MAX_LOCK_WEEKS` as the
                                 penalty on this lock would be 100%.
-        @return uint256 Amount of tokens withdrawn
+        @return output uint256 Amount of tokens withdrawn
      */
-    function withdrawWithPenalty(uint256 amountToWithdraw) external notFrozen(msg.sender) returns (uint256) {
+    function withdrawWithPenalty(uint256 amountToWithdraw) external notFrozen(msg.sender) returns (uint256 output) {
         // penalty withdrawals must be enabled by admin
         require(penaltyWithdrawalsEnabled, "Penalty withdrawals are disabled");
 
@@ -1162,7 +1162,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         lockToken.transfer(babelCore.feeReceiver(), penaltyTotal);
         emit LocksWithdrawn(msg.sender, amountToWithdraw, penaltyTotal);
 
-        return amountToWithdraw;
+        output = amountToWithdraw;
     }
 
     /**

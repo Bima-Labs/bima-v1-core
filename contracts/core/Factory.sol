@@ -46,8 +46,8 @@ contract Factory is IFactory, BabelOwnable {
         liquidationManager = _liquidationManager;
     }
 
-    function troveManagerCount() external view returns (uint256) {
-        return troveManagers.length;
+    function troveManagerCount() external view returns (uint256 count) {
+        count = troveManagers.length;
     }
 
     /**
@@ -107,5 +107,7 @@ contract Factory is IFactory, BabelOwnable {
     function setImplementations(address _troveManagerImpl, address _sortedTrovesImpl) external onlyOwner {
         troveManagerImpl = _troveManagerImpl;
         sortedTrovesImpl = _sortedTrovesImpl;
+
+        emit ImplementationContractsChanged(_troveManagerImpl, _sortedTrovesImpl);
     }
 }
