@@ -127,7 +127,8 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         @param borrower Borrower address to liquidate
      */
     function liquidate(ITroveManager troveManager, address borrower) external {
-        require(troveManager.getTroveStatus(borrower) == 1, "TroveManager: Trove does not exist or is closed");
+        require(troveManager.getTroveStatus(borrower) == ITroveManager.Status.active,
+                "TroveManager: Trove does not exist or is closed");
 
         address[] memory borrowers = new address[](1);
         borrowers[0] = borrower;

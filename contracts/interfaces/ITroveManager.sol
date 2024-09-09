@@ -225,7 +225,7 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionRec
 
     function getTroveStake(address _borrower) external view returns (uint256);
 
-    function getTroveStatus(address _borrower) external view returns (uint256);
+    function getTroveStatus(address _borrower) external view returns (Status);
 
     function getWeekAndDay() external view returns (uint256, uint256);
 

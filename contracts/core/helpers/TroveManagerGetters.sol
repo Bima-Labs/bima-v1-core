@@ -67,7 +67,8 @@ contract TroveManagerGetters {
         uint256 tmCount;
         for (uint256 i; i < length; i++) {
             address troveManager = factory.troveManagers(i);
-            if (ITroveManager(troveManager).getTroveStatus(account) > 0) {
+
+            if (ITroveManager(troveManager).getTroveStatus(account) != ITroveManager.Status.nonExistent) {
                 troveManagers[tmCount] = troveManager;
                 tmCount++;
             }

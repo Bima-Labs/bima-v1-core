@@ -361,8 +361,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         owners = TroveOwners[_index];
     }
 
-    function getTroveStatus(address _borrower) external view returns (uint256 status) {
-        status = uint256(Troves[_borrower].status);
+    function getTroveStatus(address _borrower) external view returns (Status status) {
+        status = Troves[_borrower].status;
     }
 
     function getTroveStake(address _borrower) external view returns (uint256 stake) {
