@@ -29,21 +29,8 @@ import {console} from "hardhat/console.sol";
 contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
-    // --- Connected contract declarations ---
-
-    address public immutable borrowerOperationsAddress;
-    address public immutable liquidationManager;
-    address immutable gasPoolAddress;
-    IDebtToken public immutable debtToken;
-    IBabelVault public immutable vault;
-
-    IPriceFeed public priceFeed;
-    IERC20 public collateralToken;
-
-    // A doubly linked list of Troves, sorted by their collateral ratios
-    ISortedTroves public sortedTroves;
-
-    EmissionId public emissionId;
+    // --- Constants ---
+    //
     // Minimum collateral ratio for individual troves
     uint256 public MCR;
 
@@ -68,6 +55,21 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     uint256 constant BETA = 2;
 
+    // --- Connected contract declarations ---
+    address public immutable borrowerOperationsAddress;
+    address public immutable liquidationManager;
+    address immutable gasPoolAddress;
+    IDebtToken public immutable debtToken;
+    IBabelVault public immutable vault;
+
+    IPriceFeed public priceFeed;
+    IERC20 public collateralToken;
+
+    // A doubly linked list of Troves, sorted by their collateral ratios
+    ISortedTroves public sortedTroves;
+
+    // --- public ---
+    //
     // commented values are Liquity's fixed settings for each parameter
     uint256 public minuteDecayFactor; // 999037758833783000  (half-life of 12 hours)
     uint256 public redemptionFeeFloor; // BIMA_DECIMAL_PRECISION / 1000 * 5  (0.5%)
@@ -81,8 +83,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     uint256 public lastActiveIndexUpdate;
 
     uint256 public systemDeploymentTime;
-    bool public sunsetting;
-    bool public paused;
 
     uint256 public baseRate;
 
@@ -124,26 +124,36 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     uint32 public lastUpdate;
     uint32 public periodFinish;
 
-    mapping(address => uint256) public rewardIntegralFor;
-    mapping(address => uint256) private storedPendingReward;
+    // here for storage packing
+    bool public sunsetting;
+    bool public paused;
+    EmissionId public emissionId;
 
+    // --- array ---
+    //
     // week -> total available rewards for 1 day within this week
     uint256[65535] public dailyMintReward;
 
     // week -> day -> total amount redeemed this day
     uint32[7][65535] private totalMints;
 
-    // account -> data for latest activity
-    mapping(address => VolumeData) public accountLatestMint;
+    // Array of all active trove addresses - used to to compute
+    // an approximate hint off-chain, for the sorted list insertion
+    address[] TroveOwners;
 
-    mapping(address => Trove) public Troves;
-    mapping(address => uint256) public surplusBalances;
+    // --- mapping ---
+    //
+    mapping(address account => uint256 rewardIntegral) public rewardIntegralFor;
+    mapping(address account => uint256 pendingReward) private storedPendingReward;
+
+    // account -> data for latest activity
+    mapping(address account => VolumeData mintData) public accountLatestMint;
+
+    mapping(address borrower => Trove borrowerData) public Troves;
+    mapping(address borrower => uint256 surplusCollateral) public surplusBalances;
 
     // Map addresses with active troves to their RewardSnapshot
-    mapping(address => RewardSnapshot) public rewardSnapshots;
-
-    // Array of all active trove addresses - used to to compute an approximate hint off-chain, for the sorted list insertion
-    address[] TroveOwners;
+    mapping(address borrower => RewardSnapshot) public rewardSnapshots;
 
     struct VolumeData {
         uint32 amount;
