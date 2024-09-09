@@ -5,7 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
-import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR} from "../dependencies/Constants.sol";
+import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR, BIMA_REWARD_DURATION} from "../dependencies/Constants.sol";
 import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -23,7 +23,6 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     // constants
     uint128 public constant SUNSET_DURATION = 180 days;
-    uint256 constant REWARD_DURATION = 1 weeks;
     uint256 constant MAX_COLLATERAL_COUNT = 256;
 
     // stability pool is registered with receiver ID 0
@@ -396,8 +395,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
                     amount += remaining * rewardRate;
                 }
 
-                rewardRate = SafeCast.toUint128(amount / REWARD_DURATION);
-                periodFinish = uint32(block.timestamp + REWARD_DURATION);
+                rewardRate = SafeCast.toUint128(amount / BIMA_REWARD_DURATION);
+                periodFinish = uint32(block.timestamp + BIMA_REWARD_DURATION);
             }
         }
 

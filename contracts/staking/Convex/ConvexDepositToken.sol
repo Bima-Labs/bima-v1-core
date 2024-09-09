@@ -5,7 +5,7 @@ import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
 import {IBabelVault} from "../../interfaces/IVault.sol";
 import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
 import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
-import {BIMA_100_PCT} from "../../dependencies/Constants.sol";
+import {BIMA_100_PCT, BIMA_REWARD_DURATION} from "../../dependencies/Constants.sol";
 
 import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -77,8 +77,6 @@ contract ConvexDepositToken is IEmissionReceiver {
 
     mapping(address => uint256[3]) public rewardIntegralFor;
     mapping(address => uint128[3]) private storedPendingReward;
-
-    uint256 constant REWARD_DURATION = 1 weeks;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -310,11 +308,11 @@ contract ConvexDepositToken is IEmissionReceiver {
             cvxAmount += remaining * rewardRate[2];
         }
 
-        rewardRate[0] = SafeCast.toUint128(babelAmount / REWARD_DURATION);
-        rewardRate[1] = SafeCast.toUint128(crvAmount / REWARD_DURATION);
-        rewardRate[2] = SafeCast.toUint128(cvxAmount / REWARD_DURATION);
+        rewardRate[0] = SafeCast.toUint128(babelAmount / BIMA_REWARD_DURATION);
+        rewardRate[1] = SafeCast.toUint128(crvAmount / BIMA_REWARD_DURATION);
+        rewardRate[2] = SafeCast.toUint128(cvxAmount / BIMA_REWARD_DURATION);
 
         lastUpdate = uint32(block.timestamp);
-        periodFinish = uint32(block.timestamp + REWARD_DURATION);
+        periodFinish = uint32(block.timestamp + BIMA_REWARD_DURATION);
     }
 }

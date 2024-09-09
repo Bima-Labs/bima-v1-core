@@ -10,7 +10,7 @@ import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BabelBase} from "../dependencies/BabelBase.sol";
 import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
-import {BIMA_100_PCT, BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
+import {BIMA_100_PCT, BIMA_DECIMAL_PRECISION, BIMA_REWARD_DURATION} from "../dependencies/Constants.sol";
 
 // todo: remove before production
 import {console} from "hardhat/console.sol";
@@ -50,7 +50,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     uint256 constant SECONDS_IN_ONE_MINUTE = 60;
     uint256 constant INTEREST_PRECISION = 1e27;
     uint256 constant SECONDS_IN_YEAR = 365 days;
-    uint256 constant REWARD_DURATION = 1 weeks;
 
     // volume-based amounts are divided by this value to allow storing as uint32
     uint256 constant VOLUME_MULTIPLIER = 1e20;
@@ -904,9 +903,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             uint256 remaining = _periodFinish - block.timestamp;
             amount += remaining * rewardRate;
         }
-        rewardRate = uint128(amount / REWARD_DURATION);
+        rewardRate = uint128(amount / BIMA_REWARD_DURATION);
         lastUpdate = uint32(block.timestamp);
-        periodFinish = uint32(block.timestamp + REWARD_DURATION);
+        periodFinish = uint32(block.timestamp + BIMA_REWARD_DURATION);
 
         // minting rewards
         amount = vault.allocateNewEmissions(id.minting);
