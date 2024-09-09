@@ -674,19 +674,24 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 _maxIterations,
         uint256 _maxFeePercentage
     ) external {
-        ISortedTroves _sortedTrovesCached = sortedTroves;
-        RedemptionTotals memory totals;
+        // checks without storage reads first - fail fast
+        require(_debtAmount > 0, "Amount must be greater than zero");
 
+        // checks with storage reads next
+        require(debtToken.balanceOf(msg.sender) >= _debtAmount, "Insufficient balance");
+        require(block.timestamp >= systemDeploymentTime + BOOTSTRAP_PERIOD, "BOOTSTRAP_PERIOD");
+        uint256 _MCR = MCR;
+        require(IBorrowerOperations(borrowerOperationsAddress).getTCR() >= _MCR, "Cannot redeem when TCR < MCR");
         require(
             _maxFeePercentage >= redemptionFeeFloor && _maxFeePercentage <= maxRedemptionFee,
             "Max fee 0.5% to 100%"
         );
-        require(block.timestamp >= systemDeploymentTime + BOOTSTRAP_PERIOD, "BOOTSTRAP_PERIOD");
+
+        ISortedTroves _sortedTrovesCached = sortedTroves;
+
+        RedemptionTotals memory totals;        
         totals.price = fetchPrice();
-        uint256 _MCR = MCR;
-        require(IBorrowerOperations(borrowerOperationsAddress).getTCR() >= _MCR, "Cannot redeem when TCR < MCR");
-        require(_debtAmount > 0, "Amount must be greater than zero");
-        require(debtToken.balanceOf(msg.sender) >= _debtAmount, "Insufficient balance");
+
         _updateBalances();
         totals.totalDebtSupplyAtStart = getEntireSystemDebt();
 
@@ -723,7 +728,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
                 _partialRedemptionHintNICR
             );
 
-            if (singleRedemption.cancelledPartial) break; // Partial redemption was cancelled (out-of-date hint, or new net debt < minimum), therefore we could not redeem from the last Trove
+            // Partial redemption was cancelled (out-of-date hint, or new net debt < minimum)
+            // therefore we could not redeem from the last Trove
+            if (singleRedemption.cancelledPartial) break; 
 
             totals.totalDebtToRedeem = totals.totalDebtToRedeem + singleRedemption.debtLot;
             totals.totalCollateralDrawn = totals.totalCollateralDrawn + singleRedemption.collateralLot;
@@ -731,6 +738,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             totals.remainingDebt = totals.remainingDebt - singleRedemption.debtLot;
             currentBorrower = nextUserToCheck;
         }
+
         require(totals.totalCollateralDrawn > 0, "Unable to redeem any amount");
 
         // Decay the baseRate due to time passed, and then increase it according to the size of this redemption.
@@ -750,9 +758,11 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         // Burn the total debt that is cancelled with debt, and send the redeemed collateral to msg.sender
         debtToken.burn(msg.sender, totals.totalDebtToRedeem);
+
         // Update Trove Manager debt, and send collateral to account
         totalActiveDebt = totalActiveDebt - totals.totalDebtToRedeem;
         _sendCollateral(msg.sender, totals.collateralToSendToRedeemer);
+        
         _resetState();
     }
 
