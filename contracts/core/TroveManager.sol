@@ -384,12 +384,16 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function collectInterests() external {
+        // checks
         uint256 interestPayableCached = interestPayable;
         require(interestPayableCached > 0, "Nothing to collect");
-        debtToken.mint(BABEL_CORE.feeReceiver(), interestPayableCached);
-        interestPayable = 0;
 
+        // effects
+        interestPayable = 0;
         emit CollectedInterest(interestPayableCached);
+
+        // interactions
+        debtToken.mint(BABEL_CORE.feeReceiver(), interestPayableCached);
     }
 
     // --- Getters ---
