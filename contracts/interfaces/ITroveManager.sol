@@ -28,6 +28,19 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionRec
     event TroveIndexUpdated(address _borrower, uint256 _newIndex);
     event TroveSnapshotsUpdated(uint256 _L_collateral, uint256 _L_debt);
     event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 _stake, TroveManagerOperation _operation);
+    event Paused();
+    event Unpaused();
+    event SetPriceFeed(address);
+    event StartSunset();
+    event SetParameters(uint256 _minuteDecayFactor,
+                        uint256 _redemptionFeeFloor,
+                        uint256 _maxRedemptionFee,
+                        uint256 _borrowingFeeFloor,
+                        uint256 _maxBorrowingFee,
+                        uint256 _interestRateInBPS,
+                        uint256 _maxSystemDebt,
+                        uint256 _MCR);
+    event CollectedInterest(uint256 amount);
 
     enum Status {
         nonExistent,

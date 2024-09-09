@@ -9,7 +9,9 @@ import {BIMA_DECIMAL_PRECISION} from "./Constants.sol";
  * common functions.
  */
 contract BabelBase is IBabelBase {
-    // Critical system collateral ratio. If the system's total collateral ratio (TCR) falls below the CCR, Recovery Mode is triggered.
+    // Critical Collateral Ratio
+    // If the system's total collateral ratio (TCR) falls
+    // below the CCR, Recovery Mode is triggered
     uint256 public constant CCR = 2.25e18; // 225%
 
     // Amount of debt to be locked in gas pool on opening troves

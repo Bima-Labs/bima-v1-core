@@ -12,8 +12,8 @@ import {BabelMath} from "../dependencies/BabelMath.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
 import {BIMA_100_PCT, BIMA_DECIMAL_PRECISION, BIMA_REWARD_DURATION} from "../dependencies/Constants.sol";
 
-// todo: remove before production
-import {console} from "hardhat/console.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
     @title Babel Trove Manager
     @notice Based on Liquity's `TroveManager`
@@ -31,7 +31,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
     // --- Constants ---
     //
-    // Minimum collateral ratio for individual troves
+    // Minimum Collateral Ratio for individual troves
     uint256 public MCR;
 
     uint256 constant SECONDS_IN_ONE_MINUTE = 60;
@@ -42,9 +42,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     uint256 constant VOLUME_MULTIPLIER = 1e20;
 
     // Maximum interest rate must be lower than the minimum LST staking yield
-    // so that over time the actual TCR becomes greater than the calculated TCR.
+    // so that over time the actual TCR becomes greater than the calculated TCR
     uint256 public constant MAX_INTEREST_RATE_IN_BPS = 400; // 4%
-    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) / (BIMA_100_PCT * SECONDS_IN_YEAR); //50%
+    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) /
+                                                       (BIMA_100_PCT * SECONDS_IN_YEAR); //50%
 
     // During bootsrap period redemptions are not allowed
     uint256 public constant BOOTSTRAP_PERIOD = 14 days;
@@ -221,7 +222,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function setAddresses(address _priceFeedAddress, address _sortedTrovesAddress, address _collateralToken) external {
+        // Factory::deployNewInstance calls this once when new TroveManager
+        // deployed so even without access control it can't be called again
         require(address(sortedTroves) == address(0));
+
         priceFeed = IPriceFeed(_priceFeedAddress);
         sortedTroves = ISortedTroves(_sortedTrovesAddress);
         collateralToken = IERC20(_collateralToken);
@@ -233,11 +237,19 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool success) {
+        // called by BabelVault when the TroveManager is registered
+        // as an emissions receiver
         require(msg.sender == address(vault));
+
+        // prevent vault from calling this multiple times
         require(emissionId.debt == 0, "Already assigned");
-        uint256 length = _assignedIds.length;
-        require(length == 2, "Incorrect ID count");
-        emissionId = EmissionId({ debt: uint16(_assignedIds[0]), minting: uint16(_assignedIds[1]) });
+
+        // enforce that both debt & mint ids have been provided
+        require(_assignedIds.length == 2, "Incorrect ID count");
+
+        emissionId = EmissionId({ debt: SafeCast.toUint16(_assignedIds[0]),
+                                  minting: SafeCast.toUint16(_assignedIds[1]) });
+
         periodFinish = uint32(((block.timestamp / 1 weeks) + 1) * 1 weeks);
 
         success = true;
@@ -254,6 +266,12 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     function setPaused(bool _paused) external {
         require((_paused && msg.sender == guardian()) || msg.sender == owner(), "Unauthorized");
         paused = _paused;
+
+        if (_paused) {
+            emit Paused();
+        } else {
+            emit Unpaused();
+        }
     }
 
     /**
@@ -262,6 +280,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     function setPriceFeed(address _priceFeedAddress) external onlyOwner {
         priceFeed = IPriceFeed(_priceFeedAddress);
+        emit SetPriceFeed(_priceFeedAddress);
     }
 
     /**
@@ -276,12 +295,17 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     function startSunset() external onlyOwner {
         sunsetting = true;
+
+        // important to call this first before re-setting parameters
         _accrueActiveInterests();
+
         interestRate = SUNSETTING_INTEREST_RATE;
         // accrual function doesn't update timestamp if interest was 0
         lastActiveIndexUpdate = block.timestamp;
         redemptionFeeFloor = 0;
         maxSystemDebt = 0;
+
+        emit StartSunset();
     }
 
     /*
@@ -301,19 +325,29 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 _maxSystemDebt,
         uint256 _MCR
     ) public {
-        require(!sunsetting, "Cannot change after sunset");
-        console.log("Collateral ratio", _MCR, CCR);
+        // checks without storage reads first - fail fast
         require(_MCR <= CCR && _MCR >= 1.1e18, "MCR cannot be > CCR or < 110%");
 
-        if (minuteDecayFactor != 0) {
-            require(msg.sender == owner(), "Only owner");
-        }
+        require(_interestRateInBPS <= MAX_INTEREST_RATE_IN_BPS, "Interest > Maximum");
+
         require(
             _minuteDecayFactor >= 977159968434245000 && // half-life of 30 minutes
                 _minuteDecayFactor <= 999931237762985000 // half-life of 1 week
         );
-        require(_redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
-        require(_borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
+        require(_redemptionFeeFloor <= _maxRedemptionFee &&
+                _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
+        require(_borrowingFeeFloor <= _maxBorrowingFee &&
+                _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
+
+        // checks with storage reads next
+        require(!sunsetting, "Cannot change after sunset");
+
+        // Factory::deployNewInstance calls this once when new TroveManager
+        // deployed so even without access control it can't be called again
+        // by anyone else apart from the owner
+        if (minuteDecayFactor != 0) {
+            require(msg.sender == owner(), "Only owner");
+        }
 
         _decayBaseRate();
 
@@ -324,16 +358,29 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         maxBorrowingFee = _maxBorrowingFee;
         maxSystemDebt = _maxSystemDebt;
 
-        require(_interestRateInBPS <= MAX_INTEREST_RATE_IN_BPS, "Interest > Maximum");
+        // calculate interest rate using input bps
+        uint256 newInterestRate = (INTEREST_PRECISION * _interestRateInBPS) /
+                                  (BIMA_100_PCT * SECONDS_IN_YEAR);
 
-        uint256 newInterestRate = (INTEREST_PRECISION * _interestRateInBPS) / (10000 * SECONDS_IN_YEAR);
+        // if rate is changing, accrue interest under the old rate first
+        // before updating to the new interest rate
         if (newInterestRate != interestRate) {
             _accrueActiveInterests();
             // accrual function doesn't update timestamp if interest was 0
             lastActiveIndexUpdate = block.timestamp;
             interestRate = newInterestRate;
         }
+
         MCR = _MCR;
+
+        emit SetParameters(_minuteDecayFactor,
+                           _redemptionFeeFloor,
+                           _maxRedemptionFee,
+                           _borrowingFeeFloor,
+                           _maxBorrowingFee,
+                           _interestRateInBPS,
+                           _maxSystemDebt,
+                           _MCR);
     }
 
     function collectInterests() external {
@@ -341,6 +388,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         require(interestPayableCached > 0, "Nothing to collect");
         debtToken.mint(BABEL_CORE.feeReceiver(), interestPayableCached);
         interestPayable = 0;
+
+        emit CollectedInterest(interestPayableCached);
     }
 
     // --- Getters ---
