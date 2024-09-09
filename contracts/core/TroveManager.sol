@@ -468,13 +468,14 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function getEntireSystemDebt() public view returns (uint256 debt) {
-        uint256 currentActiveDebt = totalActiveDebt;
+        debt = totalActiveDebt;
+
         (, uint256 interestFactor) = _calculateInterestIndex();
         if (interestFactor > 0) {
-            uint256 activeInterests = Math.mulDiv(currentActiveDebt, interestFactor, INTEREST_PRECISION);
-            currentActiveDebt = currentActiveDebt + activeInterests;
+            debt += Math.mulDiv(debt, interestFactor, INTEREST_PRECISION);
         }
-        debt = currentActiveDebt + defaultedDebt;
+
+        debt += defaultedDebt;
     }
 
     function getEntireSystemBalances() external returns (uint256 coll, uint256 debt, uint256 price) {
