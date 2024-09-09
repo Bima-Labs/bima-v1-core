@@ -463,10 +463,12 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         coll = coll + pendingCollateralReward;
     }
 
+    // includes defaulted collateral
     function getEntireSystemColl() public view returns (uint256 coll) {
         coll = totalActiveCollateral + defaultedCollateral;
     }
 
+    // includes defaulted debt
     function getEntireSystemDebt() public view returns (uint256 debt) {
         debt = totalActiveDebt;
 
@@ -500,16 +502,18 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         ICR = BabelMath._computeCR(currentCollateral, currentDebt, _price);
     }
 
+    // excludes defaulted collateral
     function getTotalActiveCollateral() public view returns (uint256 currentActiveCollateral) {
         currentActiveCollateral = totalActiveCollateral;
     }
 
+    // excludes defaulted debt
     function getTotalActiveDebt() public view returns (uint256 currentActiveDebt) {
         currentActiveDebt = totalActiveDebt;
+
         (, uint256 interestFactor) = _calculateInterestIndex();
         if (interestFactor > 0) {
-            uint256 activeInterests = Math.mulDiv(currentActiveDebt, interestFactor, INTEREST_PRECISION);
-            currentActiveDebt = currentActiveDebt + activeInterests;
+            currentActiveDebt += Math.mulDiv(currentActiveDebt, interestFactor, INTEREST_PRECISION);
         }
     }
 
