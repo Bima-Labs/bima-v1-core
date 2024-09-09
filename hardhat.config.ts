@@ -230,8 +230,8 @@ const config: HardhatUserConfig = {
         chainId: 534351,
 
         urls: {
-          browserURL: "https://scroll-sepolia.drpc.org",
-          apiURL: "https://scroll-sepolia.drpc.org",
+          browserURL: "https://sepolia.scrollscan.com/",
+          apiURL: "https://sepolia.scrollscan.com/api",
         },
       },
       {
@@ -248,8 +248,8 @@ const config: HardhatUserConfig = {
         chainId: 80002,
 
         urls: {
-          browserURL: "https://rpc-amoy.polygon.technology",
-          apiURL: "https://rpc-amoy.polygon.technology",
+          browserURL: "https://www.oklink.com/amoy",
+          apiURL: "https://www.oklink.com/amoy/api",
         },
       },
       {
@@ -429,7 +429,7 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     scroll_testnet: {
-      url: "https://scroll-sepolia.drpc.org",
+      url: "https://sepolia-rpc.scroll.io",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     optimism_sepolia_testnet: {
