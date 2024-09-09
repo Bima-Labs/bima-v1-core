@@ -762,7 +762,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         // Update Trove Manager debt, and send collateral to account
         totalActiveDebt = totalActiveDebt - totals.totalDebtToRedeem;
         _sendCollateral(msg.sender, totals.collateralToSendToRedeemer);
-        
+
         _resetState();
     }
 
@@ -981,7 +981,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             uint256 remaining = _periodFinish - block.timestamp;
             amount += remaining * rewardRate;
         }
-        rewardRate = uint128(amount / BIMA_REWARD_DURATION);
+        rewardRate = SafeCast.toUint128(amount / BIMA_REWARD_DURATION);
         lastUpdate = uint32(block.timestamp);
         periodFinish = uint32(block.timestamp + BIMA_REWARD_DURATION);
 
