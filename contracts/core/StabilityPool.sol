@@ -550,7 +550,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
          * The newProductFactor is the factor by which to change all deposits, due to the depletion of Stability Pool Debt in the liquidation.
          * We make the product factor 0 if there was a pool-emptying. Otherwise, it is (1 - DebtLossPerUnitStaked)
          */
-        uint256 newProductFactor = uint256(BIMA_DECIMAL_PRECISION) - _debtLossPerUnitStaked;
+        uint256 newProductFactor = BIMA_DECIMAL_PRECISION - _debtLossPerUnitStaked;
 
         uint128 currentScaleCached = currentScale;
         uint128 currentEpochCached = currentEpoch;
@@ -652,7 +652,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
                 uint256 firstPortion = sumS[i] - depSums[i];
                 uint256 secondPortion = nextSumS[i] / BIMA_SCALE_FACTOR;
 
-                depositorGains[i] += uint80(
+                depositorGains[i] += SafeCast.toUint80(
                     (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
                 );
             }
