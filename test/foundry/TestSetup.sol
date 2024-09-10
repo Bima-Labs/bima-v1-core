@@ -97,6 +97,14 @@ contract TestSetup is Test {
     BoostCalculator  internal boostCalc;
 
     // constants
+    uint256 internal constant INIT_MCR = 2e18; // 200%
+    uint256 internal constant INIT_MAX_DEBT = 1_000_000e18; // 1M USD
+    uint256 internal constant INIT_REDEMPTION_FEE_FLOOR = 5e15;
+    uint256 internal constant INIT_MAX_REDEMPTION_FEE = 1e18;
+    uint256 internal constant INIT_BORROWING_FEE_FLOOR = 0;
+    uint256 internal constant INIT_MAX_BORROWING_FEE = 0;
+    uint256 internal constant INIT_INTEREST_RATE_BPS = 0;
+
     uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
     uint256 internal constant INIT_MIN_NET_DEBT = 1000e18;
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
@@ -265,13 +273,13 @@ contract TestSetup is Test {
         // to add StakedBTC as valid collateral in the protocol
         IFactory.DeploymentParams memory params = IFactory.DeploymentParams({
             minuteDecayFactor : 999037758833783000,
-            redemptionFeeFloor: 5e15,
-            maxRedemptionFee: 1e18,
-            borrowingFeeFloor: 0,
-            maxBorrowingFee: 0,
-            interestRateInBps: 0,
-            maxDebt: 1_000_000e18, // 1M USD
-            MCR: 2e18 // 200%
+            redemptionFeeFloor: INIT_REDEMPTION_FEE_FLOOR,
+            maxRedemptionFee: INIT_MAX_REDEMPTION_FEE,
+            borrowingFeeFloor: INIT_BORROWING_FEE_FLOOR,
+            maxBorrowingFee: INIT_MAX_BORROWING_FEE,
+            interestRateInBps: INIT_INTEREST_RATE_BPS,
+            maxDebt: INIT_MAX_DEBT,
+            MCR: INIT_MCR
         });
 
         factory.deployNewInstance(address(stakedBTC), 
