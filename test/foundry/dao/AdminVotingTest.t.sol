@@ -155,6 +155,24 @@ contract AdminVotingTest is TestSetup {
                                adminVoting.getWeek()-1,
                                adminVoting.SET_GUARDIAN_PASSING_PCT(),
                                payload);
+
+        // change default passing percent to be higher than hard-coded
+        // setGuardian passing percent
+        uint256 higherPassingPct = adminVoting.SET_GUARDIAN_PASSING_PCT() + 1;
+        vm.prank(address(adminVoting));
+        adminVoting.setPassingPct(higherPassingPct);
+
+        // create a second setGuardian proposal
+        vm.warp(block.timestamp + adminVoting.MIN_TIME_BETWEEN_PROPOSALS() + 1);
+        vm.prank(users.user1);
+        proposalId = adminVoting.createNewProposal(users.user1, payload);
+
+        // verify it received higher default passing percent instead
+        // of lower hard-coded setGuardian passing percent
+        _verifyCreatedProposal(proposalId,
+                               adminVoting.getWeek()-1,
+                               higherPassingPct,
+                               payload);
     }
 
     function test_createNewProposal_withVotingWeight() public returns(uint256 proposalId) {
