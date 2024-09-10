@@ -80,6 +80,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
     function _setMinNetDebt(uint256 _minNetDebt) internal {
         require(_minNetDebt > 0);
         minNetDebt = _minNetDebt;
+        emit SetMinDetDebt(_minNetDebt);
     }
 
     function configureCollateral(ITroveManager troveManager, IERC20 collateralToken) external {
@@ -366,7 +367,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             _requireAtLeastMinNetDebt(_getNetDebt(vars.debt) - vars.netDebtChange);
         }
 
-        // If we are incrasing collateral, send tokens to the trove manager prior to adjusting the trove
+        // If we are increasing collateral, send tokens to the trove manager prior to adjusting the trove
         if (vars.isCollIncrease) collateralToken.safeTransferFrom(msg.sender, address(troveManager), vars.collChange);
 
         (vars.newColl, vars.newDebt, vars.stake) = troveManager.updateTroveFromAdjustment(

@@ -26,6 +26,7 @@ interface IBorrowerOperations is IBabelOwnable, IBabelBase, IDelegatedOps {
     event TroveCreated(address indexed _borrower, uint256 arrayIndex);
     event TroveManagerRemoved(ITroveManager);
     event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 stake, BorrowerOperation operation);
+    event SetMinDetDebt(uint256 newMinNetDebt);
 
     function addColl(
         ITroveManager troveManager,
