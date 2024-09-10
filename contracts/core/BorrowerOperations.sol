@@ -9,6 +9,8 @@ import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 import {IBorrowerOperations, ITroveManager, IDebtToken} from "../interfaces/IBorrowerOperations.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /**
     @title Babel Borrower Operations
     @notice Based on Liquity's `BorrowerOperations`
@@ -80,18 +82,27 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
     function _setMinNetDebt(uint256 _minNetDebt) internal {
         require(_minNetDebt > 0);
         minNetDebt = _minNetDebt;
+
         emit SetMinDetDebt(_minNetDebt);
     }
 
     function configureCollateral(ITroveManager troveManager, IERC20 collateralToken) external {
         require(msg.sender == factory, "!factory");
-        troveManagersData[troveManager] = TroveManagerData(collateralToken, uint16(_troveManagers.length));
+
+        troveManagersData[troveManager] = TroveManagerData(collateralToken,
+                                                            SafeCast.toUint16(_troveManagers.length));
         _troveManagers.push(troveManager);
+
         emit CollateralConfigured(troveManager, collateralToken);
     }
 
     function removeTroveManager(ITroveManager troveManager) external {
         TroveManagerData memory tmData = troveManagersData[troveManager];
+
+        // can only remove TroveManagers which:
+        // 1) have valid collateral token
+        // 2) are sunsetting
+        // 3) have zero entire system debt
         require(
             address(tmData.collateralToken) != address(0) &&
                 troveManager.sunsetting() &&
@@ -99,6 +110,8 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             "Trove Manager cannot be removed"
         );
         delete troveManagersData[troveManager];
+
+        // uses swap & pop method for efficient removal
         uint256 lastIndex = _troveManagers.length - 1;
         if (tmData.index < lastIndex) {
             ITroveManager lastTm = _troveManagers[lastIndex];
@@ -108,6 +121,10 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
         _troveManagers.pop();
         emit TroveManagerRemoved(troveManager);
+    }
+
+    function getTroveManagersCount() external view returns (uint256 count) {
+        count = _troveManagers.length;
     }
 
     /**
@@ -128,17 +145,17 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
      */
     function fetchBalances() public returns (SystemBalances memory balances) {
         uint256 loopEnd = _troveManagers.length;
+
         balances = SystemBalances({
             collaterals: new uint256[](loopEnd),
             debts: new uint256[](loopEnd),
             prices: new uint256[](loopEnd)
         });
+
         for (uint256 i; i < loopEnd; ) {
-            ITroveManager troveManager = _troveManagers[i];
-            (uint256 collateral, uint256 debt, uint256 price) = troveManager.getEntireSystemBalances();
-            balances.collaterals[i] = collateral;
-            balances.debts[i] = debt;
-            balances.prices[i] = price;
+            (balances.collaterals[i], balances.debts[i], balances.prices[i])
+                = _troveManagers[i].getEntireSystemBalances();
+
             unchecked {
                 ++i;
             }
@@ -165,6 +182,8 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         address _lowerHint
     ) external callerOrDelegated(account) {
         require(!BABEL_CORE.paused(), "Deposits are paused");
+        _requireValidMaxFeePercentage(_maxFeePercentage);
+
         IERC20 collateralToken;
         LocalVariables_openTrove memory vars;
         bool isRecoveryMode;
@@ -176,28 +195,35 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             isRecoveryMode
         ) = _getCollateralAndTCRData(troveManager);
 
-        _requireValidMaxFeePercentage(_maxFeePercentage);
-
         vars.netDebt = _debtAmount;
 
         if (!isRecoveryMode) {
-            vars.netDebt = vars.netDebt + _triggerBorrowingFee(troveManager,
-                                                               collateralToken,
-                                                               account,
-                                                               _maxFeePercentage,
-                                                               _debtAmount);
+            vars.netDebt += _triggerBorrowingFee(troveManager,
+                                                 collateralToken,
+                                                 account,
+                                                 _maxFeePercentage,
+                                                 _debtAmount);
         }
+
         _requireAtLeastMinNetDebt(vars.netDebt);
 
         // ICR is based on the composite debt, i.e. the requested Debt amount + Debt borrowing fee + Debt gas comp.
         vars.compositeDebt = _getCompositeDebt(vars.netDebt);
+
         vars.ICR = BabelMath._computeCR(_collateralAmount, vars.compositeDebt, vars.price);
         vars.NICR = BabelMath._computeNominalCR(_collateralAmount, vars.compositeDebt);
 
+        // ICR = Individual Collateral Ratio
+        // MCR = Minimum Collateral Ratio for individual troves (see TroveManager.sol)
+        // CCR = Critical Collateral Ratio (see BabelBase.sol)
+        // TCR = Total Collateral Ratio (see BabelBase.sol)
+
         if (isRecoveryMode) {
             _requireICRisAboveCCR(vars.ICR);
-        } else {
+        }
+        else {
             _requireICRisAboveMCR(vars.ICR, troveManager.MCR());
+
             uint256 newTCR = _getNewTCRFromTroveChange(
                 vars.totalPricedCollateral,
                 vars.totalDebt,
@@ -206,6 +232,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
                 vars.compositeDebt,
                 true
             ); // bools: coll increase, debt increase
+
             _requireNewTCRisAboveCCR(newTCR);
         }
 
@@ -219,12 +246,13 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             _lowerHint,
             isRecoveryMode
         );
+
         emit TroveCreated(account, vars.arrayIndex);
 
         // Move the collateral to the Trove Manager
         collateralToken.safeTransferFrom(msg.sender, address(troveManager), _collateralAmount);
 
-        //  and mint the DebtAmount to the caller and gas compensation for Gas Pool
+        // and mint the DebtAmount to the caller and gas compensation for Gas Pool
         debtToken.mintWithGasCompensation(msg.sender, _debtAmount);
 
         emit TroveUpdated(account, vars.compositeDebt, _collateralAmount, vars.stake, BorrowerOperation.openTrove);
@@ -342,6 +370,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         if (_isDebtIncrease) {
             require(_debtChange > 0, "BorrowerOps: Debt increase requires non-zero debtChange");
             _requireValidMaxFeePercentage(_maxFeePercentage);
+
             if (!isRecoveryMode) {
                 // If the adjustment incorporates a debt increase and system is in Normal Mode, trigger a borrowing fee
                 vars.netDebtChange += _triggerBorrowingFee(troveManager,
@@ -388,14 +417,13 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
     function closeTrove(ITroveManager troveManager, address account) external callerOrDelegated(account) {
         IERC20 collateralToken;
-
         uint256 price;
         bool isRecoveryMode;
         uint256 totalPricedCollateral;
         uint256 totalDebt;
-        (collateralToken, price, totalPricedCollateral, totalDebt, isRecoveryMode) = _getCollateralAndTCRData(
-            troveManager
-        );
+
+        (collateralToken, price, totalPricedCollateral, totalDebt, isRecoveryMode)
+            = _getCollateralAndTCRData(troveManager);
         require(!isRecoveryMode, "BorrowerOps: Operation not permitted during Recovery Mode");
 
         (uint256 coll, uint256 debt) = troveManager.applyPendingRewards(account);
@@ -479,13 +507,16 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
         if (_isRecoveryMode) {
             require(_collWithdrawal == 0, "BorrowerOps: Collateral withdrawal not permitted Recovery Mode");
+
             if (_isDebtIncrease) {
                 _requireICRisAboveCCR(newICR);
                 _requireNewICRisAboveOldICR(newICR, oldICR);
             }
-        } else {
+        }
+        else {
             // if Normal Mode
             _requireICRisAboveMCR(newICR, _vars.MCR);
+
             uint256 newTCR = _getNewTCRFromTroveChange(
                 totalPricedCollateral,
                 totalDebt,
@@ -494,6 +525,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
                 _vars.netDebtChange,
                 _isDebtIncrease
             );
+
             _requireNewTCRisAboveCCR(newTCR);
         }
     }
@@ -574,13 +606,16 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         SystemBalances memory balances
     ) internal pure returns (uint256 amount, uint256 totalPricedCollateral, uint256 totalDebt) {
         uint256 loopEnd = balances.collaterals.length;
+
         for (uint256 i; i < loopEnd; ) {
             totalPricedCollateral += (balances.collaterals[i] * balances.prices[i]);
             totalDebt += balances.debts[i];
+
             unchecked {
                 ++i;
             }
         }
+
         amount = BabelMath._computeCR(totalPricedCollateral, totalDebt);
     }
 

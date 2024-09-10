@@ -105,7 +105,7 @@ contract TestSetup is Test {
     uint256 internal constant INIT_MAX_BORROWING_FEE = 0;
     uint256 internal constant INIT_INTEREST_RATE_BPS = 0;
 
-    uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
+    uint256 internal constant INIT_GAS_COMPENSATION = 1e18;
     uint256 internal constant INIT_MIN_NET_DEBT = 1000e18;
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
     address internal constant ZERO_ADDRESS = address(0);
