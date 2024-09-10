@@ -40,6 +40,7 @@ contract BabelBase is IBabelBase {
     }
 
     function _requireUserAcceptsFee(uint256 _fee, uint256 _amount, uint256 _maxFeePercentage) internal pure {
+        require(_amount > 0, "Amount must be greater than zero");
         uint256 feePercentage = (_fee * BIMA_DECIMAL_PRECISION) / _amount;
         require(feePercentage <= _maxFeePercentage, "Fee exceeded provided maximum");
     }
