@@ -34,13 +34,16 @@ contract BorrowerOperationsTest is TestSetup {
         borrowerOps.openTrove(troveMgr, users.user1, 1e18, 1e18, 0, address(0), address(0));
     }
 
-    function test_openTrove_fuzz(uint256 collateralAmount) external {
+    function test_openTrove_fuzz(uint256 collateralAmount, uint256 debtAmount) external {
         // bound fuzz inputs
         collateralAmount = bound(collateralAmount, 4e16, 1_000_000e18);
 
-        // get max debt possible
-        uint256 debtAmount = BabelMath._min(INIT_MAX_DEBT - INIT_GAS_COMPENSATION,
-                                            collateralAmount * 26566);
+        // get max debt possible for random collateral amount
+        uint256 debtAmountMax = BabelMath._min(INIT_MAX_DEBT - INIT_GAS_COMPENSATION,
+                                               collateralAmount * 26566);
+
+        // get random debt between min and max possible for random collateral amount
+        debtAmount = bound(debtAmount, INIT_MIN_NET_DEBT, debtAmountMax);                                
 
         _sendStakedBtc(users.user1, collateralAmount);
 
