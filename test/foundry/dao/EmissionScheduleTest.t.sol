@@ -4,6 +4,9 @@ pragma solidity 0.8.19;
 // test setup
 import {TestSetup} from "../TestSetup.sol";
 
+// dependencies
+import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
+
 contract EmissionScheduleTest is TestSetup {
 
     uint64 constant internal EMISSION_10_PCT = 1000;  // 10%
@@ -52,10 +55,10 @@ contract EmissionScheduleTest is TestSetup {
         uint64 emissionPct1
     ) external {
         // bound inputs
-        emissionPct4 = uint64(bound(emissionPct4, 0, MAX_PCT));
-        emissionPct3 = uint64(bound(emissionPct3, 0, MAX_PCT));
-        emissionPct2 = uint64(bound(emissionPct2, 0, MAX_PCT));
-        emissionPct1 = uint64(bound(emissionPct1, 0, MAX_PCT));
+        emissionPct4 = uint64(bound(emissionPct4, 0, BIMA_100_PCT));
+        emissionPct3 = uint64(bound(emissionPct3, 0, BIMA_100_PCT));
+        emissionPct2 = uint64(bound(emissionPct2, 0, BIMA_100_PCT));
+        emissionPct1 = uint64(bound(emissionPct1, 0, BIMA_100_PCT));
 
         // warp forward 5 weeks
         vm.warp(block.timestamp + 5 weeks);
@@ -113,10 +116,10 @@ contract EmissionScheduleTest is TestSetup {
     ) external {
         // bound inputs
         unallocatedTotal = bound(unallocatedTotal, 0, type(uint128).max);
-        emissionPct4 = uint64(bound(emissionPct4, 0, MAX_PCT));
-        emissionPct3 = uint64(bound(emissionPct3, 0, MAX_PCT));
-        emissionPct2 = uint64(bound(emissionPct2, 0, MAX_PCT));
-        emissionPct1 = uint64(bound(emissionPct1, 0, MAX_PCT));
+        emissionPct4 = uint64(bound(emissionPct4, 0, BIMA_100_PCT));
+        emissionPct3 = uint64(bound(emissionPct3, 0, BIMA_100_PCT));
+        emissionPct2 = uint64(bound(emissionPct2, 0, BIMA_100_PCT));
+        emissionPct1 = uint64(bound(emissionPct1, 0, BIMA_100_PCT));
 
         // warp forward 5 weeks
         vm.warp(block.timestamp + 5 weeks);
@@ -136,7 +139,7 @@ contract EmissionScheduleTest is TestSetup {
         (uint256 amount, uint256 lock) 
             = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct1 / MAX_PCT);
+        assertEq(amount, unallocatedTotal * emissionPct1 / BIMA_100_PCT);
 
         // lockWeeks reduced by 1 and storage updated
         assertEq(lock, savedLockWeeks - 1);
@@ -157,7 +160,7 @@ contract EmissionScheduleTest is TestSetup {
         (amount, lock) 
             = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct2 / MAX_PCT);
+        assertEq(amount, unallocatedTotal * emissionPct2 / BIMA_100_PCT);
 
         // lockWeeks reduced by 2 and storage updated
         assertEq(lock, savedLockWeeks - 2);
@@ -178,7 +181,7 @@ contract EmissionScheduleTest is TestSetup {
         (amount, lock) 
             = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct3 / MAX_PCT);
+        assertEq(amount, unallocatedTotal * emissionPct3 / BIMA_100_PCT);
 
         // lockWeeks reduced by 3 and storage updated
         assertEq(lock, savedLockWeeks - 3);
@@ -199,7 +202,7 @@ contract EmissionScheduleTest is TestSetup {
         (amount, lock) 
             = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct4 / MAX_PCT);
+        assertEq(amount, unallocatedTotal * emissionPct4 / BIMA_100_PCT);
 
         // lockWeeks reduced by 4 and storage updated
         assertEq(lock, savedLockWeeks - 4);
@@ -222,7 +225,7 @@ contract EmissionScheduleTest is TestSetup {
 
         // confirm it is using values from last week of schedule
         // since that was the last modification
-        assertEq(amount, unallocatedTotal * emissionPct4 / MAX_PCT);
+        assertEq(amount, unallocatedTotal * emissionPct4 / BIMA_100_PCT);
         assertEq(lock, savedLockWeeks - 4);
         assertEq(lock, emissionSchedule.lockWeeks());
         assertEq(emissionPct4, emissionSchedule.weeklyPct());

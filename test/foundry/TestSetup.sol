@@ -97,9 +97,8 @@ contract TestSetup is Test {
     BoostCalculator  internal boostCalc;
 
     // constants
-    uint64 constant internal MAX_PCT = 10000; // 100%
     uint256 internal constant INIT_GAS_COMPENSATION = 200e18;
-    uint256 internal constant INIT_MIN_NET_DEBT = 1800e18;
+    uint256 internal constant INIT_MIN_NET_DEBT = 1000e18;
     uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
     address internal constant ZERO_ADDRESS = address(0);
 
@@ -320,6 +319,11 @@ contract TestSetup is Test {
     }
 
     // common helper functions used in tests
+    function _sendStakedBtc(address user, uint256 amount) internal {
+        vm.prank(users.owner);
+        stakedBTC.transfer(user, amount);
+    }
+
     function _vaultSetDefaultInitialParameters() internal {
         uint128[] memory _fixedInitialAmounts;
         IBabelVault.InitialAllowance[] memory initialAllowances;

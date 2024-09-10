@@ -4,6 +4,9 @@ pragma solidity 0.8.19;
 // test setup
 import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IRewards, MockEmissionReceiver, MockBoostDelegate, SafeCast} from "../TestSetup.sol";
 
+// dependencies
+import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -187,7 +190,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = INIT_BAB_TKN_TOTAL_SUPPLY*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = INIT_BAB_TKN_TOTAL_SUPPLY*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
 
@@ -528,7 +531,7 @@ contract VaultTest is TestSetup {
         // bound fuzz inputs
         rewardAmount = bound(rewardAmount, 0, allocatedBalancePre);
         mockEmissionReceiver.setReward(rewardAmount);
-        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, MAX_PCT));
+        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, BIMA_100_PCT));
 
         // setup boost delegate
         vm.prank(mockBoostDelegateAddr);
@@ -559,7 +562,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
 
         // calculate expected fee
-        expectedFeeAmount = rewardAmount * maxFeePct / MAX_PCT;
+        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
 
         // verify delegate has stored pending reward equal to fee
         assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
@@ -680,7 +683,7 @@ contract VaultTest is TestSetup {
         // bound fuzz inputs
         rewardAmount = bound(rewardAmount, 0, allocatedBalancePre);
         mockEmissionReceiver.setReward(rewardAmount);
-        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, MAX_PCT));
+        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, BIMA_100_PCT));
 
         // setup boost delegate
         vm.prank(mockBoostDelegateAddr);
@@ -706,7 +709,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
 
         // calculate expected fee
-        expectedFeeAmount = rewardAmount * maxFeePct / MAX_PCT;
+        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
 
         // verify delegate has stored pending reward equal to fee
         assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
@@ -781,7 +784,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
 
@@ -852,7 +855,7 @@ contract VaultTest is TestSetup {
         //    the amount disabled receivers would have received if enabled; in
         //    this case only 1 receiver so entire emissions get credited back
         //    to unallocated supply
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated);
 
@@ -912,7 +915,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         uint256 remainingUnallocated = initialUnallocated - firstWeekEmissions;
         assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
@@ -993,7 +996,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         uint256 remainingUnallocated = initialUnallocated - firstWeekEmissions;
         assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
