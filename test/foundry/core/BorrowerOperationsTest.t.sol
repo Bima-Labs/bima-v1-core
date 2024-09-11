@@ -9,7 +9,7 @@ import {ITroveManager, IERC20} from "../../../contracts/interfaces/ITroveManager
 
 contract BorrowerOperationsTest is TestSetup {
 
-    ITroveManager stakedBTCTroveMgr;
+    ITroveManager internal stakedBTCTroveMgr;
     uint256 internal minCollateral;
     uint256 internal maxCollateral;
 
@@ -95,7 +95,7 @@ contract BorrowerOperationsTest is TestSetup {
     }
 
     function test_openTrove(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) public
-        returns(uint256 actualCollateralAmount) {
+        returns(uint256 actualCollateralAmount, uint256 actualDebtAmount) {
         // bound fuzz inputs
         actualCollateralAmount = bound(collateralAmount, minCollateral, maxCollateral);
         btcPrice = bound(btcPrice, MIN_BTC_PRICE_8DEC, MAX_BTC_PRICE_8DEC);
@@ -116,9 +116,9 @@ contract BorrowerOperationsTest is TestSetup {
                               - INIT_GAS_COMPENSATION);
 
         // get random debt between min and max possible for random collateral amount
-        debtAmount = bound(debtAmount, INIT_MIN_NET_DEBT, debtAmountMax);                                
+        actualDebtAmount = bound(debtAmount, INIT_MIN_NET_DEBT, debtAmountMax);                                
 
-        _openTrove(users.user1, actualCollateralAmount, debtAmount);
+        _openTrove(users.user1, actualCollateralAmount, actualDebtAmount);
     }
 
     function test_openTrove_custom() external {
@@ -273,7 +273,7 @@ contract BorrowerOperationsTest is TestSetup {
 
     function test_closeTrove(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external {
         // first open a new trove
-        uint256 actualCollateralAmount = test_openTrove(collateralAmount, debtAmount, btcPrice);
+        (uint256 actualCollateralAmount, ) = test_openTrove(collateralAmount, debtAmount, btcPrice);
 
         // save pre state
         BorrowerOpsState memory statePre = _getBorrowerOpsState();
