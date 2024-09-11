@@ -39,6 +39,26 @@ contract BorrowerOperationsTest is TestSetup {
         borrowerOps.openTrove(troveMgr, users.user1, 1e18, 1e18, 0, address(0), address(0));
     }
 
+    // used to store relevant state before tests for verification afterwards
+    struct BorrowerOpsState {
+        uint256 userSBTCBal;
+        uint256 userDebtTokenBal;
+        uint256 gasPoolDebtTokenBal;
+        uint256 troveMgrSBTCBal;
+        IBorrowerOperations.SystemBalances sysBalances;
+    }
+    function _getBorrowerOpsState() internal returns(BorrowerOpsState memory state) {
+        state.userSBTCBal = stakedBTC.balanceOf(users.user1);
+        state.userDebtTokenBal = debtToken.balanceOf(users.user1);
+        state.gasPoolDebtTokenBal = debtToken.balanceOf(users.gasPool);
+        state.troveMgrSBTCBal = stakedBTC.balanceOf(address(stakedBTCTroveMgr));
+        state.sysBalances = borrowerOps.fetchBalances();
+
+        assertEq(state.sysBalances.collaterals.length, 1);
+        assertEq(state.sysBalances.collaterals.length, state.sysBalances.debts.length);
+        assertEq(state.sysBalances.collaterals.length, state.sysBalances.prices.length);
+    }
+
     // helper function to open a trove
     function _openTrove(address user, uint256 collateralAmount, uint256 debtAmount) internal {
         _sendStakedBtc(user, collateralAmount);
@@ -127,14 +147,7 @@ contract BorrowerOperationsTest is TestSetup {
         _sendStakedBtc(users.user1, addedCollateral);
 
         // save pre state
-        uint256 userDebtTokenBalPre = debtToken.balanceOf(users.user1);
-        uint256 gasPoolDebtTokenBalPre = debtToken.balanceOf(users.gasPool);
-        uint256 troveMgrSBTCBalPre = stakedBTC.balanceOf(address(stakedBTCTroveMgr));
-
-        IBorrowerOperations.SystemBalances memory sysBalancesPre = borrowerOps.fetchBalances();
-        assertEq(sysBalancesPre.collaterals.length, 1);
-        assertEq(sysBalancesPre.collaterals.length, sysBalancesPre.debts.length);
-        assertEq(sysBalancesPre.collaterals.length, sysBalancesPre.prices.length);
+        BorrowerOpsState memory statePre = _getBorrowerOpsState();
 
         // transfer approval
         vm.prank(users.user1);
@@ -147,14 +160,14 @@ contract BorrowerOperationsTest is TestSetup {
                             addedCollateral,
                             address(0), address(0)); // hints
 
-        // verify borrower received no new debt tokens
-        assertEq(debtToken.balanceOf(users.user1), userDebtTokenBalPre);
+        // verify borrower debt tokens unchanged
+        assertEq(debtToken.balanceOf(users.user1), statePre.userDebtTokenBal);
 
-        // verify gas pool received no new gas compensation tokens
-        assertEq(debtToken.balanceOf(users.gasPool), gasPoolDebtTokenBalPre);
+        // verify gas pool gas compensation tokens unchanged
+        assertEq(debtToken.balanceOf(users.gasPool), statePre.gasPoolDebtTokenBal);
 
         // verify TroveManager received additional collateral tokens
-        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), troveMgrSBTCBalPre + addedCollateral);
+        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), statePre.troveMgrSBTCBal + addedCollateral);
 
         // verify system balances
         IBorrowerOperations.SystemBalances memory sysBalancesPost = borrowerOps.fetchBalances();
@@ -162,9 +175,9 @@ contract BorrowerOperationsTest is TestSetup {
         assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.debts.length);
         assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.prices.length);
 
-        assertEq(sysBalancesPost.collaterals[0], sysBalancesPre.collaterals[0] + addedCollateral);
-        assertEq(sysBalancesPost.debts[0], sysBalancesPre.debts[0]);
-        assertEq(sysBalancesPost.prices[0], sysBalancesPre.prices[0]);
+        assertEq(sysBalancesPost.collaterals[0], statePre.sysBalances.collaterals[0] + addedCollateral);
+        assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0]);
+        assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
     }
 
     function test_withdrawColl(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external
@@ -176,15 +189,7 @@ contract BorrowerOperationsTest is TestSetup {
         withdrawnCollateral = bound(addedCollateral, 1, addedCollateral);
 
         // save pre state
-        uint256 userSBTCBalPre = stakedBTC.balanceOf(users.user1);
-        uint256 userDebtTokenBalPre = debtToken.balanceOf(users.user1);
-        uint256 gasPoolDebtTokenBalPre = debtToken.balanceOf(users.gasPool);
-        uint256 troveMgrSBTCBalPre = stakedBTC.balanceOf(address(stakedBTCTroveMgr));
-        
-        IBorrowerOperations.SystemBalances memory sysBalancesPre = borrowerOps.fetchBalances();
-        assertEq(sysBalancesPre.collaterals.length, 1);
-        assertEq(sysBalancesPre.collaterals.length, sysBalancesPre.debts.length);
-        assertEq(sysBalancesPre.collaterals.length, sysBalancesPre.prices.length);
+        BorrowerOpsState memory statePre = _getBorrowerOpsState();
 
         // withdraw the extra collateral
         vm.prank(users.user1);
@@ -193,17 +198,17 @@ contract BorrowerOperationsTest is TestSetup {
                                  withdrawnCollateral,
                                  address(0), address(0)); // hints
 
-        // verify borrower received no new debt tokens
-        assertEq(debtToken.balanceOf(users.user1), userDebtTokenBalPre);
+        // verify borrower debt tokens unchanged
+        assertEq(debtToken.balanceOf(users.user1), statePre.userDebtTokenBal);
 
-        // verify gas pool received no new gas compensation tokens
-        assertEq(debtToken.balanceOf(users.gasPool), gasPoolDebtTokenBalPre);
+        // verify gas pool compensation tokens unchanged
+        assertEq(debtToken.balanceOf(users.gasPool), statePre.gasPoolDebtTokenBal);
 
         // verify TroveManager sent withdrawn collateral tokens
-        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), troveMgrSBTCBalPre - withdrawnCollateral);
+        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), statePre.troveMgrSBTCBal - withdrawnCollateral);
 
         // verify user received withdrawn collateral tokens
-        assertEq(stakedBTC.balanceOf(users.user1), userSBTCBalPre + withdrawnCollateral);
+        assertEq(stakedBTC.balanceOf(users.user1), statePre.userSBTCBal + withdrawnCollateral);
 
         // verify system balances
         IBorrowerOperations.SystemBalances memory sysBalancesPost = borrowerOps.fetchBalances();
@@ -211,9 +216,58 @@ contract BorrowerOperationsTest is TestSetup {
         assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.debts.length);
         assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.prices.length);
 
-        assertEq(sysBalancesPost.collaterals[0], sysBalancesPre.collaterals[0] - withdrawnCollateral);
-        assertEq(sysBalancesPost.debts[0], sysBalancesPre.debts[0]);
-        assertEq(sysBalancesPost.prices[0], sysBalancesPre.prices[0]);
+        assertEq(sysBalancesPost.collaterals[0], statePre.sysBalances.collaterals[0] - withdrawnCollateral);
+        assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0]);
+        assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
+    }
+
+    function test_withdrawDebt(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external
+        returns(uint256 withdrawnDebt) {
+        // first limit the max collateral to prevent max debt being taken
+        // when opening a trove
+        maxCollateral = 4e18;
+
+        // then open a trove and add some extra collateral
+        uint256 addedCollateral = test_addColl(collateralAmount, debtAmount, btcPrice);
+
+        // get max debt possible for extra collateral amount
+        uint256 debtAmountMax = addedCollateral * _getScaledOraclePrice() / borrowerOps.CCR();
+
+        // get random debt between min and max possible for extra collateral amount
+        withdrawnDebt = bound(debtAmount, 1, debtAmountMax);
+
+        // save pre state
+        BorrowerOpsState memory statePre = _getBorrowerOpsState();
+
+        // withdraw the debt
+        vm.prank(users.user1);
+        borrowerOps.withdrawDebt(stakedBTCTroveMgr,
+                                 users.user1,
+                                 0, // maxFeePercentage
+                                 withdrawnDebt,
+                                 address(0), address(0)); // hints
+
+        // verify borrower received withdrawn debt tokens
+        assertEq(debtToken.balanceOf(users.user1), statePre.userDebtTokenBal + withdrawnDebt);
+
+        // verify gas pool compensation tokens unchanged
+        assertEq(debtToken.balanceOf(users.gasPool), statePre.gasPoolDebtTokenBal);
+
+        // verify TroveManager collateral tokens unchanged
+        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), statePre.troveMgrSBTCBal);
+
+        // verify user collateral tokens unchanged
+        assertEq(stakedBTC.balanceOf(users.user1), statePre.userSBTCBal);
+
+        // verify system balances
+        IBorrowerOperations.SystemBalances memory sysBalancesPost = borrowerOps.fetchBalances();
+        assertEq(sysBalancesPost.collaterals.length, 1);
+        assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.debts.length);
+        assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.prices.length);
+
+        assertEq(sysBalancesPost.collaterals[0], statePre.sysBalances.collaterals[0]);
+        assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0] + withdrawnDebt);
+        assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
     }
 
 
