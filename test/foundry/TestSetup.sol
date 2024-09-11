@@ -117,6 +117,8 @@ contract TestSetup is Test {
     uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max*INIT_LOCK_TO_TOKEN_RATIO;
     uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
 
+    uint256 internal constant MIN_BTC_PRICE_8DEC = 10_000  * 10 ** 8;
+    uint256 internal constant MAX_BTC_PRICE_8DEC = 500_000 * 10 ** 8;
 
     function setUp() public virtual {
         // prevent Foundry from setting block.timestamp = 1 which can cause
@@ -330,6 +332,10 @@ contract TestSetup is Test {
     function _sendStakedBtc(address user, uint256 amount) internal {
         vm.prank(users.owner);
         stakedBTC.transfer(user, amount);
+    }
+
+    function _getScaledOraclePrice() internal view returns(uint256 scaledPrice) {
+        scaledPrice = uint256(mockOracle.answer()) * 10 ** 10;
     }
 
     function _vaultSetDefaultInitialParameters() internal {
