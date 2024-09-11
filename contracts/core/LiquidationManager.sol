@@ -128,7 +128,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
      */
     function liquidate(ITroveManager troveManager, address borrower) external {
         require(troveManager.getTroveStatus(borrower) == ITroveManager.Status.active,
-                "TroveManager: Trove does not exist or is closed");
+                "LiquidationManager: Trove does not exist or is closed");
 
         address[] memory borrowers = new address[](1);
         borrowers[0] = borrower;
@@ -225,7 +225,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             }
         }
 
-        require(totals.totalDebtInSequence > 0, "TroveManager: nothing to liquidate");
+        require(totals.totalDebtInSequence > 0, "LiquidationManager: nothing to liquidate");
         if (totals.totalDebtToOffset > 0 || totals.totalCollToSendToSP > 0) {
             // Move liquidated collateral and Debt to the appropriate pools
             stabilityPoolCached.offset(
@@ -267,7 +267,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
      */
     function batchLiquidateTroves(ITroveManager troveManager, address[] memory _troveArray) public {
         require(_enabledTroveManagers[troveManager], "TroveManager not approved");
-        require(_troveArray.length != 0, "TroveManager: Calldata address array must not be empty");
+        require(_troveArray.length != 0, "LiquidationManager: _troveArray array must not be empty");
         troveManager.updateBalances();
 
         LiquidationValues memory singleLiquidation;
@@ -355,7 +355,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             }
         }
 
-        require(totals.totalDebtInSequence > 0, "TroveManager: nothing to liquidate");
+        require(totals.totalDebtInSequence > 0, "LiquidationManager: nothing to liquidate");
 
         if (totals.totalDebtToOffset > 0 || totals.totalCollToSendToSP > 0) {
             // Move liquidated collateral and Debt to the appropriate pools

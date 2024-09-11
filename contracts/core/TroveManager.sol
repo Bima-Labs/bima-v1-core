@@ -452,15 +452,17 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         coll = t.coll;
 
         (pendingCollateralReward, pendingDebtReward) = getPendingCollAndDebtRewards(_borrower);
+
         // Accrued trove interest for correct liquidation values. This assumes the index to be updated.
         uint256 troveInterestIndex = t.activeInterestIndex;
+
         if (troveInterestIndex > 0) {
             (uint256 currentIndex, ) = _calculateInterestIndex();
             debt = (debt * currentIndex) / troveInterestIndex;
         }
 
-        debt = debt + pendingDebtReward;
-        coll = coll + pendingCollateralReward;
+        debt += pendingDebtReward;
+        coll += pendingCollateralReward;
     }
 
     // includes defaulted collateral
@@ -1313,16 +1315,16 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         _updateIntegralForAccount(_borrower, debtBefore, rewardIntegral);
     }
 
-    function movePendingTroveRewardsToActiveBalances(uint256 _debt, uint256 _collateral) external {
+    function movePendingTroveRewardsToActiveBalances(uint256 _debtRewards, uint256 _collateralRewards) external {
         _requireCallerIsLM();
-        _movePendingTroveRewardsToActiveBalance(_debt, _collateral);
+        _movePendingTroveRewardsToActiveBalance(_debtRewards, _collateralRewards);
     }
 
-    function _movePendingTroveRewardsToActiveBalance(uint256 _debt, uint256 _collateral) internal {
-        defaultedDebt -= _debt;
-        totalActiveDebt += _debt;
-        defaultedCollateral -= _collateral;
-        totalActiveCollateral += _collateral;
+    function _movePendingTroveRewardsToActiveBalance(uint256 _debtRewards, uint256 _collateralRewards) internal {
+        defaultedDebt -= _debtRewards;
+        totalActiveDebt += _debtRewards;
+        defaultedCollateral -= _collateralRewards;
+        totalActiveCollateral += _collateralRewards;
     }
 
     function addCollateralSurplus(address borrower, uint256 collSurplus) external {
