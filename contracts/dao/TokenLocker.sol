@@ -1097,6 +1097,12 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                     accountWeeklyUnlocks[msg.sender][systemWeek] -= SafeCast.toUint32(lockReduceAmount);
                     totalWeeklyUnlocks[systemWeek] -= SafeCast.toUint32(lockReduceAmount);
 
+                    // if after dust handling user has no remaining tokens locked
+                    // then reset the bitfield
+                    if (accountWeeklyUnlocks[msg.sender][systemWeek] == 0) {
+                        bitfield = bitfield & ~(uint256(1) << (systemWeek % 256));
+                    }
+
                     // nothing remaining to be withdrawn
                     remaining = 0;
                 }
