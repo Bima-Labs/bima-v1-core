@@ -33,6 +33,7 @@ const config: HardhatUserConfig = {
       fantom_testnet: "",
       aurora_testnet: "",
       ethereum_sepolia_testnet: "",
+      manta_pacific_sepolia_testnet:"",
     },
     customChains: [
       {
@@ -42,6 +43,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "manta_pacific_sepolia_testnet",
+        chainId: 3441006,
+
+        urls: {
+          browserURL: "https://manta-sepolia.explorer.caldera.xyz/",
+          apiURL: "https://manta-sepolia.explorer.caldera.xyz/api",
         },
       },
       {
@@ -338,6 +348,10 @@ const config: HardhatUserConfig = {
   networks: {
     lorenzo_testnet: {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    manta_pacific_sepolia_testnet: {
+      url: "https://pacific-rpc.sepolia-testnet.manta.network/http",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     ethereum_sepolia_testnet: {

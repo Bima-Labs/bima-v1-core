@@ -34,6 +34,7 @@
 - [Ethereum Sepolia Testnet](#Ethereum-Sepolia-Testnet)
 - [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
 - [Merlin Testnet](#merlin-testnet)
+- [Manta Pacific Sepolia Testnet](#Manta-Pacific-Sepolia-Testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -894,4 +895,29 @@
 | --------------- | ------------------ | -------------------- | -------------- |
 |  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
 
+
+## Manta Pacific Sepolia Testnet
+
+| Contract           | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BabelCore          | 0x6539C23868dc9Ac70f78a6034af853476477BcEc |
+| PriceFeed          | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
+| FeeReceiver        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
+| InterimAdmin       | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
+| Gas Pool           | 0x15e47CF518073bd980f10a1064231db14238858A |
+| Factory            | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
+| LiquidationManager | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| DebtToken          | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
+| BorrowerOperations | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
+| StabilityPool      | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
+| TroveManager       | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E |
+| SortedTroves       | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
+| TokenLocker        | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
+| IncentiveVoting    | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
+| BabelToken         | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
+| BabelVault         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| --------------- | ------------------ | -------------------- | -------------- |
+| -               | -                  | -                    | -              |
 
