@@ -1087,13 +1087,15 @@ contract VaultTest is TestSetup {
     }
 
 
-    function test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver() public {
+    function test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver() public
+        returns(uint256 disabledReceiverId) {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
         // receiver to be disabled later
         address receiver1 = address(mockEmissionReceiver);
         uint256 RECEIVER_ID1 = _vaultRegisterReceiver(receiver1, 1);
+        disabledReceiverId = RECEIVER_ID1;
 
         // ongoing receiver
         MockEmissionReceiver mockEmissionReceiver2 = new MockEmissionReceiver();
@@ -1151,5 +1153,23 @@ contract VaultTest is TestSetup {
         // credit to BabelVault::unallocatedTotal
         babelVault.allocateNewEmissions(RECEIVER_ID1);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions + allocatedToEachReceiver);
+    }
+
+
+    function test_allocateNewEmissions_failVoteForDisabledReceiver() public {
+        // perform the previous test to set everything up
+        uint256 disabledReceiverId = test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver();
+
+        // users can remove their votes for disabled receivers
+        vm.prank(users.user1);
+        incentiveVoting.clearVote(users.user1);
+
+        // attempting to vote for disabled receiver1 fails
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = disabledReceiverId;
+        votes[0].points = incentiveVoting.MAX_POINTS() / 2;
+        vm.expectRevert("Can't vote for disabled receivers - clearVote first");
+        vm.prank(users.user1);
+        incentiveVoting.vote(users.user1, votes, false);
     }
 }

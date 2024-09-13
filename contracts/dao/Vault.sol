@@ -212,6 +212,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         success = true;
     }
 
+    function isReceiverActive(uint256 id) external view returns(bool isActive) {
+        isActive = idToReceiver[id].isActive;
+    }
+
     /**
         @notice Set the `emissionSchedule` contract
         @dev Callable only by the owner (the DAO admin voter, to change the emission schedule).

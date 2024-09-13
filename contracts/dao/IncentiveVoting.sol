@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {IIncentiveVoting, ITokenLocker} from "../interfaces/IIncentiveVoting.sol";
+import {IBabelVault} from "../interfaces/IVault.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
@@ -613,6 +614,9 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         // iterate through votes input, cheaper to not
         // cache length since calldata
         for (uint256 i; i < votes.length; i++) {
+            // prevent voting for disabled receivers
+            require(IBabelVault(vault).isReceiverActive(votes[i].id), "Can't vote for disabled receivers - clearVote first");
+
             // record each vote
             storedVotes[offset + i] = [SafeCast.toUint16(votes[i].id),
                                         SafeCast.toUint16(votes[i].points)];
