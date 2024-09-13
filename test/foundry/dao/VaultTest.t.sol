@@ -1038,5 +1038,52 @@ contract VaultTest is TestSetup {
         assertEq(allocated2, 536817224874962500063667539);
         assertEq(babelVault.allocated(receiver2), 536817224874962500063667539);
     }
+    
+    function test_unfreeze_fixForFailToRemoveActiveVotes() external {
+        // setup vault giving user1 half supply to lock for voting power
+        _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // verify user1 has 1 unfrozen lock
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        assertEq(activeLockData.length, 1); // 1 active lock
+        assertEq(frozenAmount, 0); // 0 frozen amount
+        assertEq(activeLockData[0].amount, 2147483647);
+        assertEq(activeLockData[0].weeksToUnlock, 52);
+
+        // register receiver
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(address(mockEmissionReceiver), 1);
+
+        // user1 votes for receiver using their unfrozen locked weight
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // verify user1 has 1 active vote using their unfrozen locked weight
+        votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes.length, 1);
+        assertEq(votes[0].id, RECEIVER_ID);
+        assertEq(votes[0].points, 10_000);
+
+        // user1 freezes their lock
+        vm.prank(users.user1);
+        tokenLocker.freeze();
+
+        // verify user1 has 1 frozen lock
+        (activeLockData, frozenAmount) = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        assertEq(activeLockData.length, 0); // 0 active lock
+        assertGt(frozenAmount, 0); // positive frozen amount
+
+        // user1 unfreezes without keeping their past votes
+        vm.prank(users.user1);
+        tokenLocker.unfreeze(false); // keepIncentivesVote = false
+
+        // user1 had their active vote cleared
+        votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes.length, 0);
+    }
 
 }

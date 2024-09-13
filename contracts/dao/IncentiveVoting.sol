@@ -298,6 +298,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         if (accountData.voteLength > 0) {
             existingVotes = getAccountCurrentVotes(account);
             _removeVoteWeights(account, existingVotes, accountData.frozenWeight);
+            emit ClearedVotes(account, getWeek());
         }
 
         // get updated account lock weights and store locally
@@ -461,7 +462,11 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         // cache account's frozen weight
         uint256 frozenWeight = accountData.frozenWeight;
 
-        // if frozenWeight == 0, the account was not registered so nothing needed
+        // get current system week
+        uint256 week = getWeek();
+
+        // if user had frozen weight, reset it and clear optionally
+        // clear their votes using frozen weight
         if (frozenWeight > 0) {
             // clear previous votes
             Vote[] memory existingVotes;
@@ -470,9 +475,6 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
                 existingVotes = getAccountCurrentVotes(account);
                 _removeVoteWeightsFrozen(existingVotes, frozenWeight);
             }
-
-            // get current system week
-            uint256 week = getWeek();
 
             accountData.week = SafeCast.toUint16(week);
             accountData.frozenWeight = 0;
@@ -496,6 +498,19 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
             ITokenLocker.LockData[] memory lockData = new ITokenLocker.LockData[](1);
             lockData[0] = ITokenLocker.LockData({ amount: amount, weeksToUnlock: MAX_LOCK_WEEKS });
             emit AccountWeightRegistered(account, week, 0, lockData);
+        }
+        // user may have had votes registered prior to freezing their weight so
+        // remove these if the user doesn't want to keep their votes
+        else if (!keepVote) {
+            // clear previous votes
+            if (accountData.voteLength > 0) {
+                _removeVoteWeights(account, getAccountCurrentVotes(account), 0);
+
+                accountData.voteLength = 0;
+                accountData.points = 0;
+
+                emit ClearedVotes(account, week);
+            }
         }
 
         success = true;
