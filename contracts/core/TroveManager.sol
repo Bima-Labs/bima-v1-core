@@ -1378,6 +1378,13 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 collateralNumerator = (_coll * BIMA_DECIMAL_PRECISION) + lastCollateralError_Redistribution;
         uint256 debtNumerator = (_debt * BIMA_DECIMAL_PRECISION) + lastDebtError_Redistribution;
         uint256 totalStakesCached = totalStakes;
+
+        // if there is only 1 trove open and that is being liquidated, prevent
+        // a panic during liquidation due to divide by zero
+        if(totalStakesCached == 0) {
+            totalStakesCached = 1;
+        }
+
         // Get the per-unit-staked terms
         uint256 collateralRewardPerUnitStaked = collateralNumerator / totalStakesCached;
         uint256 debtRewardPerUnitStaked = debtNumerator / totalStakesCached;

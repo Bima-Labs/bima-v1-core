@@ -165,7 +165,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         troveManagerValues.MCR = troveManager.MCR();
         uint256 debtInStabPool = stabilityPoolCached.getTotalDebtTokenDeposits();
 
-        while (trovesRemaining > 0 && troveCount > 1) {
+        while (trovesRemaining > 0 && troveCount >= 1) {
             address account = sortedTrovesCached.getLast();
             uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
             if (ICR > maxICR) {
@@ -193,6 +193,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             }
         }
 
+        // note: did not enable troveCount >= 1 here as later code looks for other troves
         if (trovesRemaining > 0 && !troveManagerValues.sunsetting && troveCount > 1) {
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
             entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
@@ -298,7 +299,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         uint256 length = _troveArray.length;
         uint256 troveIter;
 
-        while (troveIter < length && troveCount > 1) {
+        while (troveIter < length && troveCount >= 1) {
             // first iteration round, when all liquidated troves have ICR < MCR we do not need to track TCR
             address account = _troveArray[troveIter];
 
@@ -328,13 +329,13 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             }
         }
 
-        if (troveIter < length && troveCount > 1) {
+        if (troveIter < length && troveCount >= 1) {
             // second iteration round, if we receive a trove with ICR > MCR and need to track TCR
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
             entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
 
-            while (troveIter < length && troveCount > 1) {
+            while (troveIter < length && troveCount >= 1) {
                 address account = _troveArray[troveIter];
                 uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
                 unchecked {
