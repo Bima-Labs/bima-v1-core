@@ -1086,4 +1086,70 @@ contract VaultTest is TestSetup {
         assertEq(votes.length, 0);
     }
 
+
+    function test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver() public {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // receiver to be disabled later
+        address receiver1 = address(mockEmissionReceiver);
+        uint256 RECEIVER_ID1 = _vaultRegisterReceiver(receiver1, 1);
+
+        // ongoing receiver
+        MockEmissionReceiver mockEmissionReceiver2 = new MockEmissionReceiver();
+        address receiver2 = address(mockEmissionReceiver2);
+        uint256 RECEIVER_ID2 = _vaultRegisterReceiver(receiver2, 1);
+
+        // user votes for receiver1 to get emissions with 50% of their points
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID1;
+        votes[0].points = incentiveVoting.MAX_POINTS() / 2;
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // user votes for receiver2 to get emissions with 50% of their points
+        votes[0].id = RECEIVER_ID2;
+        vm.prank(users.user1);
+        incentiveVoting.vote(users.user1, votes, false);
+
+        // verify only receiver can call allocateNewEmissions when active
+        vm.expectRevert("Not receiver account");
+        babelVault.allocateNewEmissions(RECEIVER_ID1);
+
+        // disable emission receiver 1 prior to calling allocateNewEmissions
+        vm.prank(users.owner);
+        babelVault.setReceiverIsActive(RECEIVER_ID1, false);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // cache current system week
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // receiver2 calls allocateNewEmissions
+        vm.prank(receiver2);
+        uint256 allocatedToEachReceiver = babelVault.allocateNewEmissions(RECEIVER_ID2);
+
+        // verify BabelVault::totalUpdateWeek is current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+
+        // verify receiver1 and receiver2 have the same allocated amounts
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
+        assertEq(firstWeekEmissions, allocatedToEachReceiver * 2);
+
+        // if receiver1 doesn't call allocateNewEmissions the tokens they would
+        // have received would never be allocated. Only if receiver1 calls allocateNewEmissions
+        // do the tokens move into BabelVault::unallocatedTotal
+        //
+        // the fix allows anyone to call `allocateNewEmissions` for disabled receivers
+        // to trigger the tokens the disabled receiver would have received to be
+        // credit to BabelVault::unallocatedTotal
+        babelVault.allocateNewEmissions(RECEIVER_ID1);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions + allocatedToEachReceiver);
+    }
 }
