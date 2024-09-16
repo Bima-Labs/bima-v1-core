@@ -210,7 +210,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "bob_testnet",
-        chainId: 111,
+        chainId: 808813,
 
         urls: {
           browserURL: "https://bob-sepolia.explorer.gobob.xyz/",
@@ -433,7 +433,7 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bob_testnet: {
-      url: "https://testnet.rpc.gobob.xyz",
+      url: "https://bob-sepolia.rpc.gobob.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     holesky_testnet: {
