@@ -2,12 +2,14 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {TestSetup, IBorrowerOperations} from "../TestSetup.sol";
+import {IBorrowerOperations} from "../TestSetup.sol";
+
+import {StabilityPoolTest} from "./StabilityPoolTest.t.sol";
 
 import {BabelMath} from "../../../contracts/dependencies/BabelMath.sol";
 import {ITroveManager, IERC20} from "../../../contracts/interfaces/ITroveManager.sol";
 
-contract BorrowerOperationsTest is TestSetup {
+contract BorrowerOperationsTest is StabilityPoolTest {
 
     ITroveManager internal stakedBTCTroveMgr;
     uint256 internal minCollateral;

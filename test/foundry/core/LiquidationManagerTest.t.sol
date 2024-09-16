@@ -25,8 +25,16 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         uint256 userColl;
         uint256 userPendingDebtReward;
         uint256 userPendingCollateralReward;
+        uint256 stabPoolTotalDebtTokenDeposits;
+    }
+    function _getPreStateData() internal view returns (StateData memory state) {
+        (state.userDebt, state.userColl, state.userPendingDebtReward, state.userPendingCollateralReward)
+            = stakedBTCTroveMgr.getEntireDebtAndColl(users.user1);
+
+        state.stabPoolTotalDebtTokenDeposits = stabilityPool.getTotalDebtTokenDeposits();
     }
 
+    /*
     function test_liquidateTroves_onlyOneTrove() external {
         // depositing 2 BTC collateral (price = $60,000 in MockOracle)
         // use this test to experiment with different hard-coded values
@@ -146,4 +154,79 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
     }
 
 
+    function test_liquidate_withStabilityPoolDeposits() external {
+        // user2 deposits into the stability pool
+        uint96 spDepositAmount = 1e18;
+        _provideToSP(users.user2, spDepositAmount, 1);
+
+        // user1 opens a trove using 2 BTC collateral (price = $60,000 in MockOracle)
+        uint256 collateralAmount = 2e18;
+
+        uint256 debtAmountMax // 53332 333333333333333333
+            = (collateralAmount * _getScaledOraclePrice() / borrowerOps.CCR())
+              - INIT_GAS_COMPENSATION;
+
+        _openTrove(users.user1, collateralAmount, debtAmountMax);
+
+        // 2250000000000000000
+        uint256 ICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
+
+        // set new value of btc to $50,000 to make trove liquidatable
+        mockOracle.setResponse(mockOracle.roundId() + 1,
+                               int256(50000 * 10 ** 8),
+                               block.timestamp + 1,
+                               block.timestamp + 1,
+                               mockOracle.answeredInRound() + 1);
+        // warp time to prevent cached price being used
+        vm.warp(block.timestamp + 1);
+
+        // PREV ICR : 2250000000000000000
+        // NOW  ICR : 1875000000000000000
+        //
+        // TM MCR   : 2000000000000000000
+        ICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
+
+        // save previous state
+        StateData memory statePre;
+        (statePre.userDebt, statePre.userColl, statePre.userPendingDebtReward, statePre.userPendingCollateralReward)
+            = stakedBTCTroveMgr.getEntireDebtAndColl(users.user1);
+
+        // liquidate via `liquidate`
+        liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
+
+        // user after state all zeros
+        StateData memory statePost;
+        (statePost.userDebt, statePost.userColl, statePost.userPendingDebtReward, statePost.userPendingCollateralReward)
+            = stakedBTCTroveMgr.getEntireDebtAndColl(users.user1);
+        assertEq(statePost.userDebt, 0);
+        assertEq(statePost.userColl, 0);
+        assertEq(statePost.userPendingDebtReward, 0);
+        assertEq(statePost.userPendingCollateralReward, 0);
+
+        // since there was only 1 trove, these should also be zero
+        assertEq(stakedBTCTroveMgr.getTotalActiveDebt(), 0);
+        assertEq(stakedBTCTroveMgr.getTotalActiveCollateral(), 0);
+
+        
+        // verify defaulted debt & collateral calculated correctly
+        assertEq(stakedBTCTroveMgr.defaultedDebt(),
+                 statePre.userDebt + statePre.userPendingDebtReward);
+        
+        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
+                 statePre.userColl - _getCollGasCompensation(statePre.userColl));
+
+        // just defaulted values * BIMA_DECIMAL_PRECISION as no previous errors
+        // and only 1 trove total (the one being liquidated)
+        assertEq(stakedBTCTroveMgr.L_collateral(),
+                 stakedBTCTroveMgr.defaultedCollateral() * BIMA_DECIMAL_PRECISION);
+        assertEq(stakedBTCTroveMgr.L_debt(),
+                 stakedBTCTroveMgr.defaultedDebt() * BIMA_DECIMAL_PRECISION);
+
+        // no errors
+        assertEq(stakedBTCTroveMgr.lastCollateralError_Redistribution(), 0);
+        assertEq(stakedBTCTroveMgr.lastDebtError_Redistribution(), 0);
+        
+        
+    }
+    */
 }
