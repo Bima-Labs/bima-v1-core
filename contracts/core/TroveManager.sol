@@ -1190,7 +1190,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function _updateMintVolume(address account, uint256 initialAmount) internal {
-        uint32 amount = uint32(initialAmount / VOLUME_MULTIPLIER);
+        uint32 amount = SafeCast.toUint32(initialAmount / VOLUME_MULTIPLIER);
         (uint256 week, uint256 day) = getWeekAndDay();
         totalMints[week][day] += amount;
 

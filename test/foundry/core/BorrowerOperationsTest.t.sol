@@ -12,6 +12,7 @@ contract BorrowerOperationsTest is TestSetup {
     ITroveManager internal stakedBTCTroveMgr;
     uint256 internal minCollateral;
     uint256 internal maxCollateral;
+    uint256 internal minDebt;
 
     function setUp() public virtual override {
         super.setUp();
@@ -31,6 +32,7 @@ contract BorrowerOperationsTest is TestSetup {
 
         minCollateral = 3e17;
         maxCollateral = 1_000_000e18;
+        minDebt       = INIT_MIN_NET_DEBT;
     }
 
     function test_openTrove_failInvalidTroveManager() external {
@@ -116,7 +118,7 @@ contract BorrowerOperationsTest is TestSetup {
                               - INIT_GAS_COMPENSATION);
 
         // get random debt between min and max possible for random collateral amount
-        actualDebtAmount = bound(debtAmount, INIT_MIN_NET_DEBT, debtAmountMax);                                
+        actualDebtAmount = bound(debtAmount, minDebt, debtAmountMax);
 
         _openTrove(users.user1, actualCollateralAmount, actualDebtAmount);
     }
@@ -305,5 +307,47 @@ contract BorrowerOperationsTest is TestSetup {
         assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
     }
 
+    function test_repayDebt(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external
+        returns(uint256 repayAmount) {
+        // increase the minimum debt to ensure repay won't revert
+        // due to going below the minimum debt value
+        minDebt = INIT_MIN_NET_DEBT * 130 / 100;
 
+        // open a new trove
+        (, uint256 actualDebtAmount)
+            = test_openTrove(collateralAmount, debtAmount, btcPrice);
+
+        // bound repay amount to prevent revert due to going below
+        // mininum debt value
+        repayAmount = bound(actualDebtAmount, 1, actualDebtAmount - INIT_MIN_NET_DEBT);
+
+        // save pre state
+        BorrowerOpsState memory statePre = _getBorrowerOpsState();
+
+        // repay some debt
+        vm.prank(users.user1);
+        borrowerOps.repayDebt(stakedBTCTroveMgr, users.user1, repayAmount, address(0), address(0));
+
+        // verify borrower has reduced debt tokens
+        assertEq(debtToken.balanceOf(users.user1), actualDebtAmount - repayAmount);
+
+        // verify gas pool compensation debt tokens unchanged
+        assertEq(debtToken.balanceOf(users.gasPool), statePre.gasPoolDebtTokenBal);
+
+        // verify TroveManager has collateral tokens unchanged
+        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), statePre.troveMgrSBTCBal);
+
+        // verify user collateral tokens unchanged
+        assertEq(stakedBTC.balanceOf(users.user1), statePre.userSBTCBal);
+
+        // verify system balances
+        IBorrowerOperations.SystemBalances memory sysBalancesPost = borrowerOps.fetchBalances();
+        assertEq(sysBalancesPost.collaterals.length, 1);
+        assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.debts.length);
+        assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.prices.length);
+
+        assertEq(sysBalancesPost.collaterals[0], statePre.sysBalances.collaterals[0]);
+        assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0] - repayAmount);
+        assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
+    }
 }

@@ -68,13 +68,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(stakedBTCTroveMgr.getTotalActiveDebt(), 0);
         assertEq(stakedBTCTroveMgr.getTotalActiveCollateral(), 0);
 
-        // verify default debt & collateral calculated correctly
+        // verify defaulted debt & collateral calculated correctly
         assertEq(stakedBTCTroveMgr.defaultedDebt(),
                  statePre.userDebt + statePre.userPendingDebtReward);
         assertEq(stakedBTCTroveMgr.defaultedCollateral(),
                  statePre.userColl - _getCollGasCompensation(statePre.userColl));
 
-        // just default values * BIMA_DECIMAL_PRECISION as no previous errors
+        // just defaulted values * BIMA_DECIMAL_PRECISION as no previous errors
         // and only 1 trove total (the one being liquidated)
         assertEq(stakedBTCTroveMgr.L_collateral(),
                  stakedBTCTroveMgr.defaultedCollateral() * BIMA_DECIMAL_PRECISION);
@@ -127,13 +127,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(stakedBTCTroveMgr.getTotalActiveDebt(), 0);
         assertEq(stakedBTCTroveMgr.getTotalActiveCollateral(), 0);
 
-        // verify default debt & collateral calculated correctly
+        // verify defaulted debt & collateral calculated correctly
         assertEq(stakedBTCTroveMgr.defaultedDebt(),
                  statePre.userDebt + statePre.userPendingDebtReward);
         assertEq(stakedBTCTroveMgr.defaultedCollateral(),
                  statePre.userColl - _getCollGasCompensation(statePre.userColl));
 
-        // just default values * BIMA_DECIMAL_PRECISION as no previous errors
+        // just defaulted values * BIMA_DECIMAL_PRECISION as no previous errors
         // and only 1 trove total (the one being liquidated)
         assertEq(stakedBTCTroveMgr.L_collateral(),
                  stakedBTCTroveMgr.defaultedCollateral() * BIMA_DECIMAL_PRECISION);
