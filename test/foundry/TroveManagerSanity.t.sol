@@ -26,8 +26,7 @@ contract TroveManagerSanityTest is Test {
   address public ORACLE_ADDRESS;
   address public BORROW_OPERATIONS_ADDRESS;
   address public PRICE_FEED_ADDRESS;
-
-  BimaFaucet public bimaFaucet = BimaFaucet(address(0));
+  address public BIMA_FAUCET;
 
   function setUp() public {
     vm.createSelectFork(RPC_URL);
@@ -70,7 +69,7 @@ contract TroveManagerSanityTest is Test {
   function testFaucet() public {
     console.log("My Collateral Balance: ", IERC20(COLLATERAL_ADDRESS).balanceOf(address(this)));
     console.log("Getting Faucet..");
-    bimaFaucet.getTokens(COLLATERAL_ADDRESS);
+    BimaFaucet(BIMA_FAUCET).getTokens(COLLATERAL_ADDRESS);
     console.log("My Collateral Balance: ", IERC20(COLLATERAL_ADDRESS).balanceOf(address(this)));
   }
 }
