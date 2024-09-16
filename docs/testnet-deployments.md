@@ -83,10 +83,10 @@
 | BabelVault         | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
 | BimaFaucet         | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
 
-| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)                             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| tBTC            | 0xF87766ab34F863503D36394B624a436f436DAf87 | 0x5B8501da467A913485822D56632665B3af5228d7 | 0x3991aBC8D4D5Eb48DE4f7d0B36Fb446b73F320E8 |
-| wBTC            | 0x2868d708e442A6a940670d26100036d426F1e16b | 0x3ED469E7e2F4F05878f9A7295c97d1ad3dE4c752 | 0x3991aBC8D4D5Eb48DE4f7d0B36Fb446b73F320E8 |
+| tBTC            | 0xF87766ab34F863503D36394B624a436f436DAf87 | 0xB4A2b7B818eB310771fa2F4afF84a6ffa1aC4606 | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
+| wBTC            | 0x2868d708e442A6a940670d26100036d426F1e16b | 0x10D257e8F496A84d792EBCC4384957390DFb6543 | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 | Bima Mock BTC   | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 | 0x9BC04137C2c95b92677C341511F84B694F451d8B | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 
 ## Linea Testnet
