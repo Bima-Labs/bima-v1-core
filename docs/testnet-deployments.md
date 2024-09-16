@@ -916,10 +916,11 @@
 | IncentiveVoting    | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
 | BabelToken         | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
 | BabelVault         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| BimaFaucet         | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
 | --------------- | ------------------ | -------------------- | -------------- |
-| -               | -                  | -                    | -              |
+|  Bima Mock BTC | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
 
 
 ## Plume Devnet
