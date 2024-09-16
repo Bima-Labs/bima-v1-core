@@ -547,4 +547,44 @@ contract TokenLockerTest is TestSetup {
         // verify token decay rate reduced by withdrawn amount
         assertEq(tokenLocker.totalDecayRate(), totalDecayRatePre - lockedAmount);
     }
+
+    function test_withdrawWithPenalty_fixActiveLockWithZeroLocked() external {
+        uint256 amountToLock = 100;
+        uint256 weeksToLockFor = 20;
+
+        // first enable penalty withdrawals
+        test_setPenaltyWithdrawalsEnabled(0, true);
+
+        // perform the lock
+        (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
+        // verify the lock result
+        assertEq(lockedAmount, 100);
+        assertEq(weeksLockedFor, 20);
+
+        // verify user has received weight in the current week
+        uint256 week = tokenLocker.getWeek();        
+        assertTrue(tokenLocker.getAccountWeightAt(users.user1, week) != 0);
+
+        // perform the withdraw with penalty
+        vm.prank(users.user1);
+        uint256 amountToWithdraw = 61;
+        tokenLocker.withdrawWithPenalty(amountToWithdraw);
+
+        // calculate expected penaltyOnAmount = 61 * 1e18 * (52 - 32) / 32 = 38.125e18
+        // so amountToWithdraw + penaltyOnAmount = 99.125e18 and will be 100 after handling dust
+        // https://github.com/Bima-Labs/bima-v1-core/blob/main/contracts/dao/TokenLocker.sol#L1080
+
+        // verify account's weight was reset
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, week), 0);
+
+        // verify total weight was reset
+        assertEq(tokenLocker.getTotalWeight(), 0);
+
+        // verify getAccountActiveLocks shows user has no active locks
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, weeksToLockFor);
+
+        assertEq(activeLockData.length, 0);
+        assertEq(frozenAmount, 0);
+    }
 }

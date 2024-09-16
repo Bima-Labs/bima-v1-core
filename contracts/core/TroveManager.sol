@@ -138,7 +138,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     // week -> day -> total amount redeemed this day
     uint32[7][65535] private totalMints;
 
-    // Array of all active trove addresses - used to to compute
+    // Array of all active trove addresses - used to compute
     // an approximate hint off-chain, for the sorted list insertion
     address[] TroveOwners;
 
@@ -452,15 +452,17 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         coll = t.coll;
 
         (pendingCollateralReward, pendingDebtReward) = getPendingCollAndDebtRewards(_borrower);
+
         // Accrued trove interest for correct liquidation values. This assumes the index to be updated.
         uint256 troveInterestIndex = t.activeInterestIndex;
+
         if (troveInterestIndex > 0) {
             (uint256 currentIndex, ) = _calculateInterestIndex();
             debt = (debt * currentIndex) / troveInterestIndex;
         }
 
-        debt = debt + pendingDebtReward;
-        coll = coll + pendingCollateralReward;
+        debt += pendingDebtReward;
+        coll += pendingCollateralReward;
     }
 
     // includes defaulted collateral
@@ -732,10 +734,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             // therefore we could not redeem from the last Trove
             if (singleRedemption.cancelledPartial) break; 
 
-            totals.totalDebtToRedeem = totals.totalDebtToRedeem + singleRedemption.debtLot;
-            totals.totalCollateralDrawn = totals.totalCollateralDrawn + singleRedemption.collateralLot;
+            totals.totalDebtToRedeem += singleRedemption.debtLot;
+            totals.totalCollateralDrawn += singleRedemption.collateralLot;
 
-            totals.remainingDebt = totals.remainingDebt - singleRedemption.debtLot;
+            totals.remainingDebt -= singleRedemption.debtLot;
             currentBorrower = nextUserToCheck;
         }
 
@@ -760,7 +762,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         debtToken.burn(msg.sender, totals.totalDebtToRedeem);
 
         // Update Trove Manager debt, and send collateral to account
-        totalActiveDebt = totalActiveDebt - totals.totalDebtToRedeem;
+        totalActiveDebt -= totals.totalDebtToRedeem;
         _sendCollateral(msg.sender, totals.collateralToSendToRedeemer);
 
         _resetState();
@@ -789,7 +791,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         if (newDebt == DEBT_GAS_COMPENSATION) {
             // No debt left in the Trove (except for the liquidation reserve), therefore the trove gets closed
-            _removeStake(_borrower);
             _closeTrove(_borrower, Status.closedByRedemption);
             _redeemCloseTrove(_borrower, DEBT_GAS_COMPENSATION, newColl);
             emit TroveUpdated(_borrower, 0, 0, 0, TroveManagerOperation.redeemCollateral);
@@ -835,7 +836,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
      */
     function _redeemCloseTrove(address _borrower, uint256 _debt, uint256 _collateral) internal {
         debtToken.burn(gasPoolAddress, _debt);
-        totalActiveDebt = totalActiveDebt - _debt;
+        totalActiveDebt -= _debt;
 
         surplusBalances[_borrower] += _collateral;
         totalActiveCollateral -= _collateral;
@@ -1010,31 +1011,47 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         address _lowerHint,
         bool _isRecoveryMode
     ) external whenNotPaused returns (uint256 stake, uint256 arrayIndex) {
+        // only BorrowerOperations can open new Trove
         _requireCallerIsBO();
-        require(!sunsetting, "Cannot open while sunsetting");
-        uint256 supply = totalActiveDebt;
 
+        // not when sunsetting
+        require(!sunsetting, "Cannot open while sunsetting");
+
+        // borrower can only have 1 Trove active with each TroveManager
         Trove storage t = Troves[_borrower];
         require(t.status != Status.active, "BorrowerOps: Trove is active");
+
+        // cache total active debt
+        uint256 totalActiveDebtPre = totalActiveDebt;
+
+        // update storage - borrower Trove state
         t.status = Status.active;
         t.coll = _collateralAmount;
         t.debt = _compositeDebt;
-        uint256 currentInterestIndex = _accrueActiveInterests();
-        t.activeInterestIndex = currentInterestIndex;
+        t.activeInterestIndex = _accrueActiveInterests();
+
         _updateTroveRewardSnapshots(_borrower);
+
+        // this updates t.stake
         stake = _updateStakeAndTotalStakes(t);
+
         sortedTroves.insert(_borrower, NICR, _upperHint, _lowerHint);
 
+        // add borrower to list of active Trove owners
         TroveOwners.push(_borrower);
         arrayIndex = TroveOwners.length - 1;
         t.arrayIndex = uint128(arrayIndex);
 
-        _updateIntegrals(_borrower, 0, supply);
+        _updateIntegrals(_borrower, 0, totalActiveDebtPre);
         if (!_isRecoveryMode) _updateMintVolume(_borrower, _compositeDebt);
 
-        totalActiveCollateral = totalActiveCollateral + _collateralAmount;
-        uint256 _newTotalDebt = supply + _compositeDebt;
+        totalActiveCollateral += _collateralAmount;
+
+        // enforce collateral debt limit
+        uint256 _newTotalDebt = totalActiveDebtPre + _compositeDebt;
         require(_newTotalDebt + defaultedDebt <= maxSystemDebt, "Collateral debt limit reached");
+
+        // update storage new total active debt
         totalActiveDebt = _newTotalDebt;
     }
 
@@ -1051,6 +1068,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         address _receiver
     ) external returns (uint256 newColl, uint256 newDebt, uint256 newStake) {
         _requireCallerIsBO();
+
         if (_isCollIncrease || _isDebtIncrease) {
             require(!paused, "Collateral Paused");
             require(!sunsetting, "Cannot increase while sunsetting");
@@ -1059,29 +1077,40 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         Trove storage t = Troves[_borrower];
         require(t.status == Status.active, "Trove closed or does not exist");
 
+        // output borrower current debt from storage
         newDebt = t.debt;
+
+        // if debt is changing, increase or decrease as required
         if (_debtChange > 0) {
             if (_isDebtIncrease) {
-                newDebt = newDebt + _netDebtChange;
+                newDebt += _netDebtChange;
+
                 if (!_isRecoveryMode) _updateMintVolume(_borrower, _netDebtChange);
                 _increaseDebt(_receiver, _netDebtChange, _debtChange);
             } else {
-                newDebt = newDebt - _netDebtChange;
+                newDebt -= _netDebtChange;
                 _decreaseDebt(_receiver, _debtChange);
             }
+
+            // update borrower storage with new debt value
             t.debt = newDebt;
         }
 
+        // output borrower current collateral from storage
         newColl = t.coll;
+
+        // if collateral is changing, increase or decrease as required
         if (_collChange > 0) {
             if (_isCollIncrease) {
-                newColl = newColl + _collChange;
-                totalActiveCollateral = totalActiveCollateral + _collChange;
+                newColl += _collChange;
+                totalActiveCollateral += _collChange;
                 // trust that BorrowerOperations sent the collateral
             } else {
-                newColl = newColl - _collChange;
+                newColl -= _collChange;
                 _sendCollateral(_receiver, _collChange);
             }
+            
+            // update borrower storage with new collateral value
             t.coll = newColl;
         }
 
@@ -1092,11 +1121,14 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function closeTrove(address _borrower, address _receiver, uint256 collAmount, uint256 debtAmount) external {
+        // only BorrowerOperations can close an active Trove
         _requireCallerIsBO();
         require(Troves[_borrower].status == Status.active, "Trove closed or does not exist");
-        _removeStake(_borrower);
+
         _closeTrove(_borrower, Status.closedByOwner);
-        totalActiveDebt = totalActiveDebt - debtAmount;
+
+        totalActiveDebt -= debtAmount;
+
         _sendCollateral(_receiver, collAmount);
         _resetState();
     }
@@ -1128,14 +1160,20 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     function _closeTrove(address _borrower, Status closedStatus) internal {
         uint256 TroveOwnersArrayLength = TroveOwners.length;
 
+        // update storage - borrower Trove state
         Trove storage t = Troves[_borrower];
         t.status = closedStatus;
         t.coll = 0;
         t.debt = 0;
         t.activeInterestIndex = 0;
+        // _removeStake functionality
+        totalStakes -= t.stake;
+        t.stake = 0;
+
         ISortedTroves sortedTrovesCached = sortedTroves;
         rewardSnapshots[_borrower].collateral = 0;
         rewardSnapshots[_borrower].debt = 0;
+
         if (TroveOwnersArrayLength > 1 && sortedTrovesCached.getSize() > 1) {
             // remove trove owner from the TroveOwners array, not preserving array order
             uint128 index = t.arrayIndex;
@@ -1152,7 +1190,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function _updateMintVolume(address account, uint256 initialAmount) internal {
-        uint32 amount = uint32(initialAmount / VOLUME_MULTIPLIER);
+        uint32 amount = SafeCast.toUint32(initialAmount / VOLUME_MULTIPLIER);
         (uint256 week, uint256 day) = getWeekAndDay();
         totalMints[week][day] += amount;
 
@@ -1196,6 +1234,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     // Add the borrowers's coll and debt rewards earned from redistributions, to their Trove
     function _applyPendingRewards(address _borrower) internal returns (uint256 coll, uint256 debt) {
         Trove storage t = Troves[_borrower];
+
         if (t.status == Status.active) {
             uint256 troveInterestIndex = t.activeInterestIndex;
             uint256 supply = totalActiveDebt;
@@ -1203,6 +1242,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             debt = t.debt;
             uint256 prevDebt = debt;
             coll = t.coll;
+
             // We accrued interests for this trove if not already updated
             if (troveInterestIndex < currentInterestIndex) {
                 debt = (debt * currentInterestIndex) / troveInterestIndex;
@@ -1214,9 +1254,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
                 (uint256 pendingCollateralReward, uint256 pendingDebtReward) = getPendingCollAndDebtRewards(_borrower);
 
                 // Apply pending rewards to trove's state
-                coll = coll + pendingCollateralReward;
+                coll += pendingCollateralReward;
                 t.coll = coll;
-                debt = debt + pendingDebtReward;
+                debt += pendingDebtReward;
 
                 _updateTroveRewardSnapshots(_borrower);
 
@@ -1236,13 +1276,6 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 L_debtCached = L_debt;
         rewardSnapshots[_borrower] = RewardSnapshot(L_collateralCached, L_debtCached);
         emit TroveSnapshotsUpdated(L_collateralCached, L_debtCached);
-    }
-
-    // Remove borrower's stake from the totalStakes sum, and set their stake to 0
-    function _removeStake(address _borrower) internal {
-        uint256 stake = Troves[_borrower].stake;
-        totalStakes = totalStakes - stake;
-        Troves[_borrower].stake = 0;
     }
 
     // Update borrower's stake based on their latest collateral value
@@ -1278,21 +1311,20 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     function closeTroveByLiquidation(address _borrower) external {
         _requireCallerIsLM();
         uint256 debtBefore = Troves[_borrower].debt;
-        _removeStake(_borrower);
         _closeTrove(_borrower, Status.closedByLiquidation);
         _updateIntegralForAccount(_borrower, debtBefore, rewardIntegral);
     }
 
-    function movePendingTroveRewardsToActiveBalances(uint256 _debt, uint256 _collateral) external {
+    function movePendingTroveRewardsToActiveBalances(uint256 _debtRewards, uint256 _collateralRewards) external {
         _requireCallerIsLM();
-        _movePendingTroveRewardsToActiveBalance(_debt, _collateral);
+        _movePendingTroveRewardsToActiveBalance(_debtRewards, _collateralRewards);
     }
 
-    function _movePendingTroveRewardsToActiveBalance(uint256 _debt, uint256 _collateral) internal {
-        defaultedDebt -= _debt;
-        totalActiveDebt += _debt;
-        defaultedCollateral -= _collateral;
-        totalActiveCollateral += _collateral;
+    function _movePendingTroveRewardsToActiveBalance(uint256 _debtRewards, uint256 _collateralRewards) internal {
+        defaultedDebt -= _debtRewards;
+        totalActiveDebt += _debtRewards;
+        defaultedCollateral -= _collateralRewards;
+        totalActiveCollateral += _collateralRewards;
     }
 
     function addCollateralSurplus(address borrower, uint256 collSurplus) external {
@@ -1346,6 +1378,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 collateralNumerator = (_coll * BIMA_DECIMAL_PRECISION) + lastCollateralError_Redistribution;
         uint256 debtNumerator = (_debt * BIMA_DECIMAL_PRECISION) + lastDebtError_Redistribution;
         uint256 totalStakesCached = totalStakes;
+
+        // note: liquidation is prevented when there is only 1 Trove so
+        // totalStakesCached always > 0, see comment in LiquidationManager::liquidateTroves
+
         // Get the per-unit-staked terms
         uint256 collateralRewardPerUnitStaked = collateralNumerator / totalStakesCached;
         uint256 debtRewardPerUnitStaked = debtNumerator / totalStakesCached;
@@ -1371,7 +1407,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
     function _sendCollateral(address _account, uint256 _amount) private {
         if (_amount > 0) {
-            totalActiveCollateral = totalActiveCollateral - _amount;
+            totalActiveCollateral -= _amount;
             emit CollateralSent(_account, _amount);
 
             collateralToken.safeTransfer(_account, _amount);
@@ -1416,7 +1452,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             uint256 currentDebt = totalActiveDebt;
             uint256 activeInterests = Math.mulDiv(currentDebt, interestFactor, INTEREST_PRECISION);
             totalActiveDebt = currentDebt + activeInterests;
-            interestPayable = interestPayable + activeInterests;
+            interestPayable += activeInterests;
             activeInterestIndex = currentInterestIndex;
             lastActiveIndexUpdate = block.timestamp;
         }
@@ -1435,9 +1471,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
              */
             uint256 deltaT = block.timestamp - lastIndexUpdateCached;
             interestFactor = deltaT * currentInterest;
-            currentInterestIndex =
-                currentInterestIndex +
-                Math.mulDiv(currentInterestIndex, interestFactor, INTEREST_PRECISION);
+            currentInterestIndex += Math.mulDiv(currentInterestIndex, interestFactor, INTEREST_PRECISION);
         }
     }
 

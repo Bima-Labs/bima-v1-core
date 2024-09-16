@@ -119,6 +119,10 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         _enabledTroveManagers[_troveManager] = true;
     }
 
+    function isTroveManagerEnabled(ITroveManager troveManager) external view returns(bool isEnabled) {
+        isEnabled = _enabledTroveManagers[troveManager];
+    }
+
     // --- Trove Liquidation functions ---
 
     /**
@@ -128,7 +132,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
      */
     function liquidate(ITroveManager troveManager, address borrower) external {
         require(troveManager.getTroveStatus(borrower) == ITroveManager.Status.active,
-                "TroveManager: Trove does not exist or is closed");
+                "LiquidationManager: Trove does not exist or is closed");
 
         address[] memory borrowers = new address[](1);
         borrowers[0] = borrower;
@@ -161,6 +165,11 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         troveManagerValues.MCR = troveManager.MCR();
         uint256 debtInStabPool = stabilityPoolCached.getTotalDebtTokenDeposits();
 
+        // liquidation is always prevented when there is only 1 trove by design
+        // the protocol operators should have their own trove open with each TroveManager
+        // instance with minimal debt and highest CR which enables all other troves
+        // to be liquidated and ensures their trove will always be the last one during sunsetting
+        // see comment in TroveManager::_resetState
         while (trovesRemaining > 0 && troveCount > 1) {
             address account = sortedTrovesCached.getLast();
             uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
@@ -182,23 +191,28 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                 debtInStabPool -= singleLiquidation.debtToOffset;
                 _applyLiquidationValuesToTotals(totals, singleLiquidation);
             } else break; // break if the loop reaches a Trove with ICR >= MCR
+
             unchecked {
                 --trovesRemaining;
                 --troveCount;
             }
         }
+
         if (trovesRemaining > 0 && !troveManagerValues.sunsetting && troveCount > 1) {
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
             entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
             address nextAccount = sortedTrovesCached.getLast();
             ITroveManager _troveManager = troveManager; //stack too deep workaround
+
             while (trovesRemaining > 0 && troveCount > 1) {
                 uint256 ICR = troveManager.getCurrentICR(nextAccount, troveManagerValues.price);
                 if (ICR > maxICR) break;
+
                 unchecked {
                     --trovesRemaining;
                 }
+
                 address account = nextAccount;
                 nextAccount = sortedTrovesCached.getPrev(account);
 
@@ -212,20 +226,24 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                     troveManagerValues.MCR,
                     troveManagerValues.price
                 );
+
                 if (singleLiquidation.debtToOffset == 0) continue;
+
                 debtInStabPool -= singleLiquidation.debtToOffset;
                 entireSystemColl -=
                     (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
                     troveManagerValues.price;
                 entireSystemDebt -= singleLiquidation.debtToOffset;
+
                 _applyLiquidationValuesToTotals(totals, singleLiquidation);
+
                 unchecked {
                     --troveCount;
                 }
             }
         }
 
-        require(totals.totalDebtInSequence > 0, "TroveManager: nothing to liquidate");
+        require(totals.totalDebtInSequence > 0, "LiquidationManager: nothing to liquidate");
         if (totals.totalDebtToOffset > 0 || totals.totalCollToSendToSP > 0) {
             // Move liquidated collateral and Debt to the appropriate pools
             stabilityPoolCached.offset(
@@ -233,12 +251,14 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                 totals.totalDebtToOffset,
                 totals.totalCollToSendToSP
             );
+
             troveManager.decreaseDebtAndSendCollateral(
                 address(stabilityPoolCached),
                 totals.totalDebtToOffset,
                 totals.totalCollToSendToSP
             );
         }
+
         troveManager.finalizeLiquidation(
             msg.sender,
             totals.totalDebtToRedistribute,
@@ -267,7 +287,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
      */
     function batchLiquidateTroves(ITroveManager troveManager, address[] memory _troveArray) public {
         require(_enabledTroveManagers[troveManager], "TroveManager not approved");
-        require(_troveArray.length != 0, "TroveManager: Calldata address array must not be empty");
+        require(_troveArray.length != 0, "LiquidationManager: _troveArray array must not be empty");
         troveManager.updateBalances();
 
         LiquidationValues memory singleLiquidation;
@@ -282,6 +302,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         uint256 troveCount = troveManager.getTroveOwnersCount();
         uint256 length = _troveArray.length;
         uint256 troveIter;
+
         while (troveIter < length && troveCount > 1) {
             // first iteration round, when all liquidated troves have ICR < MCR we do not need to track TCR
             address account = _troveArray[troveIter];
@@ -290,7 +311,8 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
             if (ICR <= _100pct) {
                 singleLiquidation = _liquidateWithoutSP(troveManager, account);
-            } else if (ICR < troveManagerValues.MCR) {
+            }
+            else if (ICR < troveManagerValues.MCR) {
                 singleLiquidation = _liquidateNormalMode(
                     troveManager,
                     account,
@@ -298,10 +320,12 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                     troveManagerValues.sunsetting
                 );
                 debtInStabPool -= singleLiquidation.debtToOffset;
-            } else {
+            }
+            else {
                 // As soon as we find a trove with ICR >= MCR we need to start tracking the global TCR with the next loop
                 break;
             }
+
             _applyLiquidationValuesToTotals(totals, singleLiquidation);
             unchecked {
                 ++troveIter;
@@ -314,22 +338,26 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
             entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
+
             while (troveIter < length && troveCount > 1) {
                 address account = _troveArray[troveIter];
                 uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
                 unchecked {
                     ++troveIter;
                 }
+                
                 if (ICR <= _100pct) {
                     singleLiquidation = _liquidateWithoutSP(troveManager, account);
-                } else if (ICR < troveManagerValues.MCR) {
+                }
+                else if (ICR < troveManagerValues.MCR) {
                     singleLiquidation = _liquidateNormalMode(
                         troveManager,
                         account,
                         debtInStabPool,
                         troveManagerValues.sunsetting
                     );
-                } else {
+                }
+                else {
                     if (troveManagerValues.sunsetting) continue;
                     uint256 TCR = BabelMath._computeCR(entireSystemColl, entireSystemDebt);
                     if (TCR >= CCR || ICR >= TCR) continue;
@@ -348,6 +376,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                     (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
                     troveManagerValues.price;
                 entireSystemDebt -= singleLiquidation.debtToOffset;
+
                 _applyLiquidationValuesToTotals(totals, singleLiquidation);
                 unchecked {
                     --troveCount;
@@ -355,7 +384,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             }
         }
 
-        require(totals.totalDebtInSequence > 0, "TroveManager: nothing to liquidate");
+        require(totals.totalDebtInSequence > 0, "LiquidationManager: nothing to liquidate");
 
         if (totals.totalDebtToOffset > 0 || totals.totalCollToSendToSP > 0) {
             // Move liquidated collateral and Debt to the appropriate pools
@@ -400,7 +429,6 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
     ) internal returns (LiquidationValues memory singleLiquidation) {
         uint256 pendingDebtReward;
         uint256 pendingCollReward;
-
         (
             singleLiquidation.entireTroveDebt,
             singleLiquidation.entireTroveColl,
@@ -454,7 +482,6 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         uint256 entireTroveColl;
         uint256 pendingDebtReward;
         uint256 pendingCollReward;
-
         (entireTroveDebt, entireTroveColl, pendingDebtReward, pendingCollReward) = troveManager.getEntireDebtAndColl(
             _borrower
         );
@@ -503,7 +530,6 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
     ) internal returns (LiquidationValues memory singleLiquidation) {
         uint256 pendingDebtReward;
         uint256 pendingCollReward;
-
         (
             singleLiquidation.entireTroveDebt,
             singleLiquidation.entireTroveColl,

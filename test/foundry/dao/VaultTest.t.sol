@@ -4,6 +4,9 @@ pragma solidity 0.8.19;
 // test setup
 import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IRewards, MockEmissionReceiver, MockBoostDelegate, SafeCast} from "../TestSetup.sol";
 
+// dependencies
+import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -187,7 +190,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = INIT_BAB_TKN_TOTAL_SUPPLY*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = INIT_BAB_TKN_TOTAL_SUPPLY*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
 
@@ -528,7 +531,7 @@ contract VaultTest is TestSetup {
         // bound fuzz inputs
         rewardAmount = bound(rewardAmount, 0, allocatedBalancePre);
         mockEmissionReceiver.setReward(rewardAmount);
-        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, MAX_PCT));
+        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, BIMA_100_PCT));
 
         // setup boost delegate
         vm.prank(mockBoostDelegateAddr);
@@ -559,7 +562,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
 
         // calculate expected fee
-        expectedFeeAmount = rewardAmount * maxFeePct / MAX_PCT;
+        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
 
         // verify delegate has stored pending reward equal to fee
         assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
@@ -680,7 +683,7 @@ contract VaultTest is TestSetup {
         // bound fuzz inputs
         rewardAmount = bound(rewardAmount, 0, allocatedBalancePre);
         mockEmissionReceiver.setReward(rewardAmount);
-        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, MAX_PCT));
+        maxFeePct = SafeCast.toUint16(bound(maxFeePct, 0, BIMA_100_PCT));
 
         // setup boost delegate
         vm.prank(mockBoostDelegateAddr);
@@ -706,7 +709,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
 
         // calculate expected fee
-        expectedFeeAmount = rewardAmount * maxFeePct / MAX_PCT;
+        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
 
         // verify delegate has stored pending reward equal to fee
         assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
@@ -781,7 +784,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
 
@@ -852,7 +855,7 @@ contract VaultTest is TestSetup {
         //    the amount disabled receivers would have received if enabled; in
         //    this case only 1 receiver so entire emissions get credited back
         //    to unallocated supply
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated);
 
@@ -912,7 +915,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         uint256 remainingUnallocated = initialUnallocated - firstWeekEmissions;
         assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
@@ -993,7 +996,7 @@ contract VaultTest is TestSetup {
         assertEq(babelVault.totalUpdateWeek(), systemWeek);
 
         // verify unallocated supply reduced by weekly emission percent
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/MAX_PCT;
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
         assertTrue(firstWeekEmissions > 0);
         uint256 remainingUnallocated = initialUnallocated - firstWeekEmissions;
         assertEq(babelVault.unallocatedTotal(), remainingUnallocated);
@@ -1035,5 +1038,138 @@ contract VaultTest is TestSetup {
         assertEq(allocated2, 536817224874962500063667539);
         assertEq(babelVault.allocated(receiver2), 536817224874962500063667539);
     }
+    
+    function test_unfreeze_fixForFailToRemoveActiveVotes() external {
+        // setup vault giving user1 half supply to lock for voting power
+        _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
+        // verify user1 has 1 unfrozen lock
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        assertEq(activeLockData.length, 1); // 1 active lock
+        assertEq(frozenAmount, 0); // 0 frozen amount
+        assertEq(activeLockData[0].amount, 2147483647);
+        assertEq(activeLockData[0].weeksToUnlock, 52);
+
+        // register receiver
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(address(mockEmissionReceiver), 1);
+
+        // user1 votes for receiver using their unfrozen locked weight
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // verify user1 has 1 active vote using their unfrozen locked weight
+        votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes.length, 1);
+        assertEq(votes[0].id, RECEIVER_ID);
+        assertEq(votes[0].points, 10_000);
+
+        // user1 freezes their lock
+        vm.prank(users.user1);
+        tokenLocker.freeze();
+
+        // verify user1 has 1 frozen lock
+        (activeLockData, frozenAmount) = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        assertEq(activeLockData.length, 0); // 0 active lock
+        assertGt(frozenAmount, 0); // positive frozen amount
+
+        // user1 unfreezes without keeping their past votes
+        vm.prank(users.user1);
+        tokenLocker.unfreeze(false); // keepIncentivesVote = false
+
+        // user1 had their active vote cleared
+        votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes.length, 0);
+    }
+
+
+    function test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver() public
+        returns(uint256 disabledReceiverId) {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // receiver to be disabled later
+        address receiver1 = address(mockEmissionReceiver);
+        uint256 RECEIVER_ID1 = _vaultRegisterReceiver(receiver1, 1);
+        disabledReceiverId = RECEIVER_ID1;
+
+        // ongoing receiver
+        MockEmissionReceiver mockEmissionReceiver2 = new MockEmissionReceiver();
+        address receiver2 = address(mockEmissionReceiver2);
+        uint256 RECEIVER_ID2 = _vaultRegisterReceiver(receiver2, 1);
+
+        // user votes for receiver1 to get emissions with 50% of their points
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID1;
+        votes[0].points = incentiveVoting.MAX_POINTS() / 2;
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // user votes for receiver2 to get emissions with 50% of their points
+        votes[0].id = RECEIVER_ID2;
+        vm.prank(users.user1);
+        incentiveVoting.vote(users.user1, votes, false);
+
+        // verify only receiver can call allocateNewEmissions when active
+        vm.expectRevert("Not receiver account");
+        babelVault.allocateNewEmissions(RECEIVER_ID1);
+
+        // disable emission receiver 1 prior to calling allocateNewEmissions
+        vm.prank(users.owner);
+        babelVault.setReceiverIsActive(RECEIVER_ID1, false);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // cache current system week
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // initial unallocated supply has not changed
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        // receiver2 calls allocateNewEmissions
+        vm.prank(receiver2);
+        uint256 allocatedToEachReceiver = babelVault.allocateNewEmissions(RECEIVER_ID2);
+
+        // verify BabelVault::totalUpdateWeek is current system week
+        assertEq(babelVault.totalUpdateWeek(), systemWeek);
+
+        // verify receiver1 and receiver2 have the same allocated amounts
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertTrue(firstWeekEmissions > 0);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions);
+        assertEq(firstWeekEmissions, allocatedToEachReceiver * 2);
+
+        // if receiver1 doesn't call allocateNewEmissions the tokens they would
+        // have received would never be allocated. Only if receiver1 calls allocateNewEmissions
+        // do the tokens move into BabelVault::unallocatedTotal
+        //
+        // the fix allows anyone to call `allocateNewEmissions` for disabled receivers
+        // to trigger the tokens the disabled receiver would have received to be
+        // credit to BabelVault::unallocatedTotal
+        babelVault.allocateNewEmissions(RECEIVER_ID1);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated - firstWeekEmissions + allocatedToEachReceiver);
+    }
+
+
+    function test_allocateNewEmissions_failVoteForDisabledReceiver() public {
+        // perform the previous test to set everything up
+        uint256 disabledReceiverId = test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver();
+
+        // users can remove their votes for disabled receivers
+        vm.prank(users.user1);
+        incentiveVoting.clearVote(users.user1);
+
+        // attempting to vote for disabled receiver1 fails
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = disabledReceiverId;
+        votes[0].points = incentiveVoting.MAX_POINTS() / 2;
+        vm.expectRevert("Can't vote for disabled receivers - clearVote first");
+        vm.prank(users.user1);
+        incentiveVoting.vote(users.user1, votes, false);
+    }
 }

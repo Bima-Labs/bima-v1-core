@@ -85,6 +85,8 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
 
     function idToReceiver(uint256) external view returns (address account, bool isActive, uint16 updatedWeek);
 
+    function isReceiverActive(uint256 id) external view returns(bool isActive);
+
     function lockWeeks() external view returns (uint64);
 
     function locker() external view returns (ITokenLocker);

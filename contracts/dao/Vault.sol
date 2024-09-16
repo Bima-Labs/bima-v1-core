@@ -212,6 +212,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         success = true;
     }
 
+    function isReceiverActive(uint256 id) external view returns(bool isActive) {
+        isActive = idToReceiver[id].isActive;
+    }
+
     /**
         @notice Set the `emissionSchedule` contract
         @dev Callable only by the owner (the DAO admin voter, to change the emission schedule).
@@ -324,8 +328,13 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // cache receiver data from storage
         Receiver memory receiver = idToReceiver[id];
 
-        // only account linked to receiver can call this function
-        require(receiver.account == msg.sender, "Not receiver account");
+        // if receiver is active, then only account linked to receiver
+        // can call this function
+        if(receiver.isActive) {
+            require(receiver.account == msg.sender, "Not receiver account");
+        }
+        // otherwise anyone can call this function - required so that tokens
+        // are not permanently lost for disabled receivers
 
         // get current system week
         uint256 currentWeek = getWeek();

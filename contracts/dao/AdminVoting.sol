@@ -5,6 +5,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
+import {BabelMath} from "../dependencies/BabelMath.sol";
 import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
 import {IBabelCore} from "../interfaces/IBabelCore.sol";
 
@@ -227,8 +228,10 @@ contract AdminVoting is DelegatedOps, SystemStart {
             // prevent changing guardians during bootstrap period
             require(block.timestamp > startTime + BOOTSTRAP_PERIOD, "Cannot change guardian during bootstrap");
 
-            // enforce 50.1% majority for setGuardian proposals
-            proposalPassPct = SET_GUARDIAN_PASSING_PCT;
+            // enforce 50.1% majority for setGuardian proposals; if the default
+            // passing percent is greater than the hard-coded setGuardian percent
+            // then use that instead
+            proposalPassPct = BabelMath._max(SET_GUARDIAN_PASSING_PCT, passingPct);
         }
         // otherwise for ordinary proposals enforce standard configured passing %
         else proposalPassPct = passingPct;
