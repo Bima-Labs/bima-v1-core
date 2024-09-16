@@ -330,8 +330,10 @@ contract TestSetup is Test {
 
     // common helper functions used in tests
     function _sendStakedBtc(address user, uint256 amount) internal {
-        vm.prank(users.owner);
-        stakedBTC.transfer(user, amount);
+        if(user != users.owner) {
+            vm.prank(users.owner);
+            stakedBTC.transfer(user, amount);
+        }
     }
 
     function _getScaledOraclePrice() internal view returns(uint256 scaledPrice) {
