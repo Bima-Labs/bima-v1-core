@@ -194,22 +194,27 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x6f31ca6Cd905637A0Ae8c5fCaBD7a0A3c089ab27 |
-| PriceFeed          | 0xB27b35Ace3ca15c6297Ff530dBab7EFAeD18c058 |
-| FeeReceiver        | 0x6019D13686EB93931A586EE74B20E8fb2c5E20b5 |
-| InterimAdmin       | 0x9F7f2324344920C17C0aCeaBCbCF0571AE185Cdc |
-| Gas Pool           | 0x5d2C9acB66a12149346e8158F5266be3465fd48c |
-| Factory            | 0x1A57B7A90E6612284670FCBd436c2BD82cFaFf2B |
-| LiquidationManager | 0x4f4A06b6339dc37dfA7cb575225A74BCA6Cc3abb |
-| DebtToken          | 0x44eB9636a7b5b0F325f96c28aD1576C16E6917ae |
-| BorrowerOperations | 0xe0A552268483CB60B6C1b0715Edfc0d72887339e |
-| StabilityPool      | 0x53b1aC87AAb8CABc6e1e92Fdd40212f3059FDB74 |
-| TroveManager       | 0xeDF1539D47A1485fBc4B8cDed34ECd81006457d0 |
-| SortedTroves       | 0xD4Da1c7FbB0C0486371270821FeD990240bD01c7 |
-| TokenLocker        | 0x43e7061AE2771581023FBFfe49C53F10834eD5F0 |
-| IncentiveVoting    | 0x1A86649fA7dDbf5De21b4dFE35a4Fd5da87A89E4 |
-| BabelToken         | 0xf0Da0a25fF7284915f50418Dd0a0d235B82E535c |
-| BabelVault         | 0xb66cE6ca63a4CC098142759BA16037a2be2431fa |
+| BabelCore          | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
+| PriceFeed          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| FeeReceiver        | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
+| InterimAdmin       | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
+| Gas Pool           | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 |
+| Factory            | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
+| LiquidationManager | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
+| DebtToken          | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
+| BorrowerOperations | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
+| StabilityPool      | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
+| TroveManager       | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
+| SortedTroves       | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
+| TokenLocker        | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
+| IncentiveVoting    | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
+| BabelToken         | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
+| BabelVault         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
+| BimaFaucet         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
+
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
+| --------------- | ------------------ | -------------------- | -------------- |
+|  Bima Mock BTC | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D | 0x710aB13F1Bf405bCBDc9Ad8851bcab749faA3337 | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 |
 
 ## Lorenzo Testnet
 
