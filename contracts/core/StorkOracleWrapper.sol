@@ -21,6 +21,8 @@ interface IStorkOracle {
 /// @title Oracle Wrapper for Stork Oracle
 /// @notice More Info on Stork: https://docs.stork.network/
 contract StorkOracleWrapper is IAggregatorV3Interface {
+  uint8 public constant DECIMAL_PRECISION = 18;
+
   IStorkOracle public immutable storkOracle;
   bytes32 public immutable encodedAssetId;
 
@@ -35,7 +37,8 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
   }
 
   function decimals() external pure returns (uint8 dec) {
-    dec = 8;
+    // stork oracle always reports prices in 18 decimal precision
+    dec = DECIMAL_PRECISION;
   }
 
   function description() external pure returns (string memory desc) {
@@ -55,7 +58,7 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
   {
     (uint64 timestampNs, int192 quantizedValue) = storkOracle.getTemporalNumericValueV1(encodedAssetId);
 
-    answer = int256(quantizedValue / 1e10);
+    answer = int256(quantizedValue);
     updatedAt = timestampNs / 1e9 - 1 minutes;
     startedAt = updatedAt;
     roundId = _roundId;
@@ -69,7 +72,7 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
   {
     (uint64 timestampNs, int192 quantizedValue) = storkOracle.getTemporalNumericValueV1(encodedAssetId);
 
-    answer = int256(quantizedValue / 1e10);
+    answer = int256(quantizedValue);
     updatedAt = timestampNs / 1e9;
     startedAt = updatedAt;
     roundId = uint80(updatedAt / 1 minutes); // increment round every 1 minute

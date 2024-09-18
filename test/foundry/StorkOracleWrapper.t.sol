@@ -11,15 +11,16 @@ import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperation
 import {ITroveManager} from "../../contracts/interfaces/ITroveManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract TestSetup is Test {
+contract StorkOracleWrapperTest is Test {
   StorkOracleWrapper public storkOracleWrapper;
   IStorkOracle public storkOracle;
   bytes32 public encodedAssetId;
 
+  // define HOLESKY_RPC_URL in .env
   string HOLESKY_RPC_URL = vm.envString("HOLESKY_RPC_URL");
 
   function setUp() public {
-    vm.createSelectFork(HOLESKY_RPC_URL);
+    vm.createSelectFork(HOLESKY_RPC_URL, 	2184438);
 
     storkOracle = IStorkOracle(0xacC0a0cF13571d30B4b8637996F5D6D774d4fd62);
     encodedAssetId = bytes32(0x7404e3d104ea7841c3d9e6fd20adfe99b4ad586bc08d8f3bd3afef894cf184de);
@@ -30,7 +31,7 @@ contract TestSetup is Test {
   function testInitialState() public view {
     assertEq(address(storkOracleWrapper.storkOracle()), address(storkOracle));
     assertEq(storkOracleWrapper.encodedAssetId(), encodedAssetId);
-    assertEq(storkOracleWrapper.decimals(), 8);
+    assertEq(storkOracleWrapper.decimals(), storkOracleWrapper.DECIMAL_PRECISION());
     assertEq(storkOracleWrapper.description(), "AggregatorV3Interface Wrapper for Stork Oracle");
     assertEq(storkOracleWrapper.version(), 1);
   }
@@ -41,7 +42,7 @@ contract TestSetup is Test {
     (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, ) = storkOracleWrapper.latestRoundData();
 
     assertEq(roundId, timestampNs / 1e9 / 1 minutes);
-    assertEq(answer, quantizedValue / 1e10);
+    assertEq(answer, quantizedValue);
     assertEq(startedAt, timestampNs / 1e9);
     assertEq(updatedAt, timestampNs / 1e9);
   }
@@ -52,7 +53,7 @@ contract TestSetup is Test {
     (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, ) = storkOracleWrapper.getRoundData(_roundId);
 
     assertEq(roundId, _roundId);
-    assertEq(answer, quantizedValue / 1e10);
+    assertEq(answer, quantizedValue);
     assertEq(startedAt, timestampNs / 1e9 - 1 minutes);
     assertEq(updatedAt, timestampNs / 1e9 - 1 minutes);
   }
