@@ -99,6 +99,10 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         // verify trove owners count increased
         assertEq(stakedBTCTroveMgr.getTroveOwnersCount(), statePre.troveOwnersCount + 1);
 
+        // verify correct trove status
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(user)),
+                 uint8(ITroveManager.Status.active));
+
         // verify borrower received debt tokens
         assertEq(debtToken.balanceOf(user), statePre.userDebtTokenBal + debtAmount);
 
@@ -190,6 +194,10 @@ contract BorrowerOperationsTest is StabilityPoolTest {
                             addedCollateral,
                             address(0), address(0)); // hints
 
+        // verify trove status unchanged
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.active));
+
         // verify borrower debt tokens unchanged
         assertEq(debtToken.balanceOf(users.user1), statePre.userDebtTokenBal);
 
@@ -227,6 +235,10 @@ contract BorrowerOperationsTest is StabilityPoolTest {
                                  users.user1,
                                  withdrawnCollateral,
                                  address(0), address(0)); // hints
+
+        // verify trove status unchanged
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.active));
 
         // verify borrower debt tokens unchanged
         assertEq(debtToken.balanceOf(users.user1), statePre.userDebtTokenBal);
@@ -277,6 +289,10 @@ contract BorrowerOperationsTest is StabilityPoolTest {
                                  withdrawnDebt,
                                  address(0), address(0)); // hints
 
+        // verify trove status unchanged
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.active));
+
         // verify borrower received withdrawn debt tokens
         assertEq(debtToken.balanceOf(users.user1), statePre.userDebtTokenBal + withdrawnDebt);
 
@@ -311,6 +327,10 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         // then close it
         vm.prank(users.user1);
         borrowerOps.closeTrove(stakedBTCTroveMgr, users.user1);
+
+        // verify correct trove status
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.closedByOwner));
 
         // verify trove owners count decreased
         assertEq(stakedBTCTroveMgr.getTroveOwnersCount(), statePre.troveOwnersCount - 1);
@@ -360,6 +380,10 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         // repay some debt
         vm.prank(users.user1);
         borrowerOps.repayDebt(stakedBTCTroveMgr, users.user1, repayAmount, address(0), address(0));
+
+        // verify trove status unchanged
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.active));
 
         // verify borrower has reduced debt tokens
         assertEq(debtToken.balanceOf(users.user1), actualDebtAmount - repayAmount);
