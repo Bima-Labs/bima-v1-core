@@ -10,6 +10,7 @@ import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ITroveManager} from "../../contracts/interfaces/ITroveManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {BimaFaucet} from "../../contracts/BimaFaucet.sol";
 
 // Quick test file to see if deployed TroveManager is working as expected.
 // Run: forge test --match-path test/foundry/TroveManagerSanity.t.sol -vv
@@ -25,6 +26,7 @@ contract TroveManagerSanityTest is Test {
   address public ORACLE_ADDRESS;
   address public BORROW_OPERATIONS_ADDRESS;
   address public PRICE_FEED_ADDRESS;
+  address public BIMA_FAUCET;
 
   function setUp() public {
     vm.createSelectFork(RPC_URL);
@@ -62,5 +64,12 @@ contract TroveManagerSanityTest is Test {
 
     console.log("My Collateral Balance: ", IERC20(COLLATERAL_ADDRESS).balanceOf(address(this)));
     console.log("My Debt Token Balance: ", ITroveManager(TROVE_MANAGER_ADDRESS).debtToken().balanceOf(address(this)));
+  }
+
+  function testFaucet() public {
+    console.log("My Collateral Balance: ", IERC20(COLLATERAL_ADDRESS).balanceOf(address(this)));
+    console.log("Getting Faucet..");
+    BimaFaucet(BIMA_FAUCET).getTokens(COLLATERAL_ADDRESS);
+    console.log("My Collateral Balance: ", IERC20(COLLATERAL_ADDRESS).balanceOf(address(this)));
   }
 }

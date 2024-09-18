@@ -34,6 +34,7 @@ const config: HardhatUserConfig = {
       aurora_testnet: "",
       ethereum_sepolia_testnet: "",
       manta_pacific_sepolia_testnet:"",
+      plume_devnet:"",
     },
     customChains: [
       {
@@ -43,6 +44,15 @@ const config: HardhatUserConfig = {
         urls: {
           browserURL: "https://scan-testnet.lorenzo-protocol.xyz/",
           apiURL: "https://scan-testnet.lorenzo-protocol.xyz/api/",
+        },
+      },
+      {
+        network: "plume_devnet",
+        chainId: 18230,
+
+        urls: {
+          browserURL: " https://devnet-explorer.plumenetwork.xyz/",
+          apiURL: " https://devnet-explorer.plumenetwork.xyz/api",
         },
       },
       {
@@ -200,7 +210,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "bob_testnet",
-        chainId: 111,
+        chainId: 808813,
 
         urls: {
           browserURL: "https://bob-sepolia.explorer.gobob.xyz/",
@@ -350,6 +360,10 @@ const config: HardhatUserConfig = {
       url: "https://rpc-testnet.lorenzo-protocol.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
+    plume_devnet: {
+      url: "https://devnet-rpc.plumenetwork.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
     manta_pacific_sepolia_testnet: {
       url: "https://pacific-rpc.sepolia-testnet.manta.network/http",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
@@ -419,7 +433,7 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     bob_testnet: {
-      url: "https://testnet.rpc.gobob.xyz",
+      url: "https://bob-sepolia.rpc.gobob.xyz",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     holesky_testnet: {
