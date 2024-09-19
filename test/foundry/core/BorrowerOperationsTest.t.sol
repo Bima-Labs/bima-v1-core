@@ -450,6 +450,63 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(index, 0);
     }
 
+    function test_redeemCollateral_whileSunsetting(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external {
+        // owner closes their trove to simplify things
+        vm.prank(users.owner);
+        borrowerOps.closeTrove(stakedBTCTroveMgr, users.owner);
+
+        // fast forward time to after bootstrap period
+        vm.warp(stakedBTCTroveMgr.systemDeploymentTime() + stakedBTCTroveMgr.BOOTSTRAP_PERIOD());
+
+        // user1 opens a new trove
+        (uint256 actualCollateralAmount, uint256 actualDebtAmount )
+            = test_openTrove(collateralAmount, debtAmount, btcPrice);
+
+        // sunset the trove manager
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.startSunset();
+        assertTrue(stakedBTCTroveMgr.sunsetting());
+
+        // save pre state
+        BorrowerOpsState memory statePre = _getBorrowerOpsState(users.user1);
+
+        // redeem the trove; note : suboptimal to redeem your own trove, much
+        // better to use closeTrove - just doing it to simplify the fuzz test
+        vm.prank(users.user1);
+        stakedBTCTroveMgr.redeemCollateral(actualDebtAmount,
+                                           address(0), address(0), address(0), 0, 0, 0);
+
+        // user1 claims the remaining collateral put into surplusBalances
+        vm.prank(users.user1);
+        stakedBTCTroveMgr.claimCollateral(users.user1);
+
+        // save post state
+        BorrowerOpsState memory statePost = _getBorrowerOpsState(users.user1);
+
+        // verify correct trove status
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.closedByRedemption));
+
+        // verify trove owners count decreased
+        assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
+
+        // verify borrower has zero debt tokens
+        assertEq(statePost.userDebtTokenBal, 0);
+
+        // verify borrower received back all collateral tokens
+        // since no redemption fee when TroveManager is sunsetting
+        assertEq(statePost.userSBTCBal, actualCollateralAmount);
+
+        // verify gas pool compensation tokens reduced
+        assertEq(statePost.gasPoolDebtTokenBal,
+                 statePre.gasPoolDebtTokenBal - INIT_GAS_COMPENSATION);
+
+        // verify no remaining collateral or debt
+        assertEq(statePost.sysBalances.collaterals[0], 0);
+        assertEq(statePost.sysBalances.debts[0], 0);
+        assertEq(statePost.sysBalances.prices[0], statePre.sysBalances.prices[0]);
+    }
+
     function test_redeemCollateral_fixForNoCollateralForRemainingAmount() external {
         // fast forward time to after bootstrap period
         vm.warp(stakedBTCTroveMgr.systemDeploymentTime() + stakedBTCTroveMgr.BOOTSTRAP_PERIOD());
