@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 // mocks
-import {MockOracle} from "../../contracts/MockOracle.sol";
-import {StakedBTC} from "../../contracts/StakedBTC.sol";
+import {MockOracle} from "../../contracts/mock/MockOracle.sol";
+import {StakedBTC} from "../../contracts/mock/StakedBTC.sol";
 
 // interfaces
 import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";

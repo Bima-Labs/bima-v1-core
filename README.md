@@ -11,3 +11,9 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat ignition deploy ./ignition/modules/Lock.ts
 ```
+
+Run unit tests and coverage report with:
+```shell
+forge test --no-match-contract TroveManagerSanityTest
+forge coverage --no-match-contract TroveManagerSanityTest --no-match-coverage contracts/mock/
+```

@@ -66,7 +66,7 @@ contract StorkOracleWrapperTest is Test {
     address borrowOperationsAddress = 0x98cb20D30da0389028EB71eF299B688979F5cB8b;
     address priceFeedAddress = 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB;
 
-    (uint80 roundId1, int256 answer, , uint256 updatedAt, ) = IAggregatorV3Interface(oracleAddress).latestRoundData();
+    (/*uint80 roundId1*/, int256 answer, , /*uint256 updatedAt*/, ) = IAggregatorV3Interface(oracleAddress).latestRoundData();
     // console.log("ROUND ID AND ANSWER AND UPDATED AT FROM ORACLE: ");
     // console.log(roundId1);
     console.log(answer);
