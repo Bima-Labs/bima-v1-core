@@ -49,6 +49,7 @@ struct Users {
     address guardian;
     address user1;
     address user2;
+    address user3;
     address gasPool;
 }
 
@@ -131,6 +132,7 @@ contract TestSetup is Test {
         users.user1 = address(0x3333);
         users.user2 = address(0x4444);
         users.gasPool = address(0x5555);
+        users.user3 = address(0x6666);
 
         // contract constructors are inter-dependent so need to precalculate
         // some addresses to correctly initialize immutable storage variables
