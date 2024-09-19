@@ -8,7 +8,7 @@ contract DebtTokenTest is TestSetup {
 
     function test_flashLoanFee() external {
         // entire supply initially available to borrow
-        assertEq(debtToken.maxFlashLoan(address(debtToken)), type(uint256).max);
+        assertEq(debtToken.maxFlashLoan(), type(uint256).max);
 
         // expected fee for borrowing 1e18
         uint256 borrowAmount = 1e18;
@@ -18,7 +18,7 @@ contract DebtTokenTest is TestSetup {
         assertTrue(expectedFee > 0);
 
         // fee should be exactly equal
-        assertEq(debtToken.flashFee(address(debtToken), borrowAmount), expectedFee);
+        assertEq(debtToken.flashFee(borrowAmount), expectedFee);
 
         // attempt to exploit rounding down to zero precision loss
         // to get free flash loans by borrowing in small amounts - since
@@ -26,7 +26,7 @@ contract DebtTokenTest is TestSetup {
         // multiple times to borrow larger amounts at zero fee
         borrowAmount = 1111;
         vm.expectRevert("ERC20FlashMint: amount too small");
-        debtToken.flashFee(address(debtToken), borrowAmount);
+        debtToken.flashFee(borrowAmount);
 
     }
 }

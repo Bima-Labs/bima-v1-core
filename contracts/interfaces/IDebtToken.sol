@@ -25,7 +25,7 @@ interface IDebtToken {
 
     function enableTroveManager(address _troveManager) external;
 
-    function flashLoan(address receiver, address token, uint256 amount, bytes calldata data) external returns (bool);
+    function flashLoan(address receiver, uint256 amount, bytes calldata data) external returns (bool);
 
     function forceResumeReceive(uint16 _srcChainId, bytes calldata _srcAddress) external;
 
@@ -135,7 +135,7 @@ interface IDebtToken {
 
     function failedMessages(uint16, bytes calldata, uint64) external view returns (bytes32);
 
-    function flashFee(address token, uint256 amount) external view returns (uint256);
+    function flashFee(uint256 amount) external pure returns (uint256);
 
     function gasPool() external view returns (address);
 
@@ -152,7 +152,7 @@ interface IDebtToken {
 
     function lzEndpoint() external view returns (address);
 
-    function maxFlashLoan(address token) external view returns (uint256);
+    function maxFlashLoan() external view returns (uint256);
 
     function minDstGasLookup(uint16, uint16) external view returns (uint256);
 
