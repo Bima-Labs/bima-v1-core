@@ -10,7 +10,7 @@ import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ITroveManager} from "../../contracts/interfaces/ITroveManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {BimaFaucet} from "../../contracts/BimaFaucet.sol";
+import {BimaFaucet} from "../../contracts/mock/BimaFaucet.sol";
 
 // Quick test file to see if deployed TroveManager is working as expected.
 // Run: forge test --match-path test/foundry/TroveManagerSanity.t.sol -vv
