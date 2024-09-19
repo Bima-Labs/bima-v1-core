@@ -407,4 +407,41 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0] - repayAmount);
         assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
     }
+
+    function test_removeTroveManager() external {
+        vm.expectRevert("Trove Manager cannot be removed");
+        borrowerOps.removeTroveManager(stakedBTCTroveMgr);
+
+        // sunset the trove manager
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.startSunset();
+        assertTrue(stakedBTCTroveMgr.sunsetting());
+
+        // still can't remove as one open trove remains
+        vm.expectRevert("Trove Manager cannot be removed");
+        borrowerOps.removeTroveManager(stakedBTCTroveMgr);
+
+        // verify new trove can't be opened while sunsetting
+        vm.expectRevert("Cannot open while sunsetting");
+        vm.prank(users.user1);
+        borrowerOps.openTrove(stakedBTCTroveMgr,
+                              users.user1,
+                              0, // maxFeePercentage
+                              1e18,
+                              INIT_MIN_NET_DEBT,
+                              address(0), address(0)); // hints
+
+        // close the owner's trove
+        vm.prank(users.owner);
+        borrowerOps.closeTrove(stakedBTCTroveMgr, users.owner);
+        assertEq(stakedBTCTroveMgr.getTroveOwnersCount(), 0);
+
+        // now can finally remove the trove manager
+        borrowerOps.removeTroveManager(stakedBTCTroveMgr);
+        assertEq(borrowerOps.getTroveManagersCount(), 0);
+
+        (IERC20 collateralToken, uint16 index) = borrowerOps.troveManagersData(stakedBTCTroveMgr);
+        assertEq(address(collateralToken), address(0));
+        assertEq(index, 0);
+    }
 }
