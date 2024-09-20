@@ -802,8 +802,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
              *
              * If the resultant net debt of the partial is less than the minimum, net debt we bail
              *
-             * If the debt amount was small causeing a rounding down to zero precision loss
-             * in the received collateral calculaion, we bail
+             * If the debt amount was small causing a rounding down to zero precision loss
+             * in the received collateral calculation, we bail
              */
 
             {
