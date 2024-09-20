@@ -134,6 +134,7 @@
 | IncentiveVoting    | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
 | BabelToken         | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
 | BabelVault         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
+| BimaFaucet         | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
@@ -185,6 +186,7 @@
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaFaucet         | 0x46A822FA030cEd1a0D6D49cfC88AEd3bD1a17578 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
@@ -261,6 +263,7 @@
 | IncentiveVoting    | 0xb50b156c2f9418DE5c38Ca9070Ef2c3FA5e1AFA2 |
 | BabelToken         | 0xA385C1494F7540CF3e6e35C0FBcCab2Fa6696C9C |
 | BabelVault         | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
+| BimaFaucet         | 0x0E9B3208BBc81C18ED32a72e6Aa9505bfeB85eD9 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
@@ -646,6 +649,7 @@
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaFaucet         | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
@@ -848,6 +852,7 @@
 | IncentiveVoting    | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
 | BabelToken         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | BabelVault         | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
+| BimaFaucet         | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
@@ -874,6 +879,7 @@
 | IncentiveVoting    | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
 | BabelToken         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
 | BabelVault         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
+| BimaFaucet         | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
