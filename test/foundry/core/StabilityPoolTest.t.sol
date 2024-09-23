@@ -265,7 +265,7 @@ contract StabilityPoolTest is TestSetup {
 
         // calculate expected first week emissions
         uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
-        assertTrue(firstWeekEmissions > 0);
+        assertEq(firstWeekEmissions, 536870911875000000000000000);
         assertEq(babelVault.unallocatedTotal(), initialUnallocated);
 
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
@@ -316,6 +316,39 @@ contract StabilityPoolTest is TestSetup {
         assertEq(userReward, 0);
         vm.prank(users.user2);
         userReward = stabilityPool.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // user2 withdraws from the stability pool
+        _withdrawFromToSP(users.user2, spDepositAmount);
+
+        uint256 secondWeekEmissions = (initialUnallocated - firstWeekEmissions)*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertEq(secondWeekEmissions, 402653183906250000000000000);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // user2 can't claim anything as they withdrew
+        assertEq(stabilityPool.claimableReward(users.user2), 0);
+        vm.prank(users.user2);
+        userReward = stabilityPool.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // user1 gets almost all the weekly emissions apart
+        // from a small amount that is lost
+        actualUserReward = 402653183906249999999540000;
+        assertEq(stabilityPool.claimableReward(users.user1), actualUserReward);
+
+        vm.prank(users.user1);
+        userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, actualUserReward);
+
+        // weekly emissions 402653183906250000000000000
+        // user1 received   402653183906249999999540000
+
+        // user1 can't claim more rewards
+        assertEq(stabilityPool.claimableReward(users.user1), 0);
+        vm.prank(users.user1);
+        userReward = stabilityPool.claimReward(users.user1);
         assertEq(userReward, 0);
     }
 }
