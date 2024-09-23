@@ -271,8 +271,14 @@ contract StabilityPoolTest is TestSetup {
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
 
         // no rewards in the same week as emissions
+        assertEq(stabilityPool.claimableReward(users.user1), 0);
+        assertEq(stabilityPool.claimableReward(users.user2), 0);
+
         vm.prank(users.user1);
         uint256 userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, 0);
+        vm.prank(users.user2);
+        userReward = stabilityPool.claimReward(users.user2);
         assertEq(userReward, 0);
 
         // verify emissions correctly set in BabelVault for first week
@@ -282,17 +288,22 @@ contract StabilityPoolTest is TestSetup {
         vm.warp(block.timestamp + 1 weeks);
 
         // rewards for the first week can be claimed now
+        // users receive slightly less due to precision loss
+        assertEq(firstWeekEmissions/2, 268435455937500000000000000);
+        uint256 actualUserReward =     268435455937499999999890000;
+
+        assertEq(stabilityPool.claimableReward(users.user1), actualUserReward);
+        assertEq(stabilityPool.claimableReward(users.user2), actualUserReward);
+
+        // verify user1 rewards
         vm.prank(users.user1);
         userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, actualUserReward);
 
-        // verify user1 receives half of the emissions
-        assertEq(firstWeekEmissions/2, 268435455937500000000000000);
-        assertEq(userReward,           268435455937499999999890000);
-
-        // user 2 claims their reward
+        // verify user2 rewards
         vm.prank(users.user2);
         userReward = stabilityPool.claimReward(users.user2);
-        assertEq(userReward,           268435455937499999999890000);
+        assertEq(userReward, actualUserReward);
 
         // firstWeekEmissions = 536870911875000000000000000
         // userReward * 2     = 536870911874999999999780000
