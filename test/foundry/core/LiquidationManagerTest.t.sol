@@ -115,9 +115,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
 
-        // no errors
+        // no TroveManager errors
         assertEq(stakedBTCTroveMgr.lastCollateralError_Redistribution(), 0);
         assertEq(stakedBTCTroveMgr.lastDebtError_Redistribution(), 0);
+
+        // no StabilityPool errors
+        assertEq(stabilityPool.lastCollateralError_Offset(0), 0);
+        assertEq(stabilityPool.lastDebtLossError_Offset(), 0);
     }
 
     function test_liquidate_oneTroveWithStabilityPool(
@@ -184,7 +188,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
                                                                 statePre.stabPoolTotalDebtTokenDeposits);
         
-        // verify default debt calculated correctly
+        // verify defaulted debt calculated correctly
         assertEq(statePost.stabPoolTotalDebtTokenDeposits,
                  statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
         assertEq(stakedBTCTroveMgr.defaultedDebt(),
@@ -211,14 +215,35 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         // verify stability pool lost debt tokens
         assertEq(statePost.stabPoolDebtTokenBal, statePre.stabPoolDebtTokenBal - debtToOffsetUsingStabilityPool);
 
-        // no errors
+        // no TroveManager errors
         assertEq(stakedBTCTroveMgr.lastCollateralError_Redistribution(), 0);
         assertEq(stakedBTCTroveMgr.lastDebtError_Redistribution(), 0);
+
+        // since user2 is the only stability pool depositor they
+        // should gain the collateral sent to the stability pool
+        uint256[] memory user2CollateralGains = stabilityPool.getDepositorCollateralGain(users.user2);
+        assertEq(user2CollateralGains.length, 1);
+
+        // due to rounding? the user can receive slightly less
+        assertTrue(user2CollateralGains[0] <= collToSendToStabilityPool);
+
+        // verify user2 can claim their collateral gains
+        assertEq(stakedBTC.balanceOf(users.user2), 0);
+
+        uint256[] memory collateralIndexes = new uint256[](1);
+        collateralIndexes[0] = 0;
+        vm.prank(users.user2);
+        stabilityPool.claimCollateralGains(users.user2, collateralIndexes);
+        assertEq(stakedBTC.balanceOf(users.user2), user2CollateralGains[0]);
+        assertEq(stakedBTC.balanceOf(address(stabilityPool)), statePost.stabPoolStakedBTCBal - user2CollateralGains[0]);
+
+        // verify nothing else can be claimed
+        user2CollateralGains = stabilityPool.getDepositorCollateralGain(users.user2);
+        assertEq(user2CollateralGains.length, 1);
+        assertEq(user2CollateralGains[0], 0);
     }
 
-    /* here but commented out as the basis for future tests before turning
-       them into fuzz tests
-    function test_liquidate_oneTroveWithStabilityPool() external {
+    function test_liquidate_oneTroveWithStabilityPool_custom() external {
         // user2 deposits into the stability pool
         uint96 spDepositAmount = 1e18;
         _provideToSP(users.user2, spDepositAmount, 1);
@@ -280,16 +305,16 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         uint256 userDebtPlusPendingRewards = statePre.userDebt + statePre.userPendingDebtReward;
         uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
                                                                 statePre.stabPoolTotalDebtTokenDeposits);
-        
-        // verify default debt calculated correctly
+
+        // verify defaulted debt calculated correctly
         assertEq(statePost.stabPoolTotalDebtTokenDeposits,
                  statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
         assertEq(stakedBTCTroveMgr.defaultedDebt(),
                  userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
 
-        // calculate expected collateral to liquidate        
+        // calculate expected collateral to liquidate
         uint256 collToLiquidate = statePre.userColl - _getCollGasCompensation(statePre.userColl);
-        
+
         // calculate expected collateral to send to stability pool
         uint256 collToSendToStabilityPool = collToLiquidate *
                                             debtToOffsetUsingStabilityPool /
@@ -311,6 +336,161 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         // no errors
         assertEq(stakedBTCTroveMgr.lastCollateralError_Redistribution(), 0);
         assertEq(stakedBTCTroveMgr.lastDebtError_Redistribution(), 0);
+
+        // since user2 is the only stability pool depositor they
+        // should gain the collateral sent to the stability pool
+        uint256[] memory user2CollateralGains = stabilityPool.getDepositorCollateralGain(users.user2);
+        assertEq(user2CollateralGains.length, 1);
+        assertEq(user2CollateralGains[0], collToSendToStabilityPool);
+
+        assertEq(stakedBTC.balanceOf(users.user2), 0);
+
+        uint256[] memory collateralIndexes = new uint256[](1);
+        collateralIndexes[0] = 0;
+        vm.prank(users.user2);
+        stabilityPool.claimCollateralGains(users.user2, collateralIndexes);
+        assertEq(stakedBTC.balanceOf(users.user2), collToSendToStabilityPool);
+        assertEq(stakedBTC.balanceOf(address(stabilityPool)), 0);
+
+        // verify nothing else can be claimed
+        user2CollateralGains = stabilityPool.getDepositorCollateralGain(users.user2);
+        assertEq(user2CollateralGains.length, 1);
+        assertEq(user2CollateralGains[0], 0);
     }
-    */
+
+    function test_FixAttackerDrainsStabilityPoolCollateralTokens() external {
+        // user1 and user 2 both deposit 10K into the stability pool
+        uint96 spDepositAmount = 10_000e18;
+        _provideToSP(users.user1, spDepositAmount, 1);
+        _provideToSP(users.user2, spDepositAmount, 1);
+
+        // user1 opens a trove using 1 BTC collateral (price = $60,000 in MockOracle)
+        uint256 collateralAmount = 1e18;
+        uint256 debtAmountMax = _getMaxDebtAmount(collateralAmount);
+
+        _openTrove(users.user1, collateralAmount, debtAmountMax);
+
+        // set new value of btc to $50,000 to make trove liquidatable
+        mockOracle.setResponse(mockOracle.roundId() + 1,
+                            int256(50000 * 10 ** 8),
+                            block.timestamp + 1,
+                            block.timestamp + 1,
+                            mockOracle.answeredInRound() + 1);
+        // warp time to prevent cached price being used
+        vm.warp(block.timestamp + 1);
+
+        // save previous state
+        LiquidationState memory statePre = _getLiquidationState(users.user1);
+
+        // both users deposits in the stability pool
+        assertEq(statePre.stabPoolTotalDebtTokenDeposits, spDepositAmount * 2);
+
+        // liquidate via `liquidate`
+        liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
+
+        // save after state
+        LiquidationState memory statePost = _getLiquidationState(users.user1);
+
+        // verify trove owners count decreased
+        assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
+
+        // verify correct trove status
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                uint8(ITroveManager.Status.closedByLiquidation));
+
+        // user1 after state all zeros
+        assertEq(statePost.userDebt, 0);
+        assertEq(statePost.userColl, 0);
+        assertEq(statePost.userPendingDebtReward, 0);
+        assertEq(statePost.userPendingCollateralReward, 0);
+
+        // verify total active debt & collateral reduced by liquidation
+        assertEq(statePost.totalDebt, statePre.totalDebt - debtAmountMax - INIT_GAS_COMPENSATION);
+        assertEq(statePost.totalColl, statePre.totalColl - collateralAmount);
+
+        // verify stability pool debt token deposits reduced by amount used to offset liquidation
+        uint256 userDebtPlusPendingRewards = statePre.userDebt + statePre.userPendingDebtReward;
+        uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
+                                                                statePre.stabPoolTotalDebtTokenDeposits);
+        
+        // verify default debt calculated correctly
+        assertEq(statePost.stabPoolTotalDebtTokenDeposits,
+                statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
+        assertEq(stakedBTCTroveMgr.defaultedDebt(),
+                userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+
+        // calculate expected collateral to liquidate        
+        uint256 collToLiquidate = statePre.userColl - _getCollGasCompensation(statePre.userColl);
+        
+        // calculate expected collateral to send to stability pool
+        uint256 collToSendToStabilityPool = collToLiquidate *
+                                            debtToOffsetUsingStabilityPool /
+                                            userDebtPlusPendingRewards;
+
+        // verify defaulted collateral calculated correctly
+        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
+                collToLiquidate - collToSendToStabilityPool);
+
+        assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
+        assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
+
+        // verify stability pool received collateral tokens
+        assertEq(statePost.stabPoolStakedBTCBal, statePre.stabPoolStakedBTCBal + collToSendToStabilityPool);
+
+        // verify stability pool lost debt tokens
+        assertEq(statePost.stabPoolDebtTokenBal, statePre.stabPoolDebtTokenBal - debtToOffsetUsingStabilityPool);
+
+        // no TroveManager errors
+        assertEq(stakedBTCTroveMgr.lastCollateralError_Redistribution(), 0);
+        assertEq(stakedBTCTroveMgr.lastDebtError_Redistribution(), 0);
+
+        // user1 and user2 are both stability pool depositors so they
+        // gain an equal share of the collateral sent to the stability pool
+        // (at least in our PoC with simple whole numbers)
+        uint256 collateralGainsPerUser = collToSendToStabilityPool / 2;
+
+        uint256[] memory user1CollateralGains = stabilityPool.getDepositorCollateralGain(users.user1);
+        assertEq(user1CollateralGains.length, 1);
+        assertEq(user1CollateralGains[0], collateralGainsPerUser);
+
+        uint256[] memory user2CollateralGains = stabilityPool.getDepositorCollateralGain(users.user2);
+        assertEq(user2CollateralGains.length, 1);
+        assertEq(user2CollateralGains[0], collateralGainsPerUser);
+
+        // user2 claims their gains
+        assertEq(stakedBTC.balanceOf(users.user2), 0);
+        uint256[] memory collateralIndexes = new uint256[](1);
+        collateralIndexes[0] = 0;
+        vm.prank(users.user2);
+        stabilityPool.claimCollateralGains(users.user2, collateralIndexes);
+        assertEq(stakedBTC.balanceOf(users.user2), collateralGainsPerUser);
+        assertEq(stakedBTC.balanceOf(address(stabilityPool)), statePost.stabPoolStakedBTCBal - collateralGainsPerUser);
+
+        // if user2 tries to immediately claim again, they receive no additional tokens
+        vm.prank(users.user2);
+        stabilityPool.claimCollateralGains(users.user2, collateralIndexes);
+        assertEq(stakedBTC.balanceOf(users.user2), collateralGainsPerUser);
+        assertEq(stakedBTC.balanceOf(address(stabilityPool)), statePost.stabPoolStakedBTCBal - collateralGainsPerUser);
+
+        // user1 claims their gains
+        assertEq(stakedBTC.balanceOf(users.user1), 0);
+        vm.prank(users.user1);
+        stabilityPool.claimCollateralGains(users.user1, collateralIndexes);
+        assertEq(stakedBTC.balanceOf(users.user1), collateralGainsPerUser);
+        assertEq(stakedBTC.balanceOf(address(stabilityPool)), 0);
+
+        // if user1 tries to immediately claim again, they receive no additional tokens
+        vm.prank(users.user1);
+        stabilityPool.claimCollateralGains(users.user1, collateralIndexes);
+        assertEq(stakedBTC.balanceOf(users.user1), collateralGainsPerUser);
+
+        // view function now returns 0 pending collateral gains for both users
+        user1CollateralGains = stabilityPool.getDepositorCollateralGain(users.user1);
+        assertEq(user1CollateralGains.length, 1);
+        assertEq(user1CollateralGains[0], 0);
+
+        user2CollateralGains = stabilityPool.getDepositorCollateralGain(users.user2);
+        assertEq(user2CollateralGains.length, 1);
+        assertEq(user2CollateralGains[0], 0);
+    }
 }

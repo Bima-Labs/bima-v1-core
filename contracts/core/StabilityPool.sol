@@ -775,8 +775,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     // --- Sender functions for Debt deposit, collateral gains and Babel gains ---
     function claimCollateralGains(address recipient, uint256[] calldata collateralIndexes) external {
-        // accrue user collateral gains prior to claiming
-        _accrueDepositorCollateralGain(msg.sender);
+        // trigger reward claims prior to claiming collateral gains
+        claimReward(recipient);
 
         uint256[] memory collateralGains = new uint256[](collateralTokens.length);
 
@@ -848,7 +848,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         storedPendingReward[_depositor] += amount;
     }
 
-    function claimReward(address recipient) external returns (uint256 amount) {
+    function claimReward(address recipient) public returns (uint256 amount) {
         amount = _claimReward(msg.sender);
 
         if (amount > 0) {
