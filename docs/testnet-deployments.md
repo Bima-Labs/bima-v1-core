@@ -574,10 +574,11 @@
 | IncentiveVoting    | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 | BabelToken         | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
 | BabelVault         | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
+| BimaFaucet         | 0xe05295f7be167a9bFfEd5b0a4626b42dEdDC955f |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
+| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
 | --------------- | ------------------ | -------------------- | -------------- |
-| -               | -                  | -                    | -              |
+|  Bima Mock BTC | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 | 0xa5876FDe789b918fa856b79caE7b5BBeCC412934 | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF |
 
 ## Okx Testnet
 
