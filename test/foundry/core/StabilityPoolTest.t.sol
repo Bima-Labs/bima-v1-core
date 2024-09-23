@@ -243,7 +243,7 @@ contract StabilityPoolTest is TestSetup {
         _withdrawFromToSP(users.user1, withdrawAmount);
     }
 
-    function test_claimReward_smallAmountOfRewardsLost() external {
+    function test_claimReward_smallAmountOfStabilityPoolRewardsLost() external {
         // setup vault giving user1 half supply to lock for voting power
         uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
 
