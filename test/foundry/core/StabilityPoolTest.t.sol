@@ -2,7 +2,9 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {TestSetup} from "../TestSetup.sol";
+import {TestSetup, IIncentiveVoting, SafeCast} from "../TestSetup.sol";
+
+import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -239,5 +241,114 @@ contract StabilityPoolTest is TestSetup {
         vm.warp(block.timestamp + 1);
 
         _withdrawFromToSP(users.user1, withdrawAmount);
+    }
+
+    function test_claimReward_smallAmountOfRewardsLost() external {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // user votes for stability pool to get emissions
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = stabilityPool.SP_EMISSION_ID();
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // user1 and user 2 both deposit 10K into the stability pool
+        uint96 spDepositAmount = 10_000e18;
+        _provideToSP(users.user1, spDepositAmount, 1);
+        _provideToSP(users.user2, spDepositAmount, 1);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // calculate expected first week emissions
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertEq(firstWeekEmissions, 536870911875000000000000000);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // no rewards in the same week as emissions
+        assertEq(stabilityPool.claimableReward(users.user1), 0);
+        assertEq(stabilityPool.claimableReward(users.user2), 0);
+
+        vm.prank(users.user1);
+        uint256 userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, 0);
+        vm.prank(users.user2);
+        userReward = stabilityPool.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // verify emissions correctly set in BabelVault for first week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // rewards for the first week can be claimed now
+        // users receive slightly less due to precision loss
+        assertEq(firstWeekEmissions/2, 268435455937500000000000000);
+        uint256 actualUserReward =     268435455937499999999890000;
+
+        assertEq(stabilityPool.claimableReward(users.user1), actualUserReward);
+        assertEq(stabilityPool.claimableReward(users.user2), actualUserReward);
+
+        // verify user1 rewards
+        vm.prank(users.user1);
+        userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, actualUserReward);
+
+        // verify user2 rewards
+        vm.prank(users.user2);
+        userReward = stabilityPool.claimReward(users.user2);
+        assertEq(userReward, actualUserReward);
+
+        // firstWeekEmissions = 536870911875000000000000000
+        // userReward * 2     = 536870911874999999999780000
+        //
+        // a small amount of rewards was not distributed and is effectively lost
+
+        // if either users tries to claim again, nothing is returned
+        vm.prank(users.user1);
+        userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, 0);
+        vm.prank(users.user2);
+        userReward = stabilityPool.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // user2 withdraws from the stability pool
+        _withdrawFromToSP(users.user2, spDepositAmount);
+
+        uint256 secondWeekEmissions = (initialUnallocated - firstWeekEmissions)*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertEq(secondWeekEmissions, 402653183906250000000000000);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // user2 can't claim anything as they withdrew
+        assertEq(stabilityPool.claimableReward(users.user2), 0);
+        vm.prank(users.user2);
+        userReward = stabilityPool.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // user1 gets almost all the weekly emissions apart
+        // from a small amount that is lost
+        actualUserReward = 402653183906249999999540000;
+        assertEq(stabilityPool.claimableReward(users.user1), actualUserReward);
+
+        vm.prank(users.user1);
+        userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, actualUserReward);
+
+        // weekly emissions 402653183906250000000000000
+        // user1 received   402653183906249999999540000
+
+        // user1 can't claim more rewards
+        assertEq(stabilityPool.claimableReward(users.user1), 0);
+        vm.prank(users.user1);
+        userReward = stabilityPool.claimReward(users.user1);
+        assertEq(userReward, 0);
     }
 }

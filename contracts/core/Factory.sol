@@ -2,8 +2,10 @@
 pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BIMA_COLLATERAL_DECIMALS} from "../dependencies/Constants.sol";
 import {ITroveManager} from "../interfaces/ITroveManager.sol";
 import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
 import {IFactory, IDebtToken, ILiquidationManager, IBorrowerOperations, IStabilityPool} from "../interfaces/IFactory.sol";
@@ -72,6 +74,9 @@ contract Factory is IFactory, BabelOwnable {
         address customSortedTrovesImpl,
         DeploymentParams memory params
     ) external onlyOwner {
+        IERC20Metadata collateralToken = IERC20Metadata(collateral);
+        require(collateralToken.decimals() == BIMA_COLLATERAL_DECIMALS, "Invalid collateral decimals");
+
         address implementation = customTroveManagerImpl == address(0) ? troveManagerImpl : customTroveManagerImpl;
         address troveManager = implementation.cloneDeterministic(bytes32(bytes20(collateral)));
         troveManagers.push(troveManager);
@@ -85,10 +90,10 @@ contract Factory is IFactory, BabelOwnable {
         // verify that the oracle is correctly working
         ITroveManager(troveManager).fetchPrice();
 
-        stabilityPool.enableCollateral(IERC20(collateral));
+        stabilityPool.enableCollateral(collateralToken);
         liquidationManager.enableTroveManager(ITroveManager(troveManager));
         debtToken.enableTroveManager(troveManager);
-        borrowerOperations.configureCollateral(ITroveManager(troveManager), IERC20(collateral));
+        borrowerOperations.configureCollateral(ITroveManager(troveManager), collateralToken);
 
         ITroveManager(troveManager).setParameters(
             params.minuteDecayFactor,

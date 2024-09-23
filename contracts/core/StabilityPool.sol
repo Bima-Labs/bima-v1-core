@@ -59,7 +59,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // Error tracker for the error correction in the Babel issuance calculation
     uint256 public lastBabelError;
     // Error trackers for the error correction in the offset calculation
-    uint256 public lastCollateralError_Offset;
+    uint256[MAX_COLLATERAL_COUNT] public lastCollateralError_Offset;
     uint256 public lastDebtLossError_Offset;
 
     /*  Product 'P': Running product by which to multiply an initial deposit, in order to find the current compounded deposit,
@@ -490,7 +490,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         (uint256 collateralGainPerUnitStaked, uint256 debtLossPerUnitStaked) = _computeRewardsPerUnitStaked(
             _collToAdd,
             _debtToOffset,
-            totalDebt
+            totalDebt,
+            idx
         );
 
         // update S and P
@@ -505,7 +506,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     function _computeRewardsPerUnitStaked(
         uint256 _collToAdd,
         uint256 _debtToOffset,
-        uint256 _totalDebtTokenDeposits
+        uint256 _totalDebtTokenDeposits,
+        uint256 idx
     ) internal returns (uint256 collateralGainPerUnitStaked, uint256 debtLossPerUnitStaked) {
         /*
          * Compute the Debt and collateral rewards. Uses a "feedback" error correction, to keep
@@ -518,7 +520,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
          * 4) Store these errors for use in the next correction when this function is called.
          * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
          */
-        uint256 collateralNumerator = (_collToAdd * BIMA_DECIMAL_PRECISION) + lastCollateralError_Offset;
+        uint256 collateralNumerator = (_collToAdd * BIMA_DECIMAL_PRECISION) + lastCollateralError_Offset[idx];
 
         if (_debtToOffset == _totalDebtTokenDeposits) {
             debtLossPerUnitStaked = BIMA_DECIMAL_PRECISION; // When the Pool depletes to 0, so does each deposit
@@ -534,7 +536,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         }
 
         collateralGainPerUnitStaked = collateralNumerator / _totalDebtTokenDeposits;
-        lastCollateralError_Offset = collateralNumerator - (collateralGainPerUnitStaked * _totalDebtTokenDeposits);
+       lastCollateralError_Offset[idx] = collateralNumerator - (collateralGainPerUnitStaked * _totalDebtTokenDeposits);
     }
 
     // Update the Stability Pool reward sum S and product P

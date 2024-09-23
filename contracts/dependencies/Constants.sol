@@ -13,3 +13,6 @@ uint256 constant BIMA_SCALE_FACTOR = 1e9;
 
 // BIMA's default reward duration
 uint256 constant BIMA_REWARD_DURATION = 1 weeks;
+
+// collateral tokens required decimals
+uint8 constant BIMA_COLLATERAL_DECIMALS = 18;

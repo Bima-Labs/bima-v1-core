@@ -140,23 +140,21 @@ contract DebtToken is OFT {
 
     /**
      * @dev Returns the maximum amount of tokens available for loan.
-     * @param token The address of the token that is requested.
      * @return maxLoan The amount of token that can be loaned.
      */
-    function maxFlashLoan(address token) public view returns (uint256 maxLoan) {
-        maxLoan = token == address(this) ? type(uint256).max - totalSupply() : 0;
+    function maxFlashLoan() public view returns (uint256 maxLoan) {
+        maxLoan = type(uint256).max - totalSupply();
     }
 
     /**
      * @dev Returns the fee applied when doing flash loans. This function calls
      * the {_flashFee} function which returns the fee applied when doing flash
      * loans.
-     * @param token The token to be flash loaned.
      * @param amount The amount of tokens to be loaned.
      * @return fee The fees applied to the corresponding flash loan.
      */
-    function flashFee(address token, uint256 amount) external view returns (uint256 fee) {
-        fee = token == address(this) ? _flashFee(amount) : 0;
+    function flashFee(uint256 amount) external pure returns (uint256 fee) {
+        fee = _flashFee(amount);
     }
 
     /**
@@ -179,8 +177,6 @@ contract DebtToken is OFT {
      * they can be burned.
      * @param receiver The receiver of the flash loan. Should implement the
      * {IERC3156FlashBorrower-onFlashLoan} interface.
-     * @param token The token to be flash loaned. Only `address(this)` is
-     * supported.
      * @param amount The amount of tokens to be loaned.
      * @param data An arbitrary datafield that is passed to the receiver.
      * @return success true if the flash loan was successful.
@@ -190,16 +186,14 @@ contract DebtToken is OFT {
     // slither-disable-next-line reentrancy-no-eth
     function flashLoan(
         IERC3156FlashBorrower receiver,
-        address token,
         uint256 amount,
         bytes calldata data
     ) external returns (bool success) {
-        require(token == address(this), "ERC20FlashMint: wrong token");
-        require(amount <= maxFlashLoan(token), "ERC20FlashMint: amount exceeds maxFlashLoan");
+        require(amount <= maxFlashLoan(), "ERC20FlashMint: amount exceeds maxFlashLoan");
         uint256 fee = _flashFee(amount);
         _mint(address(receiver), amount);
         require(
-            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
+            receiver.onFlashLoan(msg.sender, address(this), amount, fee, data) == _RETURN_VALUE,
             "ERC20FlashMint: invalid return value"
         );
         _spendAllowance(address(receiver), address(this), amount + fee);

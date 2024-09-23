@@ -74,7 +74,7 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function indexByCollateral(IERC20 collateral) external view returns (uint256 index);
 
-    function lastCollateralError_Offset() external view returns (uint256);
+    function lastCollateralError_Offset(uint256) external view returns (uint256);
 
     function lastDebtLossError_Offset() external view returns (uint256);
 

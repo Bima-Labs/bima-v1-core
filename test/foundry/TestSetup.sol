@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 // mocks
-import {MockOracle} from "../../contracts/MockOracle.sol";
-import {StakedBTC} from "../../contracts/StakedBTC.sol";
+import {MockOracle} from "../../contracts/mock/MockOracle.sol";
+import {StakedBTC} from "../../contracts/mock/StakedBTC.sol";
 
 // interfaces
 import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
@@ -49,6 +49,7 @@ struct Users {
     address guardian;
     address user1;
     address user2;
+    address user3;
     address gasPool;
 }
 
@@ -131,6 +132,7 @@ contract TestSetup is Test {
         users.user1 = address(0x3333);
         users.user2 = address(0x4444);
         users.gasPool = address(0x5555);
+        users.user3 = address(0x6666);
 
         // contract constructors are inter-dependent so need to precalculate
         // some addresses to correctly initialize immutable storage variables
@@ -330,8 +332,10 @@ contract TestSetup is Test {
 
     // common helper functions used in tests
     function _sendStakedBtc(address user, uint256 amount) internal {
-        vm.prank(users.owner);
-        stakedBTC.transfer(user, amount);
+        if(user != users.owner) {
+            vm.prank(users.owner);
+            stakedBTC.transfer(user, amount);
+        }
     }
 
     function _getScaledOraclePrice() internal view returns(uint256 scaledPrice) {

@@ -758,7 +758,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         emit Redemption(_debtAmount, totals.totalDebtToRedeem, totals.totalCollateralDrawn, totals.collateralFee);
 
-        // Burn the total debt that is cancelled with debt, and send the redeemed collateral to msg.sender
+        // Burn the total debt that is cancelled
         debtToken.burn(msg.sender, totals.totalDebtToRedeem);
 
         // Update Trove Manager debt, and send collateral to account
@@ -800,7 +800,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
              * If the provided hint is out of date, we bail since trying to reinsert without a good hint will almost
              * certainly result in running out of gas.
              *
-             * If the resultant net debt of the partial is less than the minimum, net debt we bail.
+             * If the resultant net debt of the partial is less than the minimum, net debt we bail
+             *
+             * If the debt amount was small causing a rounding down to zero precision loss
+             * in the received collateral calculation, we bail
              */
 
             {
@@ -810,6 +813,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
                     : newNICR - _partialRedemptionHintNICR;
                 if (
                     icrError > 5e14 ||
+                    singleRedemption.collateralLot == 0 ||
                     _getNetDebt(newDebt) < IBorrowerOperations(borrowerOperationsAddress).minNetDebt()
                 ) {
                     singleRedemption.cancelledPartial = true;
