@@ -490,6 +490,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // sanity checks to ensure specific liquidation code called using `_tryLiquidateWithCap`
         assertTrue(TCR < borrowerOps.CCR());
+        assertTrue(borrowerOps.checkRecoveryMode(TCR));
         assertTrue(userICR < TCR);
 
         // save previous state
