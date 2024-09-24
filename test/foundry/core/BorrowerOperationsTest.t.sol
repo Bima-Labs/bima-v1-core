@@ -2,13 +2,15 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {IBorrowerOperations} from "../TestSetup.sol";
+import {IBorrowerOperations, IIncentiveVoting, SafeCast} from "../TestSetup.sol";
 
 import {StabilityPoolTest} from "./StabilityPoolTest.t.sol";
 
 import {BabelMath} from "../../../contracts/dependencies/BabelMath.sol";
+import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 import {ITroveManager, IERC20} from "../../../contracts/interfaces/ITroveManager.sol";
 
+// also tests TroveManager since BorrowerOps and TroveManager are very closely linked
 contract BorrowerOperationsTest is StabilityPoolTest {
 
     ITroveManager internal stakedBTCTroveMgr;
@@ -604,5 +606,133 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(statePost.sysBalances.collaterals[0], OWNER_TROVE_COLLATERAL + collateralAmount);
         assertEq(statePost.sysBalances.debts[0], INIT_MIN_NET_DEBT + debtAmountMax + INIT_GAS_COMPENSATION*2);
         assertEq(statePost.sysBalances.prices[0], balancesPre.prices[0]);
+    }
+
+
+    function test_claimReward_someTroveManagerDebtRewardsLost() external {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+
+        // owner registers TroveManager for vault emission rewards
+        vm.prank(users.owner);
+        babelVault.registerReceiver(address(stakedBTCTroveMgr), 2);
+
+        // user votes for TroveManager debtId to get emissions
+        (uint16 TM_RECEIVER_DEBT_ID, /*uint16 TM_RECEIVER_MINT_ID*/) = stakedBTCTroveMgr.emissionId();
+
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = TM_RECEIVER_DEBT_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // user1 and user2 open a trove with 1 BTC collateral for their max borrowing power
+        uint256 collateralAmount = 1e18;
+        uint256 debtAmountMax
+            = ((collateralAmount * _getScaledOraclePrice() / borrowerOps.CCR())
+              - INIT_GAS_COMPENSATION);
+
+        _openTrove(users.user1, collateralAmount, debtAmountMax);
+        _openTrove(users.user2, collateralAmount, debtAmountMax);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // calculate expected first week emissions
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertEq(firstWeekEmissions, 536870911875000000000000000);
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // no rewards in the same week as emissions
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), 0);
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user2), 0);
+
+        vm.prank(users.user1);
+        uint256 userReward = stakedBTCTroveMgr.claimReward(users.user1);
+        assertEq(userReward, 0);
+        vm.prank(users.user2);
+        userReward = stakedBTCTroveMgr.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // verify emissions correctly set in BabelVault for first week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // rewards for the first week can be claimed now
+        // users receive less?
+        assertEq(firstWeekEmissions/2, 268435455937500000000000000);
+        uint256 actualUserReward =     263490076563008042796633412;
+
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), actualUserReward);
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user2), actualUserReward);
+
+        // verify user1 rewards
+        vm.prank(users.user1);
+        userReward = stakedBTCTroveMgr.claimReward(users.user1);
+        assertEq(userReward, actualUserReward);
+
+        // verify user2 rewards
+        vm.prank(users.user2);
+        userReward = stakedBTCTroveMgr.claimReward(users.user2);
+        assertEq(userReward, actualUserReward);
+
+        // firstWeekEmissions = 536870911875000000000000000
+        // userReward * 2     = 526980153126016085593266824
+        //
+        // some rewards were not distributed and are effectively lost
+
+        // if either users tries to claim again, nothing is returned
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), 0);
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user2), 0);
+
+        vm.prank(users.user1);
+        userReward = stakedBTCTroveMgr.claimReward(users.user1);
+        assertEq(userReward, 0);
+        vm.prank(users.user2);
+        userReward = stakedBTCTroveMgr.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // refresh mock oracle to prevent frozen feed revert
+        mockOracle.refresh();
+
+        // user2 closes their trove
+        vm.prank(users.user2);
+        borrowerOps.closeTrove(stakedBTCTroveMgr, users.user2);
+
+        uint256 secondWeekEmissions = (initialUnallocated - firstWeekEmissions)*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        assertEq(secondWeekEmissions, 402653183906250000000000000);
+        assertEq(babelVault.weeklyEmissions(systemWeek + 1), secondWeekEmissions);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // user2 can't claim anything as they withdrew
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user2), 0);
+        vm.prank(users.user2);
+        userReward = stakedBTCTroveMgr.claimReward(users.user2);
+        assertEq(userReward, 0);
+
+        // user1 gets almost all the weekly emissions apart
+        // from an amount that is lost
+        actualUserReward = 388085427183354818500070297;
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), actualUserReward);
+
+        vm.prank(users.user1);
+        userReward = stakedBTCTroveMgr.claimReward(users.user1);
+        assertEq(userReward, actualUserReward);
+
+        // weekly emissions 402653183906250000000000000
+        // user1 received   388085427183354818500070297
+
+        // user1 can't claim more rewards
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), 0);
+        vm.prank(users.user1);
+        userReward = stakedBTCTroveMgr.claimReward(users.user1);
+        assertEq(userReward, 0);
     }
 }
