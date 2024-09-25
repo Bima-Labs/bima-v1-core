@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {IBorrowerOperations, IIncentiveVoting, SafeCast} from "../TestSetup.sol";
+import {IBorrowerOperations, IIncentiveVoting, IFactory, SafeCast} from "../TestSetup.sol";
 
 import {StabilityPoolTest} from "./StabilityPoolTest.t.sol";
 
@@ -452,6 +452,53 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(index, 0);
     }
 
+    function test_removeTroveManager_withMultipleTroveManagers() external {
+        // sunset the trove manager
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.startSunset();
+        assertTrue(stakedBTCTroveMgr.sunsetting());
+
+        // close the owner's trove
+        vm.prank(users.owner);
+        borrowerOps.closeTrove(stakedBTCTroveMgr, users.owner);
+        assertEq(stakedBTCTroveMgr.getTroveOwnersCount(), 0);
+
+        // add 2 additional trove managers to exercise the
+        // swap & pop removal code
+        IERC20 coll2 = IERC20(address(0x1234));
+        IERC20 coll3 = IERC20(address(0x12345));
+
+        // deploy 2 new trove managers
+        ITroveManager tv2 = ITroveManager(address(0x9876));
+        ITroveManager tv3 = ITroveManager(address(0x9875));
+
+        vm.prank(address(factory));
+        borrowerOps.configureCollateral(tv2, coll2);
+        vm.prank(address(factory));
+        borrowerOps.configureCollateral(tv3, coll3);
+
+        // 3 TroveManagers deployed
+        assertEq(borrowerOps.getTroveManagersCount(), 3);
+
+        // now can finally remove the trove manager
+        borrowerOps.removeTroveManager(stakedBTCTroveMgr);
+        assertEq(borrowerOps.getTroveManagersCount(), 2);
+
+        (IERC20 collateralToken, uint16 index) = borrowerOps.troveManagersData(stakedBTCTroveMgr);
+        assertEq(address(collateralToken), address(0));
+        assertEq(index, 0);
+
+        // previously last trove manager should now be first
+        (collateralToken, index) = borrowerOps.troveManagersData(tv3);
+        assertEq(address(collateralToken), address(coll3));
+        assertEq(index, 0);
+
+        // previously second trove manager should now be last
+        (collateralToken, index) = borrowerOps.troveManagersData(tv2);
+        assertEq(address(collateralToken), address(coll2));
+        assertEq(index, 1);
+    }
+
     function test_redeemCollateral_whileSunsetting(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external {
         // owner closes their trove to simplify things
         vm.prank(users.owner);
@@ -734,5 +781,25 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         vm.prank(users.user1);
         userReward = stakedBTCTroveMgr.claimReward(users.user1);
         assertEq(userReward, 0);
+    }
+
+    function test_setMinNetDebt_failsNotOwner() external {
+        vm.expectRevert("Only owner");
+        borrowerOps.setMinNetDebt(1);
+    }
+
+    function test_setMinNetDebt() external {
+        uint256 newMinNetDebt = 1;
+        vm.prank(users.owner);
+        borrowerOps.setMinNetDebt(newMinNetDebt);
+
+        assertEq(borrowerOps.minNetDebt(), newMinNetDebt);
+    }
+
+    function test_getCompositeDebt(uint256 debt) external view {
+        debt = bound(debt, 0, type(uint256).max - borrowerOps.DEBT_GAS_COMPENSATION());
+
+        uint256 compositeDebt = borrowerOps.getCompositeDebt(debt);
+        assertEq(compositeDebt, debt + borrowerOps.DEBT_GAS_COMPENSATION());
     }
 }
