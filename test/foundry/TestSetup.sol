@@ -166,6 +166,8 @@ contract TestSetup is Test {
                             18, // sharePriceDecimals
                             false //_isEthIndexed
                             );
+        assertEq(priceFeed.owner(), users.owner);
+        assertEq(priceFeed.guardian(), users.guardian);
 
         // FeeReceiver
         feeReceiver = new FeeReceiver(addresses.core); ++addresses.nonce;
