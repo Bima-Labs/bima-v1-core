@@ -1134,13 +1134,19 @@ contract BorrowerOperationsTest is StabilityPoolTest {
 
     // used to store relevant state before tests for verification afterwards
     struct TroveManagerState {
+        uint256 defaultedDebt;
+        uint256 defaultedCollateral;
         uint256 totalActiveDebt;
+        uint256 totalActiveCollateral;
         uint256 interestPayable;
         uint256 activeInterestIndex;
         uint256 lastActiveIndexUpdate;
     }
     function _getTroveManagerState() internal view returns(TroveManagerState memory state) {
+        state.defaultedDebt = stakedBTCTroveMgr.defaultedDebt();
+        state.defaultedCollateral = stakedBTCTroveMgr.defaultedCollateral();
         state.totalActiveDebt = stakedBTCTroveMgr.getTotalActiveDebt();
+        state.totalActiveCollateral = stakedBTCTroveMgr.getTotalActiveCollateral();
         state.interestPayable = stakedBTCTroveMgr.interestPayable();
         state.activeInterestIndex = stakedBTCTroveMgr.activeInterestIndex();
         state.lastActiveIndexUpdate = stakedBTCTroveMgr.lastActiveIndexUpdate();
