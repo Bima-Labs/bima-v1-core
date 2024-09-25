@@ -80,13 +80,14 @@ struct DeployedContracts {
 }
 
 contract BimaCoreScript is Script, Test {
-  uint256 internal constant GAS_COMPENSATION = 1e18;
-  uint256 internal constant MIN_NET_DEBT = 1000e18;
+  uint256 internal constant GAS_COMPENSATION = 200e18;
+  uint256 internal constant MIN_NET_DEBT = 1800e18;
   uint256 internal constant INIT_LOCK_TO_TOKEN_RATIO = 1e18;
   string internal constant DEBT_TOKEN_NAME = "US Bitcoin Dollar";
   string internal constant DEBT_TOKEN_SYMBOL = "USBD";
 
   address internal constant GUARDIAN = address(1);
+  address internal constant ZERO_ADDRESS = address(0);
 
   // contract constructors are inter-dependent so need to precalculate
   // some prAddresses to correctly initialize immutable storage variables
@@ -162,7 +163,7 @@ contract BimaCoreScript is Script, Test {
       prAddresses.stabilityPool,
       prAddresses.borrowerOps,
       deployedContracts.babelCore,
-      address(0),
+      ZERO_ADDRESS,
       prAddresses.factory,
       address(deployedContracts.gasPool),
       GAS_COMPENSATION
@@ -214,7 +215,7 @@ contract BimaCoreScript is Script, Test {
     );
     assertEq(prAddresses.incentiveVoting, address(deployedContracts.incentiveVoting));
 
-    deployedContracts.babelToken = new BabelToken(prAddresses.babelVault, address(0), prAddresses.tokenLocker);
+    deployedContracts.babelToken = new BabelToken(prAddresses.babelVault, ZERO_ADDRESS, prAddresses.tokenLocker);
     assertEq(prAddresses.babelToken, address(deployedContracts.babelToken));
 
     deployedContracts.babelVault = new BabelVault(
