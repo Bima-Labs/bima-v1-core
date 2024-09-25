@@ -388,6 +388,49 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
     }
 
+    function test_withdrawDebt_inRecoveryMode() external {
+        (uint256 collateralAmount, uint256 debtAmountMax) = _openTroveThenRecoveryMode();
+
+        vm.expectRevert("BorrowerOps: Operation must leave trove with ICR >= CCR");
+        vm.prank(users.user1);
+        borrowerOps.withdrawDebt(stakedBTCTroveMgr,
+                                 users.user1,
+                                 0, // maxFeePercentage
+                                 1,
+                                 address(0), address(0)); // hints
+
+        uint256 newCollateralDepositAmount = collateralAmount/2;
+
+        // give user extra staked btc collateral
+        _sendStakedBtc(users.user1, newCollateralDepositAmount);
+
+        // transfer approval
+        vm.prank(users.user1);
+        stakedBTC.approve(address(borrowerOps), newCollateralDepositAmount);
+
+        // add the new collateral to the existing trove
+        vm.prank(users.user1);
+        borrowerOps.addColl(stakedBTCTroveMgr,
+                            users.user1,
+                            newCollateralDepositAmount,
+                            address(0), address(0)); // hints
+
+        vm.expectRevert("BorrowerOps: An operation that would result in TCR < CCR is not permitted");
+        vm.prank(users.user1);
+        borrowerOps.withdrawDebt(stakedBTCTroveMgr,
+                                 users.user1,
+                                 0, // maxFeePercentage
+                                 debtAmountMax/2,
+                                 address(0), address(0)); // hints
+
+        vm.prank(users.user1);
+        borrowerOps.withdrawDebt(stakedBTCTroveMgr,
+                                 users.user1,
+                                 0, // maxFeePercentage
+                                 debtAmountMax/4,
+                                 address(0), address(0)); // hints
+    }
+
     function test_closeTrove(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external {
         // first open a new trove
         (uint256 actualCollateralAmount, uint256 actualDebtAmount )
