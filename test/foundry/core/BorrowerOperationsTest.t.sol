@@ -10,6 +10,8 @@ import {BabelMath} from "../../../contracts/dependencies/BabelMath.sol";
 import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 import {ITroveManager, IERC20} from "../../../contracts/interfaces/ITroveManager.sol";
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+
 // also tests TroveManager since BorrowerOps and TroveManager are very closely linked
 contract BorrowerOperationsTest is StabilityPoolTest {
 
@@ -19,6 +21,12 @@ contract BorrowerOperationsTest is StabilityPoolTest {
     uint256 internal minDebt;
 
     uint256 constant internal OWNER_TROVE_COLLATERAL = 1e18; // 1BTC
+
+    // non-public copied from TroveManager.sol
+    uint256 constant internal TM_INTEREST_PRECISION = 1e27;
+    uint256 constant internal TM_SECONDS_IN_YEAR = 365 days;
+    uint256 constant internal VOLUME_MULTIPLIER = 1e20;
+
 
     // since owner opens an initial trove, don't want to revert
     // during fuzz tests for trying to open more debt than allowed
@@ -45,6 +53,23 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         // since liquidation doesn't work by design if only 1 trove
         _openTrove(users.owner, OWNER_TROVE_COLLATERAL, INIT_MIN_NET_DEBT);
         assertEq(stakedBTCTroveMgr.getTroveOwnersCount(), 1);
+
+        // verify view functions return correct data for owner trove
+        assertEq(stakedBTCTroveMgr.getTroveStake(users.owner), OWNER_TROVE_COLLATERAL);
+        
+        (uint256 week, uint256 day) = stakedBTCTroveMgr.getWeekAndDay();
+        uint32[7] memory mints = stakedBTCTroveMgr.getTotalMints(week);
+        assertEq(mints[day], INIT_MIN_NET_DEBT / VOLUME_MULTIPLIER);
+
+        assertEq(stakedBTCTroveMgr.getTroveFromTroveOwnersArray(0), users.owner);
+
+        (uint256 coll, uint256 debt) = stakedBTCTroveMgr.getTroveCollAndDebt(users.owner);
+        assertEq(coll, OWNER_TROVE_COLLATERAL);
+        assertEq(debt, INIT_MIN_NET_DEBT + INIT_GAS_COMPENSATION);
+
+        assertEq(stakedBTCTroveMgr.getEntireSystemColl(), OWNER_TROVE_COLLATERAL);
+
+        assertFalse(stakedBTCTroveMgr.hasPendingRewards(users.owner));
 
         minCollateral = 3e17;
         maxCollateral = 1_000_000e18 - OWNER_TROVE_COLLATERAL;
@@ -763,6 +788,98 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(statePost.sysBalances.prices[0], balancesPre.prices[0]);
     }
 
+    function test_redeemCollateral_closeOneTrovePartialRedeemOther() external {
+        // fast forward time to after bootstrap period
+        vm.warp(stakedBTCTroveMgr.systemDeploymentTime() + stakedBTCTroveMgr.BOOTSTRAP_PERIOD());
+
+        // update price oracle response to prevent stale revert
+        mockOracle.setResponse(mockOracle.roundId() + 1,
+                               mockOracle.answer(),
+                               mockOracle.startedAt(),
+                               block.timestamp,
+                               mockOracle.answeredInRound() + 1);
+
+        // user1 opens a trove with 5 BTC collateral for their max borrowing power
+        uint256 collateralAmount = 5e18;
+
+        uint256 debtAmountMax
+            = ((collateralAmount * _getScaledOraclePrice() / borrowerOps.CCR())
+              - INIT_GAS_COMPENSATION);
+
+        _openTrove(users.user1, collateralAmount, debtAmountMax);
+
+        // user2 opens a trove with 1 BTC collateral for their max borrowing power
+        _openTrove(users.user2, collateralAmount, debtAmountMax);
+
+        // mint user3 enough debt tokens such that 1 trove will be closed
+        // and a partial redemption will occur from another trove
+        uint256 debtToSend = debtAmountMax + debtAmountMax/2;
+
+        vm.prank(address(borrowerOps));
+        debtToken.mint(users.user3, debtToSend);
+        assertEq(debtToken.balanceOf(users.user3), debtToSend);
+        assertEq(stakedBTC.balanceOf(users.user3), 0);
+
+        // save system balances prior to redemption
+        IBorrowerOperations.SystemBalances memory balancesPre = borrowerOps.fetchBalances();
+        assertEq(balancesPre.collaterals.length, 1);
+        assertEq(balancesPre.collaterals.length, balancesPre.debts.length);
+        assertEq(balancesPre.collaterals.length, balancesPre.prices.length);
+
+        // user3 exchanges their debt tokens for collateral
+        uint256 maxFeePercent = stakedBTCTroveMgr.maxRedemptionFee();
+
+        vm.prank(users.user3);
+        stakedBTCTroveMgr.redeemCollateral(debtToSend,
+                                           users.user1, address(0), address(0), 5833302083567706, 0,
+                                           maxFeePercent);
+
+        // verify user3 has no debt tokens remaining
+        assertEq(debtToken.balanceOf(users.user3), 0);
+
+        // verify user3 received some collateral tokens
+        uint256 user3ReceivedCollateral = stakedBTC.balanceOf(users.user3);
+        assertEq(user3ReceivedCollateral, 2071335111546853914);
+
+        // verify user1's trove was closed by the redemption
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
+                 uint8(ITroveManager.Status.closedByRedemption));
+
+        // verify user2's trove is still active
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user2)),
+                 uint8(ITroveManager.Status.active));
+
+        // user1 claims the remaining collateral
+        vm.prank(users.user1);
+        stakedBTCTroveMgr.claimCollateral(users.user1);
+
+        // get user1 state
+        BorrowerOpsState memory statePost = _getBorrowerOpsState(users.user1);
+
+        // verify trove count decreased by 1
+        assertEq(statePost.troveOwnersCount, 2);
+
+        // verify user1 received correct remaining collateral
+        assertEq(statePost.userSBTCBal, 2777794444444444445);
+
+        // verify user1 has their original debt tokens since user3's debt tokens
+        // were used to close the trove
+        assertEq(statePost.userDebtTokenBal, debtAmountMax);
+
+        // get user2 state
+        statePost = _getBorrowerOpsState(users.user2);
+
+        // verify user2 has no collateral as their trove was not closed
+        assertEq(statePost.userSBTCBal, 0);
+        // verify user2 debt unchanged
+        assertEq(statePost.userDebtTokenBal, debtAmountMax);
+
+        // user2 open trove has its collateral reduced
+        (uint256 coll, uint256 debt) = stakedBTCTroveMgr.getTroveCollAndDebt(users.user2);
+        assertEq(coll, 3888897222222222223);
+        // and its debt was approximately halved
+        assertEq(debt, 66667166666666666666667);
+    }
 
     function test_claimReward_someTroveManagerDebtRewardsLost() external {
         // setup vault giving user1 half supply to lock for voting power
@@ -909,5 +1026,173 @@ contract BorrowerOperationsTest is StabilityPoolTest {
 
         uint256 compositeDebt = borrowerOps.getCompositeDebt(debt);
         assertEq(compositeDebt, debt + borrowerOps.DEBT_GAS_COMPENSATION());
+    }
+
+    function test_setPaused_guardianCanPauseNotUnpause() external {
+        vm.prank(users.guardian);
+        stakedBTCTroveMgr.setPaused(true);
+
+        assertTrue(stakedBTCTroveMgr.paused());
+
+        vm.expectRevert("Unauthorized");
+        vm.prank(users.guardian);
+        stakedBTCTroveMgr.setPaused(false);
+    }
+
+    function test_setPaused_ownerCanPauseUnpause() external {
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setPaused(true);
+
+        assertTrue(stakedBTCTroveMgr.paused());
+
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setPaused(false);
+
+        assertFalse(stakedBTCTroveMgr.paused());
+    }
+
+    function test_setPaused_failNormalUser() external {
+        vm.expectRevert("Unauthorized");
+        vm.prank(users.user1);
+        stakedBTCTroveMgr.setPaused(true);
+
+        vm.expectRevert("Unauthorized");
+        vm.prank(users.user1);
+        stakedBTCTroveMgr.setPaused(false);
+    }
+
+    function test_setPriceFeed_failNotOwner() external {
+        vm.expectRevert("Only owner");
+        stakedBTCTroveMgr.setPriceFeed(address(0x1234));
+    }
+
+    function test_setPriceFeed() external {
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setPriceFeed(address(0x1234));
+
+        assertEq(address(stakedBTCTroveMgr.priceFeed()), address(0x1234));
+    }
+
+    function test_setParameters_failNotOwner() external {
+        IFactory.DeploymentParams memory params = IFactory.DeploymentParams({
+            minuteDecayFactor : 999037758833783000,
+            redemptionFeeFloor: INIT_REDEMPTION_FEE_FLOOR,
+            maxRedemptionFee: INIT_MAX_REDEMPTION_FEE,
+            borrowingFeeFloor: INIT_BORROWING_FEE_FLOOR,
+            maxBorrowingFee: INIT_MAX_BORROWING_FEE,
+            interestRateInBps: INIT_INTEREST_RATE_BPS,
+            maxDebt: INIT_MAX_DEBT,
+            MCR: INIT_MCR
+        });
+
+        vm.expectRevert("Only owner");
+        stakedBTCTroveMgr.setParameters(params.minuteDecayFactor,
+                                        params.redemptionFeeFloor,
+                                        params.maxRedemptionFee,
+                                        params.borrowingFeeFloor,
+                                        params.maxBorrowingFee,
+                                        params.interestRateInBps,
+                                        params.maxDebt,
+                                        params.MCR);
+    }
+
+    function _setInterestRate(uint256 newRateInBps) internal {
+        IFactory.DeploymentParams memory params = IFactory.DeploymentParams({
+            minuteDecayFactor : 999037758833783000,
+            redemptionFeeFloor: INIT_REDEMPTION_FEE_FLOOR,
+            maxRedemptionFee: INIT_MAX_REDEMPTION_FEE,
+            borrowingFeeFloor: INIT_BORROWING_FEE_FLOOR,
+            maxBorrowingFee: INIT_MAX_BORROWING_FEE,
+            interestRateInBps: newRateInBps,
+            maxDebt: INIT_MAX_DEBT,
+            MCR: INIT_MCR
+        });
+
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setParameters(params.minuteDecayFactor,
+                                        params.redemptionFeeFloor,
+                                        params.maxRedemptionFee,
+                                        params.borrowingFeeFloor,
+                                        params.maxBorrowingFee,
+                                        params.interestRateInBps,
+                                        params.maxDebt,
+                                        params.MCR);
+
+        assertEq(stakedBTCTroveMgr.lastActiveIndexUpdate(), block.timestamp);
+
+        uint256 expectedNewRate = (TM_INTEREST_PRECISION * params.interestRateInBps) /
+                                  (BIMA_100_PCT * TM_SECONDS_IN_YEAR);
+
+        assertEq(stakedBTCTroveMgr.interestRate(), expectedNewRate);
+    }
+
+    function test_setParameters(uint256 newRateInBps) external {
+        newRateInBps = bound(newRateInBps, 1, stakedBTCTroveMgr.MAX_INTEREST_RATE_IN_BPS());
+
+        _setInterestRate(newRateInBps);
+    }
+
+    // used to store relevant state before tests for verification afterwards
+    struct TroveManagerState {
+        uint256 totalActiveDebt;
+        uint256 interestPayable;
+        uint256 activeInterestIndex;
+        uint256 lastActiveIndexUpdate;
+    }
+    function _getTroveManagerState() internal view returns(TroveManagerState memory state) {
+        state.totalActiveDebt = stakedBTCTroveMgr.getTotalActiveDebt();
+        state.interestPayable = stakedBTCTroveMgr.interestPayable();
+        state.activeInterestIndex = stakedBTCTroveMgr.activeInterestIndex();
+        state.lastActiveIndexUpdate = stakedBTCTroveMgr.lastActiveIndexUpdate();
+    }
+
+    function test_accrueActiveInterests(uint256 rateInBps) external {
+        rateInBps = bound(rateInBps, 1, stakedBTCTroveMgr.MAX_INTEREST_RATE_IN_BPS());
+
+        _setInterestRate(rateInBps);
+
+        uint256 newInterestRate = stakedBTCTroveMgr.interestRate();
+
+        // save pre state
+        TroveManagerState memory statePre = _getTroveManagerState();
+
+        // fast forward 1 week
+        uint256 elapsedTime = 1 weeks;
+        vm.warp(block.timestamp + elapsedTime);
+
+        // calculate expected parameters
+        uint256 interestFactor = elapsedTime * newInterestRate;
+        uint256 currentInterestIndex = statePre.activeInterestIndex +
+                                       Math.mulDiv(statePre.activeInterestIndex, interestFactor, TM_INTEREST_PRECISION);
+        uint256 newInterest = Math.mulDiv(statePre.totalActiveDebt, interestFactor, TM_INTEREST_PRECISION);
+
+        // test these view functions correctly factor in interest payments
+        // even though the call to _accrueActiveInterests has not yet occurred
+        assertEq(stakedBTCTroveMgr.getEntireSystemDebt(), statePre.totalActiveDebt + newInterest);
+        assertEq(stakedBTCTroveMgr.getTotalActiveDebt(), statePre.totalActiveDebt + newInterest);
+
+        // trigger _accrueActiveInterests
+        vm.prank(address(liquidationMgr));
+        stakedBTCTroveMgr.updateBalances();
+
+        // save post state
+        TroveManagerState memory statePost = _getTroveManagerState();
+
+        // verify new interest added to total active debt and interest payable
+        assertEq(statePost.totalActiveDebt, statePre.totalActiveDebt + newInterest);
+        assertEq(statePost.interestPayable, statePre.interestPayable + newInterest);
+
+        // verify active interest index updated
+        assertNotEq(currentInterestIndex, statePre.activeInterestIndex);
+        assertEq(statePost.activeInterestIndex, currentInterestIndex);
+        
+        // verify active index update timestamp updated
+        assertTrue(statePost.lastActiveIndexUpdate > statePre.lastActiveIndexUpdate);
+        assertEq(statePost.lastActiveIndexUpdate, block.timestamp);
+
+        // verify interest payable can be collected
+        uint256 feeReceiverDebtTokenBalPre = debtToken.balanceOf(address(feeReceiver));
+        stakedBTCTroveMgr.collectInterests();
+        assertEq(debtToken.balanceOf(address(feeReceiver)), feeReceiverDebtTokenBalPre + newInterest);
     }
 }
