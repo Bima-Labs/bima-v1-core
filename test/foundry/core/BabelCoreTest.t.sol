@@ -87,7 +87,7 @@ contract BabelCoreTest is TestSetup {
     }
 
     function test_acceptTransferOwnership_failsNotNewPendingOwner() external {
-        address newPendingOwner = test_commitTransferOwnership();
+        test_commitTransferOwnership();
 
         vm.expectRevert("Only new owner");
         babelCore.acceptTransferOwnership();
@@ -120,7 +120,7 @@ contract BabelCoreTest is TestSetup {
     }
 
     function test_revokeTransferOwnership() external {
-        address newPendingOwner = test_commitTransferOwnership();
+        test_commitTransferOwnership();
 
         vm.prank(users.owner);
         babelCore.revokeTransferOwnership();

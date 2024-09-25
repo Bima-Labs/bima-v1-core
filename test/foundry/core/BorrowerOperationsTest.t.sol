@@ -131,6 +131,31 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(balances.prices[0], statePre.sysBalances.prices[0]);
     }
 
+    function _openTroveThenRecoveryMode() internal returns(uint256 collateralAmount, uint256 debtAmountMax) {
+        // user1 opens a trove using 20 BTC collateral (price = $60,000 in MockOracle)
+        collateralAmount = 20e18;
+        debtAmountMax = _getMaxDebtAmount(collateralAmount);
+
+        _openTrove(users.user1, collateralAmount, debtAmountMax);
+
+        uint256 userICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
+        assertEq(userICR, 2250000000000000000);
+
+        // set new value of btc to $53,335 to make trove liquidatable
+        // with ICR >= MCR and TCR < CCR and ICR < TCR which triggers
+        // recovery mode
+        mockOracle.setResponse(mockOracle.roundId() + 1,
+                               int256(53335 * 10 ** 8),
+                               block.timestamp + 1,
+                               block.timestamp + 1,
+                               mockOracle.answeredInRound() + 1);
+        // warp time to prevent cached price being used
+        vm.warp(block.timestamp + 1);
+
+        uint256 TCR = borrowerOps.getTCR();
+        assertTrue(borrowerOps.checkRecoveryMode(TCR));
+    }
+
     function test_openTrove_failInvalidTroveManager() external {
         vm.expectRevert("Collateral not enabled");
         vm.prank(users.user1);
@@ -171,6 +196,35 @@ contract BorrowerOperationsTest is StabilityPoolTest {
               - INIT_GAS_COMPENSATION;
 
         _openTrove(users.user1, collateralAmount, debtAmountMax);
+    }
+
+    function test_openTrove_inRecoveryMode() external {
+        (uint256 collateralAmount, uint256 debtAmountMax) = _openTroveThenRecoveryMode();
+
+        // if user2 attempts to open a trove with ICR < CCR, this fails
+        vm.expectRevert("BorrowerOps: Operation must leave trove with ICR >= CCR");
+        vm.prank(users.user2);
+        borrowerOps.openTrove(stakedBTCTroveMgr,
+                              users.user2,
+                              0, // maxFeePercentage
+                              collateralAmount,
+                              debtAmountMax,
+                              address(0), address(0)); // hints
+
+        // user2 can open a trove with ICR >= CCR
+        _sendStakedBtc(users.user2, collateralAmount);
+        vm.prank(users.user2);
+        stakedBTC.approve(address(borrowerOps), collateralAmount);
+        vm.prank(users.user2);
+        borrowerOps.openTrove(stakedBTCTroveMgr,
+                              users.user2,
+                              0, // maxFeePercentage
+                              collateralAmount,
+                              debtAmountMax/2,
+                              address(0), address(0)); // hints
+
+        assertTrue(stakedBTCTroveMgr.getCurrentICR(users.user2, stakedBTCTroveMgr.fetchPrice())
+                   > borrowerOps.CCR());
     }
 
     function test_addColl(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) public
@@ -268,6 +322,17 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(sysBalancesPost.collaterals[0], statePre.sysBalances.collaterals[0] - withdrawnCollateral);
         assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0]);
         assertEq(sysBalancesPost.prices[0], statePre.sysBalances.prices[0]);
+    }
+
+    function test_withdrawColl_failsInRecoveryMode() external {
+        (uint256 collateralAmount, /*uint256 debtAmountMax*/) = _openTroveThenRecoveryMode();
+
+        vm.expectRevert("BorrowerOps: Collateral withdrawal not permitted Recovery Mode");
+        vm.prank(users.user1);
+        borrowerOps.withdrawColl(stakedBTCTroveMgr,
+                                 users.user1,
+                                 collateralAmount,
+                                 address(0), address(0)); // hints
     }
 
     function test_withdrawDebt(uint256 collateralAmount, uint256 debtAmount, uint256 btcPrice) external

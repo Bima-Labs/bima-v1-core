@@ -456,31 +456,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
     }
 
     function test_liquidate_oneTroveWithStabilityPool_ICRgtMCR_TCRltCCR_ICRltTCR(bool functionSwitch) external {
-        // user1 opens a trove using 2 BTC collateral (price = $60,000 in MockOracle)
-        uint256 collateralAmount = 20e18;
-        uint256 debtAmountMax = _getMaxDebtAmount(collateralAmount);
-
-        _openTrove(users.user1, collateralAmount, debtAmountMax);
-
-        uint256 userICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
-        assertEq(userICR, 2250000000000000000);
+        (uint256 collateralAmount, uint256 debtAmountMax) = _openTroveThenRecoveryMode();
 
         // user2 deposits enough debt into the stability pool to cover user1's debt
         uint96 spDepositAmount = SafeCast.toUint96(debtAmountMax+1e18);
         _provideToSP(users.user2, spDepositAmount, 1);
 
-        // set new value of btc to $53,335 to make trove liquidatable
-        // with ICR >= MCR and TCR < CCR and ICR < TCR which triggers
-        // different liquidation code
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                               int256(53335 * 10 ** 8),
-                               block.timestamp + 1,
-                               block.timestamp + 1,
-                               mockOracle.answeredInRound() + 1);
-        // warp time to prevent cached price being used
-        vm.warp(block.timestamp + 1);
-
-        userICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
+        uint256 userICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
         assertEq(userICR, 2000062500000000000);
         assertTrue(userICR >= stakedBTCTroveMgr.MCR());
 
