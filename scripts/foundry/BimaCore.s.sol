@@ -228,6 +228,9 @@ contract BimaCoreScript is Script, Test {
     );
     assertEq(prAddresses.babelVault, address(deployedContracts.babelVault));
 
+    // TODO: Create EmissionSchedule
+    // TODO: Create BoostCalculator
+
     vm.stopBroadcast();
 
     console.log("DONE");
