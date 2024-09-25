@@ -525,6 +525,10 @@ contract TokenLockerTest is TestSetup {
         // save previous decay rate
         uint256 totalDecayRatePre = tokenLocker.totalDecayRate();
 
+        // get expected amounts using TokenLocker::getWithdrawWithPenaltyAmounts
+        (uint256 expectedAmountWithdrawn, uint256 expectedPenaltyAmountPaid)
+            = tokenLocker.getWithdrawWithPenaltyAmounts(users.user1, type(uint256).max);
+
         // perform the withdraw with penalty
         vm.prank(users.user1);
         tokenLocker.withdrawWithPenalty(type(uint256).max);
@@ -546,6 +550,10 @@ contract TokenLockerTest is TestSetup {
 
         // verify token decay rate reduced by withdrawn amount
         assertEq(tokenLocker.totalDecayRate(), totalDecayRatePre - lockedAmount);
+
+        // verify TokenLocker::getWithdrawWithPenaltyAmounts returned correct values
+        assertEq(penaltyOnAmount, expectedPenaltyAmountPaid);
+        assertEq(expectedAmountWithdrawn, lockedAmount * INIT_LOCK_TO_TOKEN_RATIO - penaltyOnAmount);
     }
 
     function test_withdrawWithPenalty_fixActiveLockWithZeroLocked() external {
