@@ -670,4 +670,131 @@ contract TokenLockerTest is TestSetup {
 
         assertEq(tokenLocker.getTotalWeightWrite(), 0);
     }
+
+    function test_lockMany() public returns(ITokenLocker.LockData[] memory locksData) {
+        locksData = new ITokenLocker.LockData[](2);
+        locksData[0].amount = 10e18 / INIT_LOCK_TO_TOKEN_RATIO;
+        locksData[0].weeksToUnlock = 2;
+        locksData[1].amount = 20e18 / INIT_LOCK_TO_TOKEN_RATIO;
+        locksData[1].weeksToUnlock = 4;
+
+        uint256 totalToLock = locksData[0].amount + locksData[1].amount;
+
+        // save user initial balance
+        uint256 userPreLockTokenBalance = babelToken.balanceOf(users.user1);
+
+        (uint256 userPreLockLockedBalance, ) = tokenLocker.getAccountBalances(users.user1);
+
+        // lock up
+        vm.prank(users.user1);
+        assertTrue(tokenLocker.lockMany(users.user1, locksData));
+
+        // verify locked amount is correct
+        (uint256 totalLocked, ) = tokenLocker.getAccountBalances(users.user1);
+        totalLocked -= userPreLockLockedBalance;
+
+        assertEq(totalLocked, totalToLock);
+
+        // when checking actual token balances, need to multipy totalLocked by
+        // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
+        assertEq(babelToken.balanceOf(users.user1), userPreLockTokenBalance - totalLocked*INIT_LOCK_TO_TOKEN_RATIO);
+
+        // verify user has positive voting weight in the current week
+        uint256 userWeight = tokenLocker.getAccountWeight(users.user1);
+        assertTrue(userWeight > 0);
+
+        // verify user has no voting weight for future weeks
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek()+1), 0);
+
+        // verify total weight for current week all belongs to user
+        assertEq(tokenLocker.getTotalWeight(), userWeight);
+
+        // verify no total weight for future weeks
+        assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+
+        // verify user active locks are correct
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+
+        assertEq(activeLockData.length, 2);
+        assertEq(frozenAmount, 0);
+        assertEq(activeLockData[0].amount, locksData[1].amount);
+        assertEq(activeLockData[0].weeksToUnlock, locksData[1].weeksToUnlock);
+        assertEq(activeLockData[1].amount, locksData[0].amount);
+        assertEq(activeLockData[1].weeksToUnlock, locksData[0].weeksToUnlock);
+
+        // verify future total weekly unlocks increased for locked amounts
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount);
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount);
+
+        // verify future account weekly unlocks increased for locked amounts
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount);
+    }
+
+    function test_extendMany() external {
+        ITokenLocker.LockData[] memory locksData = test_lockMany();
+
+        ITokenLocker.ExtendLockData[] memory extendLocksData = new ITokenLocker.ExtendLockData[](2);
+        extendLocksData[0].amount = locksData[0].amount;
+        extendLocksData[0].currentWeeks = locksData[0].weeksToUnlock;
+        extendLocksData[0].newWeeks = locksData[0].weeksToUnlock + 1;
+        extendLocksData[1].amount = locksData[1].amount;
+        extendLocksData[1].currentWeeks = locksData[1].weeksToUnlock;
+        extendLocksData[1].newWeeks = locksData[1].weeksToUnlock + 1;
+
+        vm.prank(users.user1);
+        assertTrue(tokenLocker.extendMany(extendLocksData));
+
+        // verify locked amount is correct
+        (uint256 totalLocked, ) = tokenLocker.getAccountBalances(users.user1);
+        assertEq(totalLocked, extendLocksData[0].amount + extendLocksData[1].amount);
+
+        // verify user active locks are correct
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+
+        assertEq(activeLockData.length, 2);
+        assertEq(frozenAmount, 0);
+        assertEq(activeLockData[0].amount, extendLocksData[1].amount);
+        assertEq(activeLockData[0].weeksToUnlock, extendLocksData[1].newWeeks);
+        assertEq(activeLockData[1].amount, extendLocksData[0].amount);
+        assertEq(activeLockData[1].weeksToUnlock, extendLocksData[0].newWeeks);
+
+        // verify future total weekly unlocks increased for locked amounts
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount);
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount);
+
+        // verify future account weekly unlocks increased for locked amounts
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount);
+
+        // verify future total weekly unlocks decreased for old locks
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+locksData[0].weeksToUnlock), 0);
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+locksData[1].weeksToUnlock), 0);
+
+        // verify future account weekly unlocks decreased for old locks
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+locksData[0].weeksToUnlock), 0);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+locksData[1].weeksToUnlock), 0);
+    }
 }
