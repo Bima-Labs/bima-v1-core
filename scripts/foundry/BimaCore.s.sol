@@ -234,5 +234,22 @@ contract BimaCoreScript is Script, Test {
     vm.stopBroadcast();
 
     console.log("DONE");
+
+    console.log("BabelCore: ", address(deployedContracts.babelCore));
+    console.log("PriceFeed: ", address(deployedContracts.priceFeed));
+    console.log("Factory: ", address(deployedContracts.factory));
+    console.log("LiquidationManager: ", address(deployedContracts.liquidationMgr));
+    console.log("DebtToken: ", address(deployedContracts.debtToken));
+    console.log("BorrowerOperations: ", address(deployedContracts.borrowerOps));
+    console.log("StabilityPool: ", address(deployedContracts.stabilityPool));
+    console.log("TroveManager: ", address(deployedContracts.troveMgr));
+    console.log("TokenLocker: ", address(deployedContracts.tokenLocker));
+    console.log("IncentiveVoting: ", address(deployedContracts.incentiveVoting));
+    console.log("BabelToken: ", address(deployedContracts.babelToken));
+    console.log("BabelVault: ", address(deployedContracts.babelVault));
+    console.log("SortedTroves: ", address(deployedContracts.sortedTroves));
+    console.log("GasPool: ", address(deployedContracts.gasPool));
+    console.log("FeeReceiver: ", address(deployedContracts.feeReceiver));
+    console.log("InterimAdmin: ", address(deployedContracts.interimAdmin));
   }
 }
