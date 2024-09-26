@@ -940,7 +940,7 @@ contract BorrowerOperationsTest is StabilityPoolTest {
 
     function test_claimReward_someTroveManagerDebtRewardsLost() external {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // owner registers TroveManager for vault emission rewards
         vm.prank(users.owner);

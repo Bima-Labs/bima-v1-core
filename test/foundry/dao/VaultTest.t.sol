@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {TestSetup, IBabelVault, BabelVault, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IRewards, MockEmissionReceiver, MockBoostDelegate, SafeCast} from "../TestSetup.sol";
+import {TestSetup, IBabelVault, BabelVault, EmissionSchedule, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IEmissionSchedule, IBoostCalculator, IRewards, MockEmissionReceiver, MockBoostDelegate, SafeCast} from "../TestSetup.sol";
 
 // dependencies
 import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
@@ -305,7 +305,7 @@ contract VaultTest is TestSetup {
     // helper function
     function _allocateNewEmissionsAndWarp(uint256 weeksToWarp) internal {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // helper registers receivers and performs all necessary checks
         address receiver = address(mockEmissionReceiver);
@@ -753,7 +753,7 @@ contract VaultTest is TestSetup {
 
     function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // helper registers receivers and performs all necessary checks
         address receiver = address(mockEmissionReceiver);
@@ -814,7 +814,7 @@ contract VaultTest is TestSetup {
 
     function test_allocateNewEmissions_oneDisabledReceiverWithVotingWeight() external {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // helper registers receivers and performs all necessary checks
         address receiver = address(mockEmissionReceiver);
@@ -877,7 +877,7 @@ contract VaultTest is TestSetup {
 
     function test_allocateNewEmissions_twoReceiversWithEqualVotingWeight() external {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // helper registers receivers and performs all necessary checks
         address receiver = address(mockEmissionReceiver);
@@ -957,7 +957,7 @@ contract VaultTest is TestSetup {
 
     function test_allocateNewEmissions_twoReceiversWithUnequalExtremeVotingWeight() external {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // helper registers receivers and performs all necessary checks
         address receiver = address(mockEmissionReceiver);
@@ -1041,7 +1041,7 @@ contract VaultTest is TestSetup {
     
     function test_unfreeze_fixForFailToRemoveActiveVotes() external {
         // setup vault giving user1 half supply to lock for voting power
-        _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // verify user1 has 1 unfrozen lock
         (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
@@ -1090,7 +1090,7 @@ contract VaultTest is TestSetup {
     function test_allocateNewEmissions_fixForTokensLostAfterDisablingReceiver() public
         returns(uint256 disabledReceiverId) {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
 
         // receiver to be disabled later
         address receiver1 = address(mockEmissionReceiver);
@@ -1171,5 +1171,68 @@ contract VaultTest is TestSetup {
         vm.expectRevert("Can't vote for disabled receivers - clearVote first");
         vm.prank(users.user1);
         incentiveVoting.vote(users.user1, votes, false);
+    }
+
+    function test_setEmissionSchedule_failNotOwner() external {
+        vm.expectRevert("Only owner");
+        babelVault.setEmissionSchedule(IEmissionSchedule(address(0)));
+    }
+
+    function test_setEmissionSchedule() external {
+        uint64[2][] memory scheduledWeeklyPct;
+        EmissionSchedule newEmissionSchedule
+            = new EmissionSchedule(address(babelCore), 
+                                   incentiveVoting,
+                                   babelVault,
+                                   INIT_ES_LOCK_WEEKS,
+                                   INIT_ES_LOCK_DECAY_WEEKS,
+                                   INIT_ES_WEEKLY_PCT,
+                                   scheduledWeeklyPct);
+    
+        // fast forward time to trigger additional processing
+        // inside _allocateTotalWeekly
+        vm.warp(block.timestamp + 4 weeks);
+
+        vm.prank(users.owner);
+        assertTrue(babelVault.setEmissionSchedule(newEmissionSchedule));
+
+        assertEq(address(babelVault.emissionSchedule()), address(newEmissionSchedule));
+    }
+
+    function test_setBoostCalculator_failNotOwner() external {
+        vm.expectRevert("Only owner");
+        babelVault.setBoostCalculator(IBoostCalculator(address(0)));
+    }
+
+    function test_setBoostCalculator() external {
+        vm.prank(users.owner);
+        assertTrue(babelVault.setBoostCalculator(IBoostCalculator(address(0x123456))));
+        assertEq(address(babelVault.boostCalculator()), address(0x123456));
+    }
+
+    function test_increaseUnallocatedSupply(uint256 amount) external {
+        uint256 user1Supply = INIT_BAB_TKN_TOTAL_SUPPLY/2;
+
+        // setup vault giving user1 half supply but no locking
+        _vaultSetupAndLockTokens(user1Supply, false);
+
+        // bound fuzz inputs
+        amount = bound(amount, 0, user1Supply);
+
+        vm.prank(users.user1);
+        babelToken.approve(address(babelVault), amount);
+
+        // save previous state
+        uint256 initialUnallocated = babelVault.unallocatedTotal();
+        uint256 initialBabelBalance = babelToken.balanceOf(address(babelVault));
+        uint256 initialUserBalance = babelToken.balanceOf(users.user1);
+
+        vm.prank(users.user1);
+        assertTrue(babelVault.increaseUnallocatedSupply(amount));
+
+        assertEq(babelVault.unallocatedTotal(), initialUnallocated + amount);
+        assertEq(babelToken.balanceOf(address(babelVault)), initialBabelBalance + amount);
+        assertEq(babelToken.balanceOf(users.user1), initialUserBalance - amount);
+
     }
 }
