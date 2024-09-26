@@ -79,6 +79,16 @@ contract AllocationVesting is DelegatedOps, Ownable {
         maxTotalPreclaimPct = maxTotalPreclaimPct_;
     }
 
+
+    /**
+     *
+     * @notice Returns claimed amount
+     * @param account account to check
+     */
+    function getClaimed(address account) external view returns(uint256 claimed) {
+        claimed = allocations[account].claimed;
+    }
+
     /**
      *
      * @notice Set allocations and starts vesting

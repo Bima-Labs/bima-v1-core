@@ -343,18 +343,21 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         address account,
         uint256 amountToWithdraw
     ) external view returns (uint256 amountWithdrawn, uint256 penaltyAmountPaid) {
+        // get storage reference to user's account
         AccountData storage accountData = accountLockData[account];
-        uint32[65535] storage unlocks = accountWeeklyUnlocks[account];
-        if (amountToWithdraw != type(uint256).max) amountToWithdraw *= lockToTokenRatio;
 
-        // first we apply the unlocked balance without penalty
+        // scale up both amount to withdraw and unlocked amount by lockToTokenRatio
+        if (amountToWithdraw != type(uint256).max) amountToWithdraw *= lockToTokenRatio;
         uint256 unlocked = accountData.unlocked * lockToTokenRatio;
+
+        // if user has enough unlocked to cover the withdraw, then there is no penalty
         if (unlocked >= amountToWithdraw) {
             return (amountToWithdraw, 0);
         }
 
+        // if execution reaches here user doesn't have enough unlocked to
+        // cover the amount they want to withdraw
         uint256 remaining = amountToWithdraw - unlocked;
-        uint256 penaltyTotal;
 
         uint256 accountWeek = accountData.week;
         uint256 systemWeek = getWeek();
@@ -370,7 +373,8 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             }
 
             if ((bitfield >> (accountWeek % 256)) & uint256(1) == 1) {
-                uint256 lockAmount = unlocks[accountWeek] * lockToTokenRatio;
+                // get amount locked for given week scaled up by lockToTokenRatio
+                uint256 lockAmount = accountWeeklyUnlocks[account][accountWeek] * lockToTokenRatio;
 
                 uint256 penaltyOnAmount;
                 if (accountWeek > systemWeek) {
@@ -378,30 +382,44 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                     penaltyOnAmount = (lockAmount * (weeksToUnlock - offset)) / MAX_LOCK_WEEKS;
                 }
 
+                // if after deducting the penalty from the locked amount the result is
+                // greater than the remaining amount the user wishes to withdraw
                 if (lockAmount - penaltyOnAmount > remaining) {
-                    // after penalty, locked amount exceeds remaining required balance
-                    // we can complete the withdrawal using only a portion of this lock
+                    // then recalculate the penalty using only the portion of the lock
+                    // amount that will be withdrawn
                     penaltyOnAmount =
                         (remaining * MAX_LOCK_WEEKS) /
                         (MAX_LOCK_WEEKS - (weeksToUnlock - offset)) -
                         remaining;
+
+                    // add any dust to the penalty amount
                     uint256 dust = ((penaltyOnAmount + remaining) % lockToTokenRatio);
                     if (dust > 0) penaltyOnAmount += lockToTokenRatio - dust;
-                    penaltyTotal += penaltyOnAmount;
+
+                    // update memory total penalty
+                    penaltyAmountPaid += penaltyOnAmount;
+
+                    // nothing remaining to be withdrawn
                     remaining = 0;
-                } else {
-                    // after penalty, locked amount does not exceed remaining required balance
-                    // the entire lock must be used in the withdrawal
-                    penaltyTotal += penaltyOnAmount;
+                }
+                // otherwise use entire locked amount to service the withdrawal
+                else {
+                    // update memory total penalty
+                    penaltyAmountPaid += penaltyOnAmount;
+
+                    // adjust remaining amount by net amount withdraw after penalty incurred
                     remaining -= lockAmount - penaltyOnAmount;
                 }
 
+                // exit loop if amount to be withdrawn satisfied
                 if (remaining == 0) {
                     break;
                 }
             }
         }
-        amountToWithdraw -= remaining;
+
+        // output actual withdrawn amount
+        amountWithdrawn = amountToWithdraw - remaining;
     }
 
     /**

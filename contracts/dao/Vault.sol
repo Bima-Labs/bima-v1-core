@@ -643,9 +643,6 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // cache previous amount claimed this week by claimant
         uint256 previousAmount = accountWeeklyEarned[claimant][week];
 
-        // working data
-        uint256 fee;
-
         if (boostDelegate != address(0)) {
             // cache delegate data from storage
             Delegation memory data = boostDelegation[boostDelegate];
@@ -659,22 +656,22 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                 try data.callback.getFeePct(claimant, receiver, amount, previousAmount, totalWeekly) returns (
                     uint256 _fee
                 ) {
-                    fee = _fee;
+                    feeToDelegate = _fee;
                 } catch {
                     return (0, 0);
                 }
             }
             // otherwise use fee percent in delegation data
-            else fee = data.feePct;
+            else feeToDelegate = data.feePct;
 
             // enforce fee can't be greater than constant max fee
-            if (fee > BIMA_100_PCT) return (0, 0);
+            if (feeToDelegate > BIMA_100_PCT) return (0, 0);
         }
 
         adjustedAmount = boostCalculator.getBoostedAmount(claimant, amount, previousAmount, totalWeekly);
 
         // calculate actual fee amount using fee percent (`fee` currently = fee percent)
-        fee = (adjustedAmount * fee) / BIMA_100_PCT;
+        feeToDelegate = (adjustedAmount * feeToDelegate) / BIMA_100_PCT;
     }
 
     /**
@@ -748,5 +745,9 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
 
     function getStoredPendingReward(address claimant) external view returns(uint256 amount) {
         amount = storedPendingReward[claimant];
+    }
+
+    function isBoostDelegatedEnabled(address account) external view returns(bool isEnabled) {
+        isEnabled = boostDelegation[account].isEnabled;
     }
 }

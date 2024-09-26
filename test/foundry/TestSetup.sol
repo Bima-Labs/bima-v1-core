@@ -166,6 +166,8 @@ contract TestSetup is Test {
                             18, // sharePriceDecimals
                             false //_isEthIndexed
                             );
+        assertEq(priceFeed.owner(), users.owner);
+        assertEq(priceFeed.guardian(), users.guardian);
 
         // FeeReceiver
         feeReceiver = new FeeReceiver(addresses.core); ++addresses.nonce;
@@ -298,8 +300,8 @@ contract TestSetup is Test {
         // create EmissionSchedule
         uint64[2][] memory scheduledWeeklyPct;
         emissionSchedule = new EmissionSchedule(address(babelCore), 
-                                                IIncentiveVoting(address(incentiveVoting)),
-                                                IBabelVault(address(babelVault)),
+                                                incentiveVoting,
+                                                babelVault,
                                                 INIT_ES_LOCK_WEEKS,
                                                 INIT_ES_LOCK_DECAY_WEEKS,
                                                 INIT_ES_WEEKLY_PCT,
@@ -312,7 +314,7 @@ contract TestSetup is Test {
 
         // create BoostCalculator
         boostCalc = new BoostCalculator(address(babelCore),
-                                        ITokenLocker(address(tokenLocker)),
+                                        tokenLocker,
                                         INIT_BS_GRACE_WEEKS);
 
         // note: the hardhat script had some post deloyment actions
@@ -375,7 +377,7 @@ contract TestSetup is Test {
         assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
     }
 
-    function _vaultSetupAndLockTokens(uint256 user1Allocation) internal returns (uint256 initialUnallocated) {
+    function _vaultSetupAndLockTokens(uint256 user1Allocation, bool lock) internal returns (uint256 initialUnallocated) {
         // setup the vault to get BabelTokens which are used for voting
         uint128[] memory _fixedInitialAmounts;
         IBabelVault.InitialAllowance[] memory initialAllowances 
@@ -421,16 +423,18 @@ contract TestSetup is Test {
         initialUnallocated = babelVault.unallocatedTotal();
         assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY - user1Allocation);
 
-        // receiver locks up their tokens to get voting weight
-        vm.prank(users.user1);
-        tokenLocker.lock(users.user1, user1Allocation/INIT_LOCK_TO_TOKEN_RATIO, 52);
+        if(lock) {
+            // receiver locks up their tokens to get voting weight
+            vm.prank(users.user1);
+            tokenLocker.lock(users.user1, user1Allocation/INIT_LOCK_TO_TOKEN_RATIO, 52);
 
-        // verify receiver balance after lock; calculated this way because of how
-        // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
-        // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
-        uint256 users1TokensAfterLock = user1Allocation -
-                                        (user1Allocation/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
-        assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
+            // verify receiver balance after lock; calculated this way because of how
+            // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
+            // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
+            uint256 users1TokensAfterLock = user1Allocation -
+                                            (user1Allocation/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
+            assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
+        }
     }
 
     function _vaultRegisterReceiver(address receiverAddr, uint256 count) internal returns(uint256 firstReceiverId) {

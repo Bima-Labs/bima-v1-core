@@ -27,6 +27,12 @@ contract MockOracle is IAggregatorV3Interface {
         answeredInRound = _answeredInRound;
     }
 
+    function refresh() external {
+        ++roundId;
+        ++answeredInRound;
+        updatedAt = block.timestamp;
+    }
+
     function decimals() external pure returns (uint8) {
         return 8;
     }

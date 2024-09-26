@@ -106,9 +106,10 @@ contract AdminVotingTest is TestSetup {
                                     uint256 proposalPassingPct,
                                     AdminVoting.Action[] memory payload) internal view {
         // verify requiredWeight calculated using correct passing percent
-        assertEq(adminVoting.getProposalRequiredWeight(proposalId), 
-                 (tokenLocker.getTotalWeightAt(proposalWeek) * proposalPassingPct) /
-                 BIMA_100_PCT);
+        uint256 expectedRequiredWeight
+            = (tokenLocker.getTotalWeightAt(proposalWeek) * proposalPassingPct) / BIMA_100_PCT;
+        assertEq(adminVoting.getProposalRequiredWeight(proposalId), expectedRequiredWeight);
+
         // verify proposal details stored correctly
         assertEq(adminVoting.getProposalWeek(proposalId), proposalWeek);
         assertEq(adminVoting.getProposalCreatedAt(proposalId), block.timestamp);
@@ -124,6 +125,32 @@ contract AdminVotingTest is TestSetup {
         for(uint256 i; i<payload.length; i++) {
             assertEq(payload[i].target, savedPayload[i].target);
             assertEq(payload[i].data, savedPayload[i].data);
+        }
+
+        // verify this view function also returns correct data
+        (
+            uint256 week,
+            uint256 createdAt,
+            uint256 currentWeight,
+            uint256 requiredWeight,
+            uint256 canExecuteAfter,
+            bool executed,
+            bool canExecute,
+            AdminVoting.Action[] memory savedPayload2
+        ) = adminVoting.getProposalData(proposalId);
+
+        assertEq(week, proposalWeek);
+        assertEq(createdAt, block.timestamp);
+        assertEq(currentWeight, 0);
+        assertEq(requiredWeight, expectedRequiredWeight);
+        assertEq(canExecuteAfter, 0);
+        assertEq(executed, false);
+        assertEq(canExecute, false);
+
+        assertEq(payload.length, savedPayload2.length);
+        for(uint256 i; i<payload.length; i++) {
+            assertEq(payload[i].target, savedPayload2[i].target);
+            assertEq(payload[i].data, savedPayload2[i].data);
         }
     }
 
@@ -193,6 +220,12 @@ contract AdminVotingTest is TestSetup {
         vm.warp(block.timestamp + 1 weeks);
         uint256 weekNum = 1;
         assertEq(adminVoting.getWeek(), weekNum);
+
+        // verify minimum required voting weight
+        uint256 expectedMinCreateProposalWeight
+            = tokenLocker.getTotalWeightAt(weekNum-1) * adminVoting.minCreateProposalPct() / BIMA_100_PCT;
+
+        assertEq(adminVoting.minCreateProposalWeight(), expectedMinCreateProposalWeight);
 
         // create the proposal
         vm.prank(users.user1);
@@ -282,13 +315,19 @@ contract AdminVotingTest is TestSetup {
     // helper function used to make a successful vote
     function _voteForProposal(address voter, uint256 proposalId, uint256 votingWeight) internal {
         uint256 previousWeight = adminVoting.getProposalCurrentWeight(proposalId);
+        uint256 maxUserWeight = tokenLocker.getAccountWeightAt(voter,
+                                                               adminVoting.getProposalWeek(proposalId));
 
         // vote on it
         vm.prank(voter);
         adminVoting.voteForProposal(voter, proposalId, votingWeight);
 
         // verify current voting weight correctly updated
+        if(votingWeight == 0) {
+            votingWeight = maxUserWeight;
+        }
         assertEq(adminVoting.getProposalCurrentWeight(proposalId)-previousWeight, votingWeight);
+
         // verify proposal still not processed
         assertEq(adminVoting.getProposalProcessed(proposalId), false);
         // verify proposal can't be executed
@@ -311,7 +350,7 @@ contract AdminVotingTest is TestSetup {
 
         // bind fuzz inputs
         votingWeight = bound(votingWeight,
-                              1,
+                              0,
                               tokenLocker.getAccountWeightAt(users.user1,
                                                              adminVoting.getProposalWeek(proposalId)));
 
