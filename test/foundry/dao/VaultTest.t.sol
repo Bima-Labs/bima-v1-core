@@ -217,7 +217,7 @@ contract VaultTest is TestSetup {
 
         // tokens were effectively lost since the vault's unallocated supply decreased
         // but no tokens were actually allocated to receivers since there was no
-        // voting weight
+        // voting weight in the first week
     }
 
     function test_transferAllocatedTokens_noPendingRewards_inBoostGraceWeeks_inVaultLockWeeks(uint256 transferAmount) external {
@@ -854,7 +854,11 @@ contract VaultTest is TestSetup {
 
         // cache state prior to allocateNewEmissions
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
-        
+
+        // one receiver as all the voting weight
+        assertEq(incentiveVoting.getReceiverWeight(RECEIVER_ID), incentiveVoting.getTotalWeight());
+        assertEq(incentiveVoting.getReceiverVotePct(RECEIVER_ID, systemWeek + 1), 1e18);
+
         // initial unallocated supply has not changed
         assertEq(babelVault.unallocatedTotal(), initialUnallocated);
 
@@ -892,6 +896,52 @@ contract VaultTest is TestSetup {
         // doesn't return any more since already been called for current system week
         assertEq(allocated2, 0);
         assertEq(babelVault.allocated(receiver), firstWeekEmissions);
+
+        // re-register account weight
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeight(users.user1, 51);
+
+        // verify votes preserved
+        IIncentiveVoting.Vote[] memory votes2 = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes2.length, votes.length);
+        assertEq(votes2[0].id, votes[0].id);
+        assertEq(votes2[0].points, votes[0].points);
+
+        // change vote weight
+        votes[0].points /= 2;
+        vm.prank(users.user1);
+
+        // register weight and vote again
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 51, votes);
+
+        // verify previous vote cleared and new vote saved
+        votes2 = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes2.length, votes.length);
+        assertEq(votes2[0].id, votes[0].id);
+        assertEq(votes2[0].points, votes[0].points);
+
+        // change vote weight back to original
+        votes[0].points = incentiveVoting.MAX_POINTS();
+
+        // vote with clear previous to delete old vote
+        vm.prank(users.user1);
+        incentiveVoting.vote(users.user1, votes, true);
+
+        // verify new vote
+        votes2 = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes2.length, votes.length);
+        assertEq(votes2[0].id, votes[0].id);
+        assertEq(votes2[0].points, votes[0].points);
+    }
+
+    function test_clearRegisteredWeight() external {
+        test_allocateNewEmissions_oneReceiverWithVotingWeight();
+
+        vm.prank(users.user1);
+        incentiveVoting.clearRegisteredWeight(users.user1);
+
+        IIncentiveVoting.Vote[] memory votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes.length, 0);
     }
 
     function test_allocateNewEmissions_oneDisabledReceiverWithVotingWeight() external {
@@ -1144,11 +1194,18 @@ contract VaultTest is TestSetup {
         vm.prank(users.user1);
         incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
 
+        (uint256 frozenWeight, ITokenLocker.LockData[] memory lockData)
+            = incentiveVoting.getAccountRegisteredLocks(users.user1);
+        assertEq(frozenWeight, 0);
+        assertEq(lockData.length, activeLockData.length);
+        assertEq(activeLockData[0].amount, lockData[0].amount);
+        assertEq(activeLockData[0].weeksToUnlock, lockData[0].weeksToUnlock);
+
         // verify user1 has 1 active vote using their unfrozen locked weight
         votes = incentiveVoting.getAccountCurrentVotes(users.user1);
         assertEq(votes.length, 1);
         assertEq(votes[0].id, RECEIVER_ID);
-        assertEq(votes[0].points, 10_000);
+        assertEq(votes[0].points, incentiveVoting.MAX_POINTS());
 
         // user1 freezes their lock
         vm.prank(users.user1);
@@ -1164,6 +1221,83 @@ contract VaultTest is TestSetup {
         tokenLocker.unfreeze(false); // keepIncentivesVote = false
 
         // user1 had their active vote cleared
+        votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+        assertEq(votes.length, 0);
+    }
+
+    function test_freeze_vote_unfreeze(bool keepIncentivesVote) external {
+        // setup vault giving user1 half supply to lock for voting power
+        _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
+
+        // user1 freezes their lock
+        vm.prank(users.user1);
+        tokenLocker.freeze();
+
+        // register receiver
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(address(mockEmissionReceiver), 1);
+
+        // user1 votes for receiver using their frozen locked weight
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // verify user1 has 1 frozen lock
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        assertEq(activeLockData.length, 0); // 0 active lock
+        assertGt(frozenAmount, 0); // positive frozen amount
+
+        // user1 unfreezes
+        vm.prank(users.user1);
+        tokenLocker.unfreeze(keepIncentivesVote);
+
+        // refresh votes after unfreeze
+        votes = incentiveVoting.getAccountCurrentVotes(users.user1);
+
+        if(keepIncentivesVote) {
+            assertEq(votes.length, 1);
+            assertEq(votes[0].id, RECEIVER_ID);
+            assertEq(votes[0].points, incentiveVoting.MAX_POINTS());
+        }
+        else {
+            assertEq(votes.length, 0);
+        }
+    }
+
+
+    function test_freeze_vote_removeVotes() external {
+        // setup vault giving user1 half supply to lock for voting power
+        _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
+
+        // user1 freezes their lock
+        vm.prank(users.user1);
+        tokenLocker.freeze();
+
+        // register receiver
+        uint256 RECEIVER_ID = _vaultRegisterReceiver(address(mockEmissionReceiver), 1);
+
+        // user1 votes for receiver using their frozen locked weight
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = RECEIVER_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // verify user1 has 1 frozen lock
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
+            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        assertEq(activeLockData.length, 0); // 0 active lock
+        assertGt(frozenAmount, 0); // positive frozen amount
+
+        // user1 clears their votes while still frozen
+        vm.prank(users.user1);
+        incentiveVoting.clearVote(users.user1);
+
+        // refresh votes after clear
         votes = incentiveVoting.getAccountCurrentVotes(users.user1);
         assertEq(votes.length, 0);
     }
