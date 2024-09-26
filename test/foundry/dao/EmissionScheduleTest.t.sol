@@ -232,4 +232,36 @@ contract EmissionScheduleTest is TestSetup {
         assertEq(emissionSchedule.getWeeklyPctSchedule().length, 0);
     }
 
+    function test_setLockParameters_failNotOwner() external {
+        vm.expectRevert("Only owner");
+        emissionSchedule.setLockParameters(0, 0);
+    }
+
+    function test_setLockParameters_failExceedMaxLockWeeks() external {
+        uint64 lockWeeks = uint64(emissionSchedule.MAX_LOCK_WEEKS()) + 1;
+        
+        vm.expectRevert("Cannot exceed MAX_LOCK_WEEKS");
+        vm.prank(users.owner);
+        emissionSchedule.setLockParameters(lockWeeks, 0);
+    }
+
+    function test_setLockParameters_failZeroDecayWeeks() external {
+        uint64 lockWeeks = uint64(emissionSchedule.MAX_LOCK_WEEKS());
+        
+        vm.expectRevert("Decay weeks cannot be 0");
+        vm.prank(users.owner);
+        emissionSchedule.setLockParameters(lockWeeks, 0);
+    }
+
+    function test_setLockParameters(uint64 lockWeeks, uint64 decayWeeks) external {
+        lockWeeks  = uint64(bound(lockWeeks, 0, emissionSchedule.MAX_LOCK_WEEKS()));
+        decayWeeks = uint64(bound(decayWeeks, 1, type(uint64).max));
+
+        vm.prank(users.owner);
+        assertTrue(emissionSchedule.setLockParameters(lockWeeks, decayWeeks));
+
+        assertEq(emissionSchedule.lockWeeks(), lockWeeks);
+        assertEq(emissionSchedule.lockDecayWeeks(), decayWeeks);
+    }
+
 }
