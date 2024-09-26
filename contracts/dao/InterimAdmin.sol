@@ -88,13 +88,31 @@ contract InterimAdmin is Ownable {
         canExecuteAfter = proposal.canExecuteAfter;
         executed = proposal.processed;
     }
+    function getProposalCreatedAt(uint256 id) external view returns(uint256 createdAt) {
+        createdAt = proposalData[id].createdAt;
+    }
+    function getProposalCanExecuteAfter(uint256 id) external view returns(uint256 canExecuteAfter) {
+        canExecuteAfter = proposalData[id].canExecuteAfter;
+    }
+    function getProposalExecuted(uint256 id) external view returns(bool executed) {
+        executed = proposalData[id].processed;
+    }
+    function getProposalCanExecute(uint256 id) external view returns(bool canExecute) {
+        Proposal memory proposal = proposalData[id];
+        canExecute = (!proposal.processed &&
+            proposal.canExecuteAfter < block.timestamp &&
+            proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
+    }
+    function getProposalPayload(uint256 id) external view returns(Action[] memory payload) {
+        payload = proposalPayloads[id];
+    }
 
     /**
         @notice Create a new proposal
         @param payload Tuple of [(target address, calldata), ... ] to be
                        executed if the proposal is passed.
      */
-    function createNewProposal(Action[] calldata payload) external onlyOwner {
+    function createNewProposal(Action[] calldata payload) external onlyOwner returns(uint256 proposalId) {
         // enforce >=1 payload
         require(payload.length > 0, "Empty payload");
         
@@ -115,7 +133,7 @@ contract InterimAdmin is Ownable {
         }
 
         // fetch next proposal id
-        uint256 proposalId = proposalData.length;
+        proposalId = proposalData.length;
 
         // save new proposal data
         proposalData.push(
