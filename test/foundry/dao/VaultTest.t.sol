@@ -410,6 +410,24 @@ contract VaultTest is TestSetup {
         uint256 futureLockerTotalWeeklyUnlocksPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks());
         uint256 futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks());
 
+        {
+            (uint256 adjustedAmount, uint256 feeToDelegate)
+                = babelVault.claimableRewardAfterBoost(mockEmissionReceiverAddr,
+                                                       mockEmissionReceiverAddr,
+                                                       address(0),
+                                                       mockEmissionReceiver);
+
+            assertEq(adjustedAmount, rewardAmount);
+            assertEq(feeToDelegate, 0);
+        }
+        {
+            (uint256 maxBoosted, uint256 boosted)
+                = babelVault.getClaimableWithBoost(mockEmissionReceiverAddr);
+
+            assertEq(maxBoosted, babelVault.weeklyEmissions(systemWeek));
+            assertEq(boosted, maxBoosted);
+        }
+
         // batch claim rewards
         IRewards[] memory rewardContracts = new IRewards[](1);
         rewardContracts[0] = IRewards(mockEmissionReceiver);
@@ -494,6 +512,24 @@ contract VaultTest is TestSetup {
         uint256 vaultTokenBalancePre = babelToken.balanceOf(address(babelVault));
         uint256 receiverTokenBalancePre = babelToken.balanceOf(mockEmissionReceiverAddr);
 
+        {
+            (uint256 adjustedAmount, uint256 feeToDelegate)
+                = babelVault.claimableRewardAfterBoost(mockEmissionReceiverAddr,
+                                                       mockEmissionReceiverAddr,
+                                                       address(0),
+                                                       mockEmissionReceiver);
+
+            assertEq(adjustedAmount, rewardAmount);
+            assertEq(feeToDelegate, 0);
+        }
+        {
+            (uint256 maxBoosted, uint256 boosted)
+                = babelVault.getClaimableWithBoost(mockEmissionReceiverAddr);
+
+            assertEq(maxBoosted, babelVault.weeklyEmissions(systemWeek));
+            assertEq(boosted, maxBoosted);
+        }
+
         // batch claim rewards
         IRewards[] memory rewardContracts = new IRewards[](1);
         rewardContracts[0] = IRewards(mockEmissionReceiver);
@@ -552,6 +588,27 @@ contract VaultTest is TestSetup {
         uint256 futureLockerTotalWeeklyUnlocksPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek+babelVault.lockWeeks());
         uint256 futureLockerAccountWeeklyUnlocksPre = tokenLocker.getAccountWeeklyUnlocks(mockEmissionReceiverAddr, systemWeek+babelVault.lockWeeks());
 
+        // calculate expected fee
+        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
+
+        {
+            (uint256 adjustedAmount, uint256 feeToDelegate)
+                = babelVault.claimableRewardAfterBoost(mockEmissionReceiverAddr,
+                                                       mockEmissionReceiverAddr,
+                                                       mockBoostDelegateAddr,
+                                                       mockEmissionReceiver);
+
+            assertEq(adjustedAmount, rewardAmount);
+            assertEq(feeToDelegate, expectedFeeAmount);
+        }
+        {
+            (uint256 maxBoosted, uint256 boosted)
+                = babelVault.getClaimableWithBoost(mockEmissionReceiverAddr);
+
+            assertEq(maxBoosted, babelVault.weeklyEmissions(systemWeek));
+            assertEq(boosted, maxBoosted);
+        }
+
         // batch claim rewards
         IRewards[] memory rewardContracts = new IRewards[](1);
         rewardContracts[0] = IRewards(mockEmissionReceiver);
@@ -560,9 +617,6 @@ contract VaultTest is TestSetup {
 
         // verify allocated balance reduced by reward amount
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
-
-        // calculate expected fee
-        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
 
         // verify delegate has stored pending reward equal to fee
         assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
@@ -628,6 +682,8 @@ contract VaultTest is TestSetup {
 
                 lockedAmount = expectedFeeAmount / INIT_LOCK_TO_TOKEN_RATIO;
 
+                assertEq(babelVault.claimableBoostDelegationFees(mockBoostDelegateAddr), expectedFeeAmount);
+
                 // perform the call
                 vm.prank(mockBoostDelegateAddr);
                 assertTrue(babelVault.claimBoostDelegationFees(mockBoostDelegateAddr));
@@ -688,6 +744,7 @@ contract VaultTest is TestSetup {
         // setup boost delegate
         vm.prank(mockBoostDelegateAddr);
         assertTrue(babelVault.setBoostDelegationParams(true, maxFeePct, mockBoostDelegateAddr));
+        assertTrue(babelVault.isBoostDelegatedEnabled(mockBoostDelegateAddr));
 
         // cache state prior to call
         uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
@@ -699,6 +756,27 @@ contract VaultTest is TestSetup {
         uint256 vaultTokenBalancePre = babelToken.balanceOf(address(babelVault));
         uint256 receiverTokenBalancePre = babelToken.balanceOf(mockEmissionReceiverAddr);
 
+        // calculate expected fee
+        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
+
+        {
+            (uint256 adjustedAmount, uint256 feeToDelegate)
+                = babelVault.claimableRewardAfterBoost(mockEmissionReceiverAddr,
+                                                       mockEmissionReceiverAddr,
+                                                       mockBoostDelegateAddr,
+                                                       mockEmissionReceiver);
+
+            assertEq(adjustedAmount, rewardAmount);
+            assertEq(feeToDelegate, expectedFeeAmount);
+        }
+        {
+            (uint256 maxBoosted, uint256 boosted)
+                = babelVault.getClaimableWithBoost(mockEmissionReceiverAddr);
+
+            assertEq(maxBoosted, babelVault.weeklyEmissions(systemWeek));
+            assertEq(boosted, maxBoosted);
+        }
+
         // batch claim rewards
         IRewards[] memory rewardContracts = new IRewards[](1);
         rewardContracts[0] = IRewards(mockEmissionReceiver);
@@ -707,9 +785,6 @@ contract VaultTest is TestSetup {
 
         // verify allocated balance reduced by reward amount
         assertEq(babelVault.allocated(mockEmissionReceiverAddr), allocatedBalancePre - rewardAmount);
-
-        // calculate expected fee
-        expectedFeeAmount = rewardAmount * maxFeePct / BIMA_100_PCT;
 
         // verify delegate has stored pending reward equal to fee
         assertEq(babelVault.getStoredPendingReward(mockBoostDelegateAddr), expectedFeeAmount);
@@ -739,6 +814,8 @@ contract VaultTest is TestSetup {
             vaultTokenBalancePre = babelToken.balanceOf(address(babelVault));
             receiverTokenBalancePre = babelToken.balanceOf(mockBoostDelegateAddr);
 
+            assertEq(babelVault.claimableBoostDelegationFees(mockBoostDelegateAddr), expectedFeeAmount);
+
             vm.prank(mockBoostDelegateAddr);
             assertTrue(babelVault.claimBoostDelegationFees(mockBoostDelegateAddr));
 
@@ -749,6 +826,11 @@ contract VaultTest is TestSetup {
             assertEq(babelToken.balanceOf(address(babelVault)), vaultTokenBalancePre - expectedFeeAmount);
             assertEq(babelToken.balanceOf(mockBoostDelegateAddr), receiverTokenBalancePre + expectedFeeAmount);
         }
+
+        // disable boost delegate
+        vm.prank(mockBoostDelegateAddr);
+        assertTrue(babelVault.setBoostDelegationParams(false, maxFeePct, mockBoostDelegateAddr));
+        assertFalse(babelVault.isBoostDelegatedEnabled(mockBoostDelegateAddr));
     }
 
     function test_allocateNewEmissions_oneReceiverWithVotingWeight() public {
