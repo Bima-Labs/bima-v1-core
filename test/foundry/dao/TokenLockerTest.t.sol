@@ -94,7 +94,7 @@ contract TokenLockerTest is TestSetup {
     }
 
     function test_lock(uint256 amountToLock, uint256 weeksToLockFor) public
-        returns(uint256, uint256) 
+        returns(uint256 lockedAmount, uint256 weeksLockedFor)
     {
         // bound fuzz inputs
         // need to divide by lockToTokenRatio when calling the
@@ -106,7 +106,7 @@ contract TokenLockerTest is TestSetup {
         // error cases
         weeksToLockFor = bound(weeksToLockFor, 1, tokenLocker.MAX_LOCK_WEEKS() - 2);
 
-        return _lock(amountToLock, weeksToLockFor);
+        (lockedAmount, weeksLockedFor) = _lock(amountToLock, weeksToLockFor);
     }
 
     function test_lock_immediate_withdraw(uint256 amountToLock, uint256 weeksToLockFor, uint256 relockFor) external {
@@ -374,6 +374,15 @@ contract TokenLockerTest is TestSetup {
         // account weight and added frozen weight
         assertEq(tokenLocker.getTotalWeightAt(systemWeek),
                  totalWeightPre - accountWeightPre + accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
+
+        (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
+        assertEq(locked, accountFrozenPost);
+        assertEq(unlocked, 0);
+
+        // fast forward 1 week, verify frozen weight remains same
+        vm.warp(block.timestamp + 1 weeks);
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek+1),
+                 accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
     }
 
     function test_unfreeze(uint256 amountToLock, uint256 weeksToLockFor) external {
@@ -556,6 +565,46 @@ contract TokenLockerTest is TestSetup {
         assertEq(expectedAmountWithdrawn, lockedAmount * INIT_LOCK_TO_TOKEN_RATIO - penaltyOnAmount);
     }
 
+    function test_withdrawWithPenalty_withdrawLessThanMax() external {
+        uint256 amountToLock = 100e18;
+        uint256 weeksToLockFor = 2;
+
+        // first enable penalty withdrawals
+        test_setPenaltyWithdrawalsEnabled(0, true);
+
+        // perform the lock
+        (uint256 lockedAmount, /*uint256 weeksLockedFor*/) = test_lock(amountToLock, weeksToLockFor);
+
+        uint256 week = tokenLocker.getWeek();
+
+        // verify user has received weight in the current week
+        uint256 accountWeightPreWithdraw = tokenLocker.getAccountWeightAt(users.user1, week);
+        assertTrue(accountWeightPreWithdraw != 0);
+
+        // verify total weight for current week all belongs to user
+        assertEq(tokenLocker.getTotalWeight(), accountWeightPreWithdraw);
+
+        // get expected amounts using TokenLocker::getWithdrawWithPenaltyAmounts
+        uint256 amountToWithdraw = lockedAmount/2;
+        (uint256 expectedAmountWithdrawn, uint256 expectedPenaltyAmountPaid)
+            = tokenLocker.getWithdrawWithPenaltyAmounts(users.user1, amountToWithdraw);
+
+        // perform the withdraw with penalty
+        vm.prank(users.user1);
+        uint256 amountWithdrawn = tokenLocker.withdrawWithPenalty(amountToWithdraw);
+
+        assertEq(expectedAmountWithdrawn,   1735110425000000000000000000);
+        assertEq(expectedPenaltyAmountPaid, 69404417000000000000000000);
+        assertEq(amountWithdrawn, expectedAmountWithdrawn);
+
+        // verify feeReceiver receives expected penalty
+        assertEq(babelToken.balanceOf(address(babelCore.feeReceiver())), expectedPenaltyAmountPaid);
+
+        // verify weight not reset as not all tokens were withdrawn
+        assertNotEq(tokenLocker.getAccountWeightAt(users.user1, week), 0);
+        assertNotEq(tokenLocker.getTotalWeight(), 0);
+    }
+
     function test_withdrawWithPenalty_fixActiveLockWithZeroLocked() external {
         uint256 amountToLock = 100;
         uint256 weeksToLockFor = 20;
@@ -594,5 +643,31 @@ contract TokenLockerTest is TestSetup {
 
         assertEq(activeLockData.length, 0);
         assertEq(frozenAmount, 0);
+    }
+
+    function test_getAccountBalances_accountWeekBehindSystemWeek() external {
+        uint256 amountPerLock = 10e18 / INIT_LOCK_TO_TOKEN_RATIO;
+
+        _lock(amountPerLock, 2);
+
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, amountPerLock, 3);
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, amountPerLock, 4);
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, amountPerLock, 5);
+
+        vm.warp(block.timestamp + 6 weeks);
+
+        (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
+
+        assertEq(locked, 0);
+        assertEq(unlocked, amountPerLock * 4);
+
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek()), 0);
+
+        assertEq(tokenLocker.getAccountWeightWrite(users.user1), 0);
+
+        assertEq(tokenLocker.getTotalWeightWrite(), 0);
     }
 }
