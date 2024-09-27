@@ -1065,6 +1065,81 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(userReward, 0);
     }
 
+    function test_claimReward_troveManagerMintRewards() external {
+        // setup vault giving user1 half supply to lock for voting power
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
+
+        // owner registers TroveManager for vault emission rewards
+        vm.prank(users.owner);
+        babelVault.registerReceiver(address(stakedBTCTroveMgr), 2);
+
+        // user votes for TroveManager debtId to get emissions
+        (/*uint16 TM_RECEIVER_DEBT_ID*/, uint16 TM_RECEIVER_MINT_ID) = stakedBTCTroveMgr.emissionId();
+
+        IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
+        votes[0].id = TM_RECEIVER_MINT_ID;
+        votes[0].points = incentiveVoting.MAX_POINTS();
+        
+        vm.prank(users.user1);
+        incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
+
+        // user1 and user2 open a trove with 1 BTC collateral for their max borrowing power
+        uint256 collateralAmount = 1e18;
+        uint256 debtAmountMax
+            = ((collateralAmount * _getScaledOraclePrice() / borrowerOps.CCR())
+              - INIT_GAS_COMPENSATION);
+
+        _openTrove(users.user1, collateralAmount, debtAmountMax);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        // refresh mock oracle to prevent frozen feed revert
+        mockOracle.refresh();
+
+        _openTrove(users.user2, collateralAmount, debtAmountMax);
+
+        // calculate expected first week emissions
+        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+
+        // no rewards in the same week as emissions
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), 0);
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user2), 0);
+
+        // user1 claims which updates total weekly emissions
+        vm.prank(users.user1);
+        stakedBTCTroveMgr.claimReward(users.user1);
+
+        // verify emissions correctly set in BabelVault for first week
+        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+
+        // warp time by 1 week
+        vm.warp(block.timestamp + 1 weeks);
+
+        (uint256 week, uint256 day) = stakedBTCTroveMgr.getWeekAndDay();
+        assertEq(week, systemWeek + 1);
+
+        assertGt(stakedBTCTroveMgr.getTotalMints(systemWeek-1)[day], 0); // user1's mint
+        assertGt(stakedBTCTroveMgr.getTotalMints(systemWeek)[day], 0); // user2's mint
+
+        assertEq(stakedBTCTroveMgr.dailyMintReward(systemWeek-1), 0);
+        assertGt(stakedBTCTroveMgr.dailyMintReward(systemWeek), 0); // >0 from user1's mint at systemWeek-1
+
+        assertEq(stakedBTCTroveMgr.claimableReward(users.user1), 0); // no rewards
+        assertGt(stakedBTCTroveMgr.claimableReward(users.user2), 0); // rewards
+
+        // no rewards for user1
+        vm.prank(users.user1);
+        uint256 userReward = stakedBTCTroveMgr.claimReward(users.user1);
+        assertEq(userReward, 0);
+
+        // rewards for user2
+        vm.prank(users.user2);
+        userReward = stakedBTCTroveMgr.claimReward(users.user2);
+        assertGt(userReward, 0);
+    }
+
     function test_setMinNetDebt_failsNotOwner() external {
         vm.expectRevert("Only owner");
         borrowerOps.setMinNetDebt(1);
