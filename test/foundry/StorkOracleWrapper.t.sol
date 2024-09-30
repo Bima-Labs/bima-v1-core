@@ -41,7 +41,7 @@ contract StorkOracleWrapperTest is Test {
 
     (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, ) = storkOracleWrapper.latestRoundData();
 
-    assertEq(roundId, timestampNs / 1e9 / 1 minutes);
+    assertEq(roundId, timestampNs / 1e9 / 1 seconds);
     assertEq(answer, quantizedValue);
     assertEq(startedAt, timestampNs / 1e9);
     assertEq(updatedAt, timestampNs / 1e9);
@@ -54,8 +54,8 @@ contract StorkOracleWrapperTest is Test {
 
     assertEq(roundId, _roundId);
     assertEq(answer, quantizedValue);
-    assertEq(startedAt, timestampNs / 1e9 - 1 minutes);
-    assertEq(updatedAt, timestampNs / 1e9 - 1 minutes);
+    assertEq(startedAt, timestampNs / 1e9 - 1 seconds);
+    assertEq(updatedAt, timestampNs / 1e9 - 1 seconds);
   }
 
   function testFlow() public {
