@@ -101,6 +101,26 @@ contract StorkOracleWrapperMockedTest is TestSetup {
     assertEq(priceFeed.fetchPrice(address(collateral)), 10_000e18);
   }
 
+  // Test how the PriceFeed contract will handle the stale price, which hasn't been updated for a while
+  function test_StalePrice(uint32 heartbeat) public {
+    vm.assume(heartbeat > 0 && heartbeat <= 1 days);
+
+    _setUp();
+
+    vm.startPrank(users.owner);
+
+    MockERC20 collateral = new MockERC20();
+
+    storkOracle.setPrice(60_000e18);
+
+    priceFeed.setOracle(address(collateral), address(storkOracleWrapper), heartbeat, bytes4(0x00000000), 18, false);
+
+    skip(heartbeat + priceFeed.RESPONSE_TIMEOUT_BUFFER() + 1);
+
+    vm.expectRevert();
+    priceFeed.fetchPrice(address(collateral));
+  }
+
   function _setUp() internal {
     storkOracle = new MockStorkOracle();
 
