@@ -678,13 +678,15 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         if(totalDebt != 0 && initialDeposit != 0) {
             uint256 babelNumerator = (_vestedEmissions() * BIMA_DECIMAL_PRECISION) + lastBabelError;
             uint256 babelPerUnitStaked = babelNumerator / totalDebt;
-            uint256 marginalBabelGain = babelPerUnitStaked * P;
 
             Snapshots memory snapshots = depositSnapshots[_depositor];
             uint128 epochSnapshot = snapshots.epoch;
             uint128 scaleSnapshot = snapshots.scale;
             uint256 firstPortion;
             uint256 secondPortion;
+
+            uint256 marginalBabelGain = epochSnapshot == currentEpoch ? babelPerUnitStaked * P : 0;
+
             if (scaleSnapshot == currentScale) {
                 firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G + marginalBabelGain;
                 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
