@@ -2,10 +2,19 @@ import { BaseContract, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
 import { BabelCore } from "../../typechain-types";
 
-const ZERO_ADDRESS = ethers.ZeroAddress;
-
 async function deployCore() {
   const [owner] = await ethers.getSigners();
+
+  const BABEL_OWNER_ADDRESS = owner.address;
+  const BABEL_GUARDIAN_ADDRESS = owner.address;
+  const GAS_COMPENSATION = ethers.parseUnits("200", 18); // 200 USBD
+  const DEBT_TOKEN_NAME = "US Bitcoin Dollar";
+  const DEBT_TOKEN_SYMBOL = "USBD";
+  const LZ_ENDPOINT = ethers.ZeroAddress;
+  const MIN_NET_DEBT = ethers.parseUnits("1800", 18); // 1800 USDB
+  const TOKEN_LOCKER_DEPLOYMENT_MANAGER = owner.address;
+  const LOCK_TO_TOKEN_RATIO = ethers.parseUnits("1", 18); // 1 BABEL
+  const BABEL_VAULT_DEPLOYMENT_MANAGER = owner.address;
 
   const factories = await getFactories();
 
@@ -16,26 +25,33 @@ async function deployCore() {
   // Disgusting hack to get the addresses of the contracts before deployment
   const babelCoreAddress = ethers.getCreateAddress({
     from: owner.address,
-    nonce: deployerNonce,
+    nonce: deployerNonce + 1,
   });
 
   const priceFeedAddress = ethers.getCreateAddress({
     from: owner.address,
-    nonce: deployerNonce + 1,
+    nonce: deployerNonce + 2,
   });
 
-  const [babelCore] = await deployContract(
+  const [, deployedFeeReceiverAddress] = await deployContract(factories.FeeReceiver, "FeeReceiver", babelCoreAddress);
+
+  const [babelCore, deployedBabelCoreAddress] = await deployContract(
     factories.BabelCore,
     "BabelCore",
-    owner.address,
-    owner.address,
+    BABEL_OWNER_ADDRESS,
+    BABEL_GUARDIAN_ADDRESS,
     priceFeedAddress,
-    owner.address
+    deployedFeeReceiverAddress
   );
+  assertEq(babelCoreAddress, deployedBabelCoreAddress);
 
-  await deployContract(factories.PriceFeed, "PriceFeed", babelCoreAddress, mockAaggregatorAddress);
-
-  await deployContract(factories.FeeReceiver, "FeeReceiver", babelCoreAddress);
+  const [, deployedPriceFeedAddress] = await deployContract(
+    factories.PriceFeed,
+    "PriceFeed",
+    babelCoreAddress,
+    mockAaggregatorAddress
+  );
+  assertEq(priceFeedAddress, deployedPriceFeedAddress);
 
   const [, interimAdminAddress] = await deployContract(factories.InterimAdmin, "InterimAdmin", babelCoreAddress);
 
@@ -105,7 +121,7 @@ async function deployCore() {
     nonce: deployerNonce + 10,
   });
 
-  await deployContract(
+  const [, deployedFactoryAddress] = await deployContract(
     factories.Factory,
     "Factory",
     babelCoreAddress,
@@ -116,43 +132,45 @@ async function deployCore() {
     troveManagerAddress,
     liqudiationManagerAddress
   );
+  assertEq(factoryAddress, deployedFactoryAddress);
 
-  await deployContract(
+  const [, deployedLiquidationManagerAddress] = await deployContract(
     factories.LiquidationManager,
     "LiquidationManager",
     stabilityPoolAddress,
     borrowerOperationsAddress,
     factoryAddress,
-    ethers.parseUnits("200", 18) // BigInt("200000000000000000000") gas compensation
+    GAS_COMPENSATION
   );
+  assertEq(liqudiationManagerAddress, deployedLiquidationManagerAddress);
 
-  await deployContract(
+  const [, deployedDebtTokenAddress] = await deployContract(
     factories.DebtToken,
     "DebtToken",
-    "US Bitcoin Dollar", //mkUSD or ULTRA name
-    "USBD", // symbol
+    DEBT_TOKEN_NAME,
+    DEBT_TOKEN_SYMBOL,
     stabilityPoolAddress,
     borrowerOperationsAddress,
     babelCoreAddress,
-    // lzApp endpoint address
-    // We currently don't have this address. If we can deploy LzApp as example we can later use this
-    ZERO_ADDRESS,
+    LZ_ENDPOINT,
     factoryAddress,
     gasPoolAddress,
-    ethers.parseUnits("200", 18) // BigInt("200000000000000000000") // gas compensation
+    GAS_COMPENSATION
   );
+  assertEq(debtTokenAddress, deployedDebtTokenAddress);
 
-  await deployContract(
+  const [, deployedBorrowerOperationsAddress] = await deployContract(
     factories.BorrowerOperations,
     "BorrowerOperations",
     babelCoreAddress,
     debtTokenAddress,
     factoryAddress,
-    ethers.parseUnits("1800", 18), // BigInt("1800 000000000000000000"), // 1800 USDB
-    ethers.parseUnits("200", 18) // BigInt("200000000000000000000")
+    MIN_NET_DEBT,
+    GAS_COMPENSATION
   );
+  assertEq(borrowerOperationsAddress, deployedBorrowerOperationsAddress);
 
-  await deployContract(
+  const [, deployedStabilityPoolAddress] = await deployContract(
     factories.StabilityPool,
     "StabilityPool",
     babelCoreAddress,
@@ -161,8 +179,9 @@ async function deployCore() {
     factoryAddress,
     liqudiationManagerAddress
   );
+  assertEq(stabilityPoolAddress, deployedStabilityPoolAddress);
 
-  await deployContract(
+  const [, deployedTroveManagerAddress] = await deployContract(
     factories.TroveManager,
     "TroveManager",
     babelCoreAddress,
@@ -171,40 +190,43 @@ async function deployCore() {
     borrowerOperationsAddress,
     babelVaultAddress,
     liqudiationManagerAddress,
-    ethers.parseUnits("200", 18) // BigInt("200000000000000000000")
+    GAS_COMPENSATION
   );
+  assertEq(troveManagerAddress, deployedTroveManagerAddress);
 
-  await deployContract(factories.SortedTroves, "SortedTroves");
+  const [, deployedSortedTrovesAddress] = await deployContract(factories.SortedTroves, "SortedTroves");
+  assertEq(sortedTrovesAddress, deployedSortedTrovesAddress);
 
-  await deployContract(
+  const [, deployedTokenLockerAddress] = await deployContract(
     factories.TokenLocker,
     "TokenLocker",
     babelCoreAddress,
     babelTokenAddress,
     incentiveVotingAddress,
-    owner.address, // Change this with gnosis safe for real deployment...
-    ethers.parseUnits("1", 18) // BigInt("1000000000000000000") // 1 BABEL
+    TOKEN_LOCKER_DEPLOYMENT_MANAGER, // Change this with gnosis safe for real deployment...
+    LOCK_TO_TOKEN_RATIO
   );
+  assertEq(tokenLockerAddress, deployedTokenLockerAddress);
 
-  await deployContract(
+  const [, deployedIncentiveVotingAddress] = await deployContract(
     factories.IncentiveVoting,
     "IncentiveVoting",
     babelCoreAddress,
     tokenLockerAddress,
     babelVaultAddress
   );
+  assertEq(incentiveVotingAddress, deployedIncentiveVotingAddress);
 
-  await deployContract(
+  const [, deployedBabelTokenAddress] = await deployContract(
     factories.BabelToken,
     "BabelToken",
     babelVaultAddress,
-    // lzApp endpoint address
-    // We currently don't have this address. If we can deploy LzApp as example we can later use this
-    ZERO_ADDRESS,
+    LZ_ENDPOINT,
     tokenLockerAddress
   );
+  assertEq(babelTokenAddress, deployedBabelTokenAddress);
 
-  await deployContract(
+  const [, deployedBabelVaultAddress] = await deployContract(
     factories.BabelVault,
     "BabelVault",
     babelCoreAddress,
@@ -212,8 +234,9 @@ async function deployCore() {
     tokenLockerAddress,
     incentiveVotingAddress,
     stabilityPoolAddress,
-    liqudiationManagerAddress
+    BABEL_VAULT_DEPLOYMENT_MANAGER
   );
+  assertEq(babelVaultAddress, deployedBabelVaultAddress);
 }
 
 deployCore()
@@ -254,4 +277,8 @@ const deployContract = async (
   const address = await contract.getAddress();
   console.log(`${contractName} deployed!: `, address);
   return [contract, address];
+};
+
+const assertEq = (a: string, b: string) => {
+  if (a !== b) throw new Error(`Expected ${a} to equal ${b}`);
 };
