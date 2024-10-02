@@ -66,6 +66,8 @@ async function deployCore() {
 
   const [, gasPoolAddress] = await deployContract(factories.GasPool, "GasPool");
 
+  const [, sortedTrovesAddress] = await deployContract(factories.SortedTroves, "SortedTroves");
+
   deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
   // Disgusting hack to get the addresses of the contracts before deployment
@@ -99,29 +101,24 @@ async function deployCore() {
     nonce: deployerNonce + 5,
   });
 
-  const sortedTrovesAddress = ethers.getCreateAddress({
+  const tokenLockerAddress = ethers.getCreateAddress({
     from: owner.address,
     nonce: deployerNonce + 6,
   });
 
-  const tokenLockerAddress = ethers.getCreateAddress({
+  const incentiveVotingAddress = ethers.getCreateAddress({
     from: owner.address,
     nonce: deployerNonce + 7,
   });
 
-  const incentiveVotingAddress = ethers.getCreateAddress({
+  const babelTokenAddress = ethers.getCreateAddress({
     from: owner.address,
     nonce: deployerNonce + 8,
   });
 
-  const babelTokenAddress = ethers.getCreateAddress({
-    from: owner.address,
-    nonce: deployerNonce + 9,
-  });
-
   const babelVaultAddress = ethers.getCreateAddress({
     from: owner.address,
-    nonce: deployerNonce + 10,
+    nonce: deployerNonce + 9,
   });
 
   const [, deployedFactoryAddress] = await deployContract(
@@ -196,9 +193,6 @@ async function deployCore() {
     GAS_COMPENSATION
   );
   assertEq(troveManagerAddress, deployedTroveManagerAddress);
-
-  const [, deployedSortedTrovesAddress] = await deployContract(factories.SortedTroves, "SortedTroves");
-  assertEq(sortedTrovesAddress, deployedSortedTrovesAddress);
 
   const [, deployedTokenLockerAddress] = await deployContract(
     factories.TokenLocker,
