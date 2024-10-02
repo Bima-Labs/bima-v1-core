@@ -2,19 +2,22 @@ import { BaseContract, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
 import { BabelCore } from "../../typechain-types";
 
+const DEBT_TOKEN_NAME = "US Bitcoin Dollar"; //! IMPORTANT
+const DEBT_TOKEN_SYMBOL = "USBD"; //! IMPORTANT
+
+const GAS_COMPENSATION = ethers.parseUnits("200", 18); //! 200 USBD
+const MIN_NET_DEBT = ethers.parseUnits("1800", 18); //! 1800 USDB
+const LOCK_TO_TOKEN_RATIO = ethers.parseUnits("1", 18); //! 1 BABEL
+
+const LZ_ENDPOINT = ethers.ZeroAddress; //! IMPORTANT
+
 async function deployCore() {
   const [owner] = await ethers.getSigners();
 
-  const BABEL_OWNER_ADDRESS = owner.address;
-  const BABEL_GUARDIAN_ADDRESS = owner.address;
-  const GAS_COMPENSATION = ethers.parseUnits("200", 18); // 200 USBD
-  const DEBT_TOKEN_NAME = "US Bitcoin Dollar";
-  const DEBT_TOKEN_SYMBOL = "USBD";
-  const LZ_ENDPOINT = ethers.ZeroAddress;
-  const MIN_NET_DEBT = ethers.parseUnits("1800", 18); // 1800 USDB
-  const TOKEN_LOCKER_DEPLOYMENT_MANAGER = owner.address;
-  const LOCK_TO_TOKEN_RATIO = ethers.parseUnits("1", 18); // 1 BABEL
-  const BABEL_VAULT_DEPLOYMENT_MANAGER = owner.address;
+  const BABEL_OWNER_ADDRESS = owner.address; //! IMPORTANT
+  const BABEL_GUARDIAN_ADDRESS = owner.address; //! IMPORTANT
+  const TOKEN_LOCKER_DEPLOYMENT_MANAGER = owner.address; //! IMPORTANT
+  const BABEL_VAULT_DEPLOYMENT_MANAGER = owner.address; //! IMPORTANT
 
   const factories = await getFactories();
 
