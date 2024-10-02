@@ -18,11 +18,11 @@ const CUSTOM_TROVE_MANAGER_IMPL_ADDRESS = ethers.ZeroAddress; //! IMPORTANT
 const CUSTOM_SORTED_TROVES_IMPL_ADDRESS = ethers.ZeroAddress; //! IMPORTANT
 
 const MINUTE_DECAY_FACTOR = BigInt("999037758833783000"); //! IMPORTANT
-const REDEMPTION_FEE_FLOOR = BigInt("5000000000000000"); //! IMPORTANT
-const MAX_REDEMPTION_FEE = BigInt("1000000000000000000"); //! IMPORTANT
-const BORROWING_FEE_FLOOR = BigInt("0"); //! IMPORTANT
-const MAX_BORROWING_FEE = BigInt("0"); //! IMPORTANT
-const INTEREST_RATE_IN_BPS = BigInt("0"); //! IMPORTANT
+const REDEMPTION_FEE_FLOOR = ethers.parseEther("0.005"); //! 0.5% IMPORTANT
+const MAX_REDEMPTION_FEE = ethers.parseEther("1"); //! 100% IMPORTANT
+const BORROWING_FEE_FLOOR = ethers.parseEther("0.005"); //! 0.5% IMPORTANT
+const MAX_BORROWING_FEE = ethers.parseEther("0.05"); //! 5% IMPORTANT
+const INTEREST_RATE_IN_BPS = BigInt("100"); //! 1% IMPORTANT
 const MAX_DEBT = ethers.parseEther("1000000"); //! IMPORTANT
 const MCR = ethers.parseUnits("2", 18); //! IMPORTANT
 
