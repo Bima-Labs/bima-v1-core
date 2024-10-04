@@ -697,6 +697,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
             // add additional calculation to stored pending reward already in output
             reward += (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / BIMA_DECIMAL_PRECISION;
+        } else {
+            reward += _claimableReward(_depositor); 
         }
     }
 
