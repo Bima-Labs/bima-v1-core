@@ -35,6 +35,7 @@
 - [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
 - [Merlin Testnet](#merlin-testnet)
 - [Manta Pacific Sepolia Testnet](#Manta-Pacific-Sepolia-Testnet)
+- [Plume-Devnet](#Plume-Devnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -938,6 +939,7 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
 | --------------- | ------------------ | -------------------- | -------------- |
 |  Bima Mock BTC | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
+|  mBTC | 0x7e7d0b2a82a11C25f46645f08294aFaBeeaFF07c | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
 
 
 ## Plume Devnet
