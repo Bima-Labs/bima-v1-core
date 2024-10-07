@@ -20,7 +20,7 @@ contract StorkOracleWrapperTest is Test {
   string HOLESKY_RPC_URL = vm.envString("HOLESKY_RPC_URL");
 
   function setUp() public {
-    vm.createSelectFork(HOLESKY_RPC_URL, 	2184438);
+    vm.createSelectFork(HOLESKY_RPC_URL);
 
     storkOracle = IStorkOracle(0xacC0a0cF13571d30B4b8637996F5D6D774d4fd62);
     encodedAssetId = bytes32(0x7404e3d104ea7841c3d9e6fd20adfe99b4ad586bc08d8f3bd3afef894cf184de);
@@ -41,7 +41,7 @@ contract StorkOracleWrapperTest is Test {
 
     (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, ) = storkOracleWrapper.latestRoundData();
 
-    assertEq(roundId, timestampNs / 1e9 / 1 minutes);
+    assertEq(roundId, timestampNs / 1e9 / 1 seconds);
     assertEq(answer, quantizedValue);
     assertEq(startedAt, timestampNs / 1e9);
     assertEq(updatedAt, timestampNs / 1e9);
@@ -54,8 +54,8 @@ contract StorkOracleWrapperTest is Test {
 
     assertEq(roundId, _roundId);
     assertEq(answer, quantizedValue);
-    assertEq(startedAt, timestampNs / 1e9 - 1 minutes);
-    assertEq(updatedAt, timestampNs / 1e9 - 1 minutes);
+    assertEq(startedAt, timestampNs / 1e9 - 1 seconds);
+    assertEq(updatedAt, timestampNs / 1e9 - 1 seconds);
   }
 
   function testFlow() public {
@@ -66,29 +66,17 @@ contract StorkOracleWrapperTest is Test {
     address borrowOperationsAddress = 0x98cb20D30da0389028EB71eF299B688979F5cB8b;
     address priceFeedAddress = 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB;
 
-    (/*uint80 roundId1*/, int256 answer, , /*uint256 updatedAt*/, ) = IAggregatorV3Interface(oracleAddress).latestRoundData();
-    // console.log("ROUND ID AND ANSWER AND UPDATED AT FROM ORACLE: ");
-    // console.log(roundId1);
-    console.log(answer);
-    // console.log(updatedAt);
-
-    console.log("FETCHING PRICE");
+    IAggregatorV3Interface(oracleAddress).latestRoundData();
 
     PriceFeed(priceFeedAddress).fetchPrice(collateralAddress);
 
-    console.log("PRICE FETCHED");
-
-    console.log("APPROVING COLLATERAL");
-
-    vm.prank(0x39d2770AbcC456f6C6be820705eD966592E0ad96); // This address holds the mock collateral token
     IERC20(collateralAddress).approve(borrowOperationsAddress, 1e18);
 
-    console.log("OPENING TROVE");
+    deal(collateralAddress, address(this), 1e18, true);
 
-    vm.prank(0x39d2770AbcC456f6C6be820705eD966592E0ad96);
     IBorrowerOperations(borrowOperationsAddress).openTrove(
       ITroveManager(troveManagerAddress),
-      0x39d2770AbcC456f6C6be820705eD966592E0ad96,
+      address(this),
       0.1e18,
       1e18,
       10_000e18,
@@ -96,7 +84,7 @@ contract StorkOracleWrapperTest is Test {
       address(0)
     );
 
-    console.log(IERC20(collateralAddress).balanceOf(0x39d2770AbcC456f6C6be820705eD966592E0ad96));
-    console.log(ITroveManager(troveManagerAddress).debtToken().balanceOf(0x39d2770AbcC456f6C6be820705eD966592E0ad96));
+    console.log(IERC20(collateralAddress).balanceOf(address(this)));
+    console.log(ITroveManager(troveManagerAddress).debtToken().balanceOf(address(this)));
   }
 }

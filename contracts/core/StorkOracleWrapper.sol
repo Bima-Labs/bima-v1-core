@@ -59,7 +59,7 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
     (uint64 timestampNs, int192 quantizedValue) = storkOracle.getTemporalNumericValueV1(encodedAssetId);
 
     answer = int256(quantizedValue);
-    updatedAt = timestampNs / 1e9 - 1 minutes;
+    updatedAt = timestampNs / 1e9 - 1 seconds;
     startedAt = updatedAt;
     roundId = _roundId;
     answeredInRound = _roundId;
@@ -75,7 +75,7 @@ contract StorkOracleWrapper is IAggregatorV3Interface {
     answer = int256(quantizedValue);
     updatedAt = timestampNs / 1e9;
     startedAt = updatedAt;
-    roundId = uint80(updatedAt / 1 minutes); // increment round every 1 minute
+    roundId = uint80(updatedAt / 1 seconds); // increment round every second
     answeredInRound = roundId;
   }
 }

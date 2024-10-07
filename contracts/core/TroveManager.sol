@@ -632,7 +632,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 timePassed = block.timestamp - lastFeeOperationTime;
 
         if (timePassed >= SECONDS_IN_ONE_MINUTE) {
-            lastFeeOperationTime = block.timestamp;
+            uint256 minutesPassed = timePassed / SECONDS_IN_ONE_MINUTE;
+            
+            lastFeeOperationTime += minutesPassed * SECONDS_IN_ONE_MINUTE;
             emit LastFeeOpTimeUpdated(block.timestamp);
         }
     }
