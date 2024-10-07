@@ -256,34 +256,32 @@ contract PoCTest is TestSetup {
   //     console.log("Manipulated Redemption Rate: %18e%", redemptionRate);
   //   }
 
-  //   /**
-  //    * @dev Test case: Stork Oracle stale price
-  //    */
-  //   function test_poc_storkOracleStalePrice() public {
-  //     vm.startPrank(users.owner);
+  /**
+   * @dev Test case: Stork Oracle stale price
+   */
+  function test_poc_storkOracleStalePrice() public {
+    vm.startPrank(users.owner);
 
-  //     // Create mock Stork Oracle and wrapper
-  //     MockStorkOracle mockOracle = new MockStorkOracle();
-  //     StorkOracleWrapper wrapper = new StorkOracleWrapper(address(mockOracle), bytes32(0));
+    // Create mock Stork Oracle and wrapper
+    MockStorkOracle mockOracle = new MockStorkOracle();
+    StorkOracleWrapper wrapper = new StorkOracleWrapper(address(mockOracle), bytes32(0));
 
-  //     // Set initial price to $60,000
-  //     mockOracle.set(uint64(block.timestamp * 1e9), 60000 * 1e18);
+    // Set initial price to $60,000
+    mockOracle.set(uint64(block.timestamp * 1e9), 60_000e18);
 
-  //     // Configure price feed to use the Stork Oracle wrapper
-  //     priceFeed.setOracle(address(stakedBTC), address(wrapper), 80000, bytes4(0), 8, false);
+    // Configure price feed to use the Stork Oracle wrapper
+    priceFeed.setOracle(address(stakedBTC), address(wrapper), 80_000, bytes4(0), 8, false);
 
-  //     uint256 btcPrice = priceFeed.fetchPrice(address(stakedBTC));
-  //     console.log("Price before fluctuation =", btcPrice);
+    assertEq(priceFeed.fetchPrice(address(stakedBTC)), 60_000e18);
 
-  //     // Simulate time passing (1 second)
-  //     vm.warp(block.timestamp + 1);
+    // Simulate time passing (1 second)
+    vm.warp(block.timestamp + 1);
 
-  //     // Update oracle price to $50,000
-  //     mockOracle.set(uint64(block.timestamp * 1e9), 50000 * 1e18);
+    // Update oracle price to $50,000
+    mockOracle.set(uint64(block.timestamp * 1e9), 50_000e18);
 
-  //     btcPrice = priceFeed.fetchPrice(address(stakedBTC));
-  //     console.log("Price after fluctuation (should be stale) =", btcPrice);
-  //   }
+    assertEq(priceFeed.fetchPrice(address(stakedBTC)), 50_000e18);
+  }
 
   /**
    * @dev Test case: Stability Pool emptied by liquidation return incorrect claimable amount
