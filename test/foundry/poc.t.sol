@@ -338,77 +338,78 @@ contract PoCTest is TestSetup {
     assertTrue(claimableRewards > 0);
   }
 
-  //   function test_poc_stabilityPool_incorrectMarginalBabelGain() public {
-  //     address user = users.user1;
-  //     address user2 = users.user2;
-  //     address user3 = makeAddr("User3");
-  //     deal(address(stakedBTC), user, 1e6 * 1e18);
-  //     deal(address(stakedBTC), user2, 1e6 * 1e18);
-  //     deal(address(stakedBTC), user3, 1e6 * 1e18);
+  function test_poc_stabilityPool_incorrectMarginalBabelGain() public {
+    address user = users.user1;
+    address user2 = users.user2;
+    address user3 = makeAddr("User3");
+    deal(address(stakedBTC), user, 1e6 * 1e18);
+    deal(address(stakedBTC), user2, 1e6 * 1e18);
+    deal(address(stakedBTC), user3, 1e6 * 1e18);
 
-  //     // Mock Babel Vault's allocateNewEmissions function for demonstration purposes
-  //     vm.mockCall(
-  //       address(babelVault),
-  //       abi.encodeWithSelector(IBabelVault.allocateNewEmissions.selector),
-  //       abi.encode(100e18 * 86400 * 7) // 100 tokens per week
-  //     );
+    // Mock Babel Vault's allocateNewEmissions function for demonstration purposes
+    vm.mockCall(
+      address(babelVault),
+      abi.encodeWithSelector(IBabelVault.allocateNewEmissions.selector),
+      abi.encode(100e18 * 86400 * 7) // 100 tokens per week
+    );
 
-  //     // Step 1: User opens a trove
-  //     vm.startPrank(user);
-  //     uint256 debtAmount = 50000e18; // 50,000 DEBT
-  //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    // Step 1: User opens a trove
+    vm.startPrank(user);
+    uint256 debtAmount = 50000e18; // 50,000 DEBT
+    _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-  //     // Step 2: User deposits all borrowed DEBT into Stability Pool
-  //     stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
+    // Step 2: User deposits all borrowed DEBT into Stability Pool
+    stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
 
-  //     uint256 stabilityPoolBalanceBefore = stabilityPool.getTotalDebtTokenDeposits();
-  //     console.log("Stability Pool balance before liquidation:", stabilityPoolBalanceBefore);
+    uint256 stabilityPoolBalanceBefore = stabilityPool.getTotalDebtTokenDeposits();
+    console.log("Stability Pool balance before liquidation:", stabilityPoolBalanceBefore);
 
-  //     vm.startPrank(user2);
-  //     debtAmount = stabilityPoolBalanceBefore;
-  //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    vm.startPrank(user2);
+    debtAmount = stabilityPoolBalanceBefore;
+    _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-  //     // Step 3: Simulate price drop to make the trove undercollateralized
-  //     vm.warp(block.timestamp + 1);
-  //     _updateOracle(59000 * 1e8);
+    // Step 3: Simulate price drop to make the trove undercollateralized
+    vm.warp(block.timestamp + 1);
+    _updateOracle(59000 * 1e8);
 
-  //     // Step 4: Triggers liquidation
-  //     liquidationMgr.liquidate(sbtcTroveManager, user2);
+    // Step 4: Triggers liquidation
+    liquidationMgr.liquidate(sbtcTroveManager, user2);
 
-  //     // Step 5: Check Stability Pool balance after liquidation
-  //     uint256 stabilityPoolBalanceAfter = stabilityPool.getTotalDebtTokenDeposits();
-  //     console.log("Stability Pool balance after liquidation:", stabilityPoolBalanceAfter);
+    // Step 5: Check Stability Pool balance after liquidation
+    uint256 stabilityPoolBalanceAfter = stabilityPool.getTotalDebtTokenDeposits();
+    console.log("Stability Pool balance after liquidation:", stabilityPoolBalanceAfter);
 
-  //     // Assert that the Stability Pool is emptied
-  //     assertEq(stabilityPoolBalanceAfter, 0, "Stability Pool should be empty after liquidation");
+    // Assert that the Stability Pool is emptied
+    assertEq(stabilityPoolBalanceAfter, 0, "Stability Pool should be empty after liquidation");
 
-  //     // Step 6: Check claimable rewards
-  //     // The correct amount should be more than zero
-  //     uint256 claimableRewards = stabilityPool.claimableReward(user);
-  //     console.log("User claimable rewards:", claimableRewards);
+    // Step 6: Check claimable rewards
+    // The correct amount should be more than zero
+    uint256 claimableRewards = stabilityPool.claimableReward(user);
+    console.log("User claimable rewards:", claimableRewards);
 
-  //     // Step 7: User2 opens a trove and deposits into Stability Pool
-  //     vm.startPrank(user2);
-  //     debtAmount = 10000e18;
-  //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
-  //     stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
+    // Step 7: User2 opens a trove and deposits into Stability Pool
+    vm.startPrank(user2);
+    debtAmount = 10000e18;
+    _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
 
-  //     // Step 8: User3 opens a trove
-  //     vm.startPrank(user3);
-  //     debtAmount = 2000e18;
-  //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    // Step 8: User3 opens a trove
+    vm.startPrank(user3);
+    debtAmount = 2000e18;
+    _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-  //     // Step 9: Simulate price drop to make the user3's trove undercollateralized
-  //     vm.warp(block.timestamp + 1);
-  //     _updateOracle(58000 * 1e8);
+    // Step 9: Simulate price drop to make the user3's trove undercollateralized
+    vm.warp(block.timestamp + 1);
+    _updateOracle(58000 * 1e8);
 
-  //     // Step 10: Triggers liquidation
-  //     liquidationMgr.liquidate(sbtcTroveManager, user3);
+    // Step 10: Triggers liquidation
+    liquidationMgr.liquidate(sbtcTroveManager, user3);
 
-  //     // Step 11: Check claimable rewards
-  //     // The correct claimable rewards should be the same as the previous amount as
-  //     // the user's deposit was already emptied in the previous epoch
-  //     claimableRewards = stabilityPool.claimableReward(user);
-  //     console.log("User claimable rewards:", claimableRewards);
-  //   }
+    // Step 11: Check claimable rewards
+    // The correct claimable rewards should be the same as the previous amount as
+    // the user's deposit was already emptied in the previous epoch
+    uint256 claimableRewards2 = stabilityPool.claimableReward(user);
+    console.log("User claimable rewards:", claimableRewards2);
+    assertEq(claimableRewards, claimableRewards2);
+  }
 }
