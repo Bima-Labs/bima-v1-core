@@ -860,6 +860,7 @@
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 | 0xB39403dE269198651837f54501Bc28f55Cfc4ee2 | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
 | SolvBTC         | 0xE33109766662932a26d978123383ff9E7bdeF346 | 0x509aAb1A2501Ee6ce056De0D517Fc1ee44D45933 | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
+| nBTC         | 0xA229EaE06B1F8137461A9D309478da3C8d910E53 | 0x80348B8F4EFfB4C8992e577Ad506e5b77348Db5c | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
 
 ## Polygon zkEVM Cardona Testnet
 
