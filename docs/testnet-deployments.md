@@ -804,10 +804,11 @@
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaFaucet         | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
-| --------------- | ------------------ | -------------------- | -------------- |
-| -               | -                  | -                    | -              |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0x7B783a093eE5Fe07E49b5bd913a1b4AD1e90B23F |
 
 ## Rootstock Testnet
 
