@@ -61,6 +61,7 @@
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69 |
+| aBTC   | 0xeFcb867D484CE645766F09d8F67561b838Bb3FFd | 0x811d08B09a0FFB0cEA34472523770Bef30297259 | 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69 |
 
 ## Bob Testnet
 
@@ -554,6 +555,7 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
 | --------------- | ------------------ | -------------------- | -------------- |
 |  Bima Mock BTC | 0x9a64371655872B16395342B0C7A27C16d9eaC78e | 0xA6f932aefd02269Fd4897283774Ce22a2Ba5Fc07 | 0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D |
+|  aBTC | 0x2394a5832b021788b4263d226c2b0faea765234d | 0xb0925C437c7e0D3151ec9c3e928987a04f186cf9 | 0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D |
 
 ## X Layer Testnet
 
