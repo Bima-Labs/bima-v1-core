@@ -97,6 +97,9 @@ contract TestSetup is Test {
     EmissionSchedule internal emissionSchedule;
     BoostCalculator internal boostCalc;
 
+    // adapters
+    address internal constant MORPHO_ADAPTER = address(0x1); // mock address
+
     // constants
     uint256 internal constant INIT_MCR = 2e18; // 200%
     uint256 internal constant INIT_MAX_DEBT = 1_000_000e18; // 1M USD
@@ -225,7 +228,8 @@ contract TestSetup is Test {
             ZERO_ADDRESS, // LayerZero endpoint
             addresses.factory,
             users.gasPool,
-            INIT_GAS_COMPENSATION
+            INIT_GAS_COMPENSATION,
+            MORPHO_ADAPTER
         );
         assertEq(addresses.debtToken, address(debtToken));
 

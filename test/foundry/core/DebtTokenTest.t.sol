@@ -124,6 +124,38 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
         debtToken.transfer(users.user2, amount);
     }
 
+    function test_mint_from_morpho_adapter(uint256 amount) external {
+        vm.assume(amount <= MAX_AMOUNT);
+
+        uint256 totalSupply = debtToken.totalSupply();
+
+        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), 0);
+
+        vm.startPrank(MORPHO_ADAPTER);
+
+        debtToken.mint(MORPHO_ADAPTER, amount);
+
+        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), amount);
+        assertEq(debtToken.totalSupply(), totalSupply + amount);
+    }
+
+    function test_burn_from_morpho_adapter(uint256 mintAmount, uint256 burnAmount) external {
+        vm.assume(mintAmount <= MAX_AMOUNT);
+        vm.assume(burnAmount <= mintAmount);
+
+        uint256 totalSupply = debtToken.totalSupply();
+
+        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), 0);
+
+        vm.startPrank(MORPHO_ADAPTER);
+
+        debtToken.mint(MORPHO_ADAPTER, mintAmount);
+        debtToken.burn(MORPHO_ADAPTER, burnAmount);
+
+        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), mintAmount - burnAmount);
+        assertEq(debtToken.totalSupply(), totalSupply + mintAmount - burnAmount);
+    }
+
     function onFlashLoan(
         address /*initiator*/,
         address /*token*/,

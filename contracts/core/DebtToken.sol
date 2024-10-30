@@ -8,7 +8,7 @@ import {IBimaCore} from "../interfaces/IBimaCore.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 /**
-    @title Bima Debt Token "acUSD"
+    @title Bima Debt Token "USBD"
     @notice CDP minted against collateral deposits within `TroveManager`.
             This contract has a 1:n relationship with multiple deployments of `TroveManager`,
             each of which hold one collateral type which may be used to mint this token.
@@ -43,6 +43,10 @@ contract DebtToken is OFT {
     address public immutable borrowerOperationsAddress;
     address public immutable factory;
     address public immutable gasPool;
+    // Adapter that will mint USBD and deposit it in Morpho (forked) vault,
+    // and vice verca, withdrawing from vault and burning USBD.
+    // making it available for borrowing against other assets
+    address public immutable morphoAdapterAddress;
 
     mapping(address => bool) public troveManager;
 
@@ -58,13 +62,15 @@ contract DebtToken is OFT {
         address _layerZeroEndpoint,
         address _factory,
         address _gasPool,
-        uint256 _gasCompensation
+        uint256 _gasCompensation,
+        address _morphoAdapterAddress
     ) OFT(_name, _symbol, _layerZeroEndpoint) {
         stabilityPoolAddress = _stabilityPoolAddress;
         _bimaCore = bimaCore_;
         borrowerOperationsAddress = _borrowerOperationsAddress;
         factory = _factory;
         gasPool = _gasPool;
+        morphoAdapterAddress = _morphoAdapterAddress;
 
         DEBT_GAS_COMPENSATION = _gasCompensation;
 
@@ -101,12 +107,15 @@ contract DebtToken is OFT {
     }
 
     function mint(address _account, uint256 _amount) external {
-        require(msg.sender == borrowerOperationsAddress || troveManager[msg.sender], "Debt: Caller not BO/TM");
+        require(
+            msg.sender == borrowerOperationsAddress || troveManager[msg.sender] || msg.sender == morphoAdapterAddress,
+            "Debt: Caller not BO/TM/MA"
+        );
         _mint(_account, _amount);
     }
 
     function burn(address _account, uint256 _amount) external {
-        require(troveManager[msg.sender], "Debt: Caller not TroveManager");
+        require(troveManager[msg.sender] || msg.sender == morphoAdapterAddress, "Debt: Caller not TM/MA");
         _burn(_account, _amount);
     }
 
