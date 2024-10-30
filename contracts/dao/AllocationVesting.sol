@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { DelegatedOps } from "../dependencies/DelegatedOps.sol";
-import { BabelOwnable } from "../dependencies/BabelOwnable.sol";
-import { ITokenLocker } from "../interfaces/ITokenLocker.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
+import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
 
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title Vesting contract for team and investors
- * @author BabelFi
+ * @author BimaFi
  * @notice Vesting contract which allows transfer of future vesting claims
  */
 contract AllocationVesting is DelegatedOps, Ownable {
@@ -79,13 +79,12 @@ contract AllocationVesting is DelegatedOps, Ownable {
         maxTotalPreclaimPct = maxTotalPreclaimPct_;
     }
 
-
     /**
      *
      * @notice Returns claimed amount
      * @param account account to check
      */
-    function getClaimed(address account) external view returns(uint256 claimed) {
+    function getClaimed(address account) external view returns (uint256 claimed) {
         claimed = allocations[account].claimed;
     }
 
@@ -145,7 +144,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
      */
     function transferPoints(address from, address to, uint24 points) external callerOrDelegated(from) {
         // revert on self-transfer to prevent infinite points exploit
-        if(from == to) revert SelfTransfer();
+        if (from == to) revert SelfTransfer();
 
         // revert on zero points input
         if (points == 0) revert ZeroAllocation();
@@ -157,10 +156,9 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // revert if `from` has less points allocation than they are
         // trying to transfer
         if (fromAllocation.points < points) revert InsufficientPoints();
-        
+
         // enforce identical vesting periods if `to` has an active vesting period
-        if (toAllocation.numberOfWeeks != 0 && 
-            toAllocation.numberOfWeeks != fromAllocation.numberOfWeeks)
+        if (toAllocation.numberOfWeeks != 0 && toAllocation.numberOfWeeks != fromAllocation.numberOfWeeks)
             revert IncompatibleVestingPeriod(fromAllocation.numberOfWeeks, toAllocation.numberOfWeeks);
 
         // get points currently vested for `from` address
@@ -169,7 +167,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // revert if `from` has claimed more than they've vested
         // since then `from` has no points to transfer
         if (totalVested < fromAllocation.claimed) revert LockedAllocation();
-        
+
         // claim one last time before transfer
         uint256 claimed = _claim(from, fromAllocation.points, fromAllocation.claimed, fromAllocation.numberOfWeeks);
 
@@ -179,18 +177,19 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // update storage - if `from` has a positive preclaimed balance,
         // transfer preclaimed amount in proportion to points tranferred
         // to prevent point transfers being used to bypass the maximum preclaim limit
-        if(fromAllocation.preclaimed > 0) {
-            uint96 preclaimedToTransfer = SafeCast.toUint96((uint256(fromAllocation.preclaimed) * points) /
-                                                            fromAllocation.points);
+        if (fromAllocation.preclaimed > 0) {
+            uint96 preclaimedToTransfer = SafeCast.toUint96(
+                (uint256(fromAllocation.preclaimed) * points) / fromAllocation.points
+            );
 
             // this should never happen but sneaky users may try to preclaiming and
             // point transferring using very small amounts so prevent this
-            if(preclaimedToTransfer == 0) revert PositivePreclaimButZeroTransfer();
+            if (preclaimedToTransfer == 0) revert PositivePreclaimButZeroTransfer();
 
             allocations[to].preclaimed = toAllocation.preclaimed + preclaimedToTransfer;
             allocations[from].preclaimed = fromAllocation.preclaimed - preclaimedToTransfer;
         }
-        
+
         // update storage - deduct points from `from` using memory cache
         allocations[from].points = fromAllocation.points - points;
 
@@ -264,9 +263,10 @@ contract AllocationVesting is DelegatedOps, Ownable {
         uint256 leftToPreclaim = maxTotalPreclaim - preclaimed;
 
         // if input amount 0, use min(leftToPreclaim, _unclaimed)
-        if (amount == 0) amount = leftToPreclaim > _unclaimed ? _unclaimed : leftToPreclaim;
+        if (amount == 0)
+            amount = leftToPreclaim > _unclaimed ? _unclaimed : leftToPreclaim;
 
-        // otherwise revert if attempting to preclaim more than max preclaimed or remaining unclaimed
+            // otherwise revert if attempting to preclaim more than max preclaimed or remaining unclaimed
         else if (preclaimed + amount > maxTotalPreclaim || amount > _unclaimed) revert PreclaimTooLarge();
 
         // truncate any dust
@@ -378,7 +378,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // calculate account's total token allocation
         uint256 accountAllocation = (totalAllocation * allocation.points) / TOTAL_POINTS;
 
-        // unclaimed amount is account allocation minus what they've already claimed        
+        // unclaimed amount is account allocation minus what they've already claimed
         accountUnclaimed = accountAllocation - allocation.claimed;
     }
 
@@ -394,8 +394,7 @@ contract AllocationVesting is DelegatedOps, Ownable {
         // nothing can be preclaimed
         if (allocation.points == 0 || vestingStart == 0) {
             accountPreclaimable = 0;
-        }
-        else {
+        } else {
             // calculate account's total token allocation
             uint256 accountAllocation = (totalAllocation * allocation.points) / TOTAL_POINTS;
 

@@ -4,11 +4,11 @@ pragma solidity 0.8.19;
 import {IAggregatorV3Interface} from "../interfaces/IAggregatorV3Interface.sol";
 
 contract MockOracle is IAggregatorV3Interface {
-    uint80  public roundId;
-    int256  public answer;
+    uint80 public roundId;
+    int256 public answer;
     uint256 public startedAt;
     uint256 public updatedAt;
-    uint80  public answeredInRound;
+    uint80 public answeredInRound;
 
     constructor() {
         roundId = 12345;
@@ -18,8 +18,13 @@ contract MockOracle is IAggregatorV3Interface {
         answeredInRound = 12345;
     }
 
-    function setResponse(uint80 _roundId, int256 _answer, uint256 _startedAt, 
-                         uint256 _updatedAt, uint80 _answeredInRound) external {
+    function setResponse(
+        uint80 _roundId,
+        int256 _answer,
+        uint256 _startedAt,
+        uint256 _updatedAt,
+        uint80 _answeredInRound
+    ) external {
         roundId = _roundId;
         answer = _answer;
         startedAt = _startedAt;
@@ -45,21 +50,11 @@ contract MockOracle is IAggregatorV3Interface {
         return 4;
     }
 
-    function getRoundData(
-        uint80 _roundId
-    )
-        external
-        view
-        returns (uint80,int256,uint256,uint256,uint80)
-    {
-        return (_roundId,answer,startedAt,updatedAt,_roundId);
+    function getRoundData(uint80 _roundId) external view returns (uint80, int256, uint256, uint256, uint80) {
+        return (_roundId, answer, startedAt, updatedAt, _roundId);
     }
 
-    function latestRoundData()
-        external
-        view
-        returns (uint80,int256,uint256,uint256,uint80)
-    {
-        return (roundId,answer,startedAt,updatedAt,answeredInRound);
+    function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80) {
+        return (roundId, answer, startedAt, updatedAt, answeredInRound);
     }
 }

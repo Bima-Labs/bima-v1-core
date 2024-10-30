@@ -4,93 +4,92 @@ pragma solidity 0.8.19;
 // test setup
 import {TestSetup} from "../TestSetup.sol";
 
-contract BabelCoreTest is TestSetup {
-
+contract BimaCoreTest is TestSetup {
     function test_setPaused_guardianCanPauseNotUnpause() external {
         vm.prank(users.guardian);
-        babelCore.setPaused(true);
+        bimaCore.setPaused(true);
 
-        assertTrue(babelCore.paused());
+        assertTrue(bimaCore.paused());
 
         vm.expectRevert("Unauthorized");
         vm.prank(users.guardian);
-        babelCore.setPaused(false);
+        bimaCore.setPaused(false);
     }
 
     function test_setPaused_ownerCanPauseUnpause() external {
         vm.prank(users.owner);
-        babelCore.setPaused(true);
+        bimaCore.setPaused(true);
 
-        assertTrue(babelCore.paused());
+        assertTrue(bimaCore.paused());
 
         vm.prank(users.owner);
-        babelCore.setPaused(false);
+        bimaCore.setPaused(false);
 
-        assertFalse(babelCore.paused());
+        assertFalse(bimaCore.paused());
     }
 
     function test_setPaused_failNormalUser() external {
         vm.expectRevert("Unauthorized");
         vm.prank(users.user1);
-        babelCore.setPaused(true);
+        bimaCore.setPaused(true);
 
         vm.expectRevert("Unauthorized");
         vm.prank(users.user1);
-        babelCore.setPaused(false);
+        bimaCore.setPaused(false);
     }
 
     function test_setFeeReceiver_failsNotOwner() external {
         vm.expectRevert("Only owner");
-        babelCore.setFeeReceiver(address(0));
+        bimaCore.setFeeReceiver(address(0));
     }
 
     function test_setFeeReceiver() external {
         vm.prank(users.owner);
-        babelCore.setFeeReceiver(address(0));
-        assertEq(babelCore.feeReceiver(), address(0));
+        bimaCore.setFeeReceiver(address(0));
+        assertEq(bimaCore.feeReceiver(), address(0));
     }
 
     function test_setPriceFeed_failsNotOwner() external {
         vm.expectRevert("Only owner");
-        babelCore.setPriceFeed(address(0));
+        bimaCore.setPriceFeed(address(0));
     }
 
     function test_setPriceFeed() external {
         vm.prank(users.owner);
-        babelCore.setPriceFeed(address(0));
-        assertEq(babelCore.priceFeed(), address(0));
+        bimaCore.setPriceFeed(address(0));
+        assertEq(bimaCore.priceFeed(), address(0));
     }
 
     function test_setGuardian_failsNotOwner() external {
         vm.expectRevert("Only owner");
-        babelCore.setGuardian(address(0));
+        bimaCore.setGuardian(address(0));
     }
 
     function test_setGuardian() external {
         vm.prank(users.owner);
-        babelCore.setGuardian(address(0));
-        assertEq(babelCore.guardian(), address(0));
+        bimaCore.setGuardian(address(0));
+        assertEq(bimaCore.guardian(), address(0));
     }
 
     function test_commitTransferOwnership_failsNotOwner() external {
         vm.expectRevert("Only owner");
-        babelCore.commitTransferOwnership(address(0));
+        bimaCore.commitTransferOwnership(address(0));
     }
 
-    function test_commitTransferOwnership() public returns(address newPendingOwner) {
+    function test_commitTransferOwnership() public returns (address newPendingOwner) {
         newPendingOwner = address(0x9876);
         vm.prank(users.owner);
-        babelCore.commitTransferOwnership(newPendingOwner);
+        bimaCore.commitTransferOwnership(newPendingOwner);
 
-        assertEq(babelCore.pendingOwner(), newPendingOwner);
-        assertEq(babelCore.ownershipTransferDeadline(), block.timestamp + babelCore.OWNERSHIP_TRANSFER_DELAY());
+        assertEq(bimaCore.pendingOwner(), newPendingOwner);
+        assertEq(bimaCore.ownershipTransferDeadline(), block.timestamp + bimaCore.OWNERSHIP_TRANSFER_DELAY());
     }
 
     function test_acceptTransferOwnership_failsNotNewPendingOwner() external {
         test_commitTransferOwnership();
 
         vm.expectRevert("Only new owner");
-        babelCore.acceptTransferOwnership();
+        bimaCore.acceptTransferOwnership();
     }
 
     function test_acceptTransferOwnership_failsTransferDeadlineNotElapsed() external {
@@ -98,35 +97,35 @@ contract BabelCoreTest is TestSetup {
 
         vm.expectRevert("Deadline not passed");
         vm.prank(newPendingOwner);
-        babelCore.acceptTransferOwnership();
+        bimaCore.acceptTransferOwnership();
     }
 
     function test_acceptTransferOwnership() external {
         address newPendingOwner = test_commitTransferOwnership();
 
-        vm.warp(babelCore.ownershipTransferDeadline());
+        vm.warp(bimaCore.ownershipTransferDeadline());
 
         vm.prank(newPendingOwner);
-        babelCore.acceptTransferOwnership();
+        bimaCore.acceptTransferOwnership();
 
-        assertEq(babelCore.owner(), newPendingOwner);
-        assertEq(babelCore.pendingOwner(), address(0));
-        assertEq(babelCore.ownershipTransferDeadline(), 0);
+        assertEq(bimaCore.owner(), newPendingOwner);
+        assertEq(bimaCore.pendingOwner(), address(0));
+        assertEq(bimaCore.ownershipTransferDeadline(), 0);
     }
 
     function test_revokeTransferOwnership_failsNotOwner() external {
         vm.expectRevert("Only owner");
-        babelCore.revokeTransferOwnership();
+        bimaCore.revokeTransferOwnership();
     }
 
     function test_revokeTransferOwnership() external {
         test_commitTransferOwnership();
 
         vm.prank(users.owner);
-        babelCore.revokeTransferOwnership();
+        bimaCore.revokeTransferOwnership();
 
-        assertEq(babelCore.owner(), users.owner);
-        assertEq(babelCore.pendingOwner(), address(0));
-        assertEq(babelCore.ownershipTransferDeadline(), 0);
+        assertEq(bimaCore.owner(), users.owner);
+        assertEq(bimaCore.pendingOwner(), address(0));
+        assertEq(bimaCore.ownershipTransferDeadline(), 0);
     }
 }

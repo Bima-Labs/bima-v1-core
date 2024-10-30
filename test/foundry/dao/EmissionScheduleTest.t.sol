@@ -8,9 +8,8 @@ import {TestSetup} from "../TestSetup.sol";
 import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 
 contract EmissionScheduleTest is TestSetup {
+    uint64 internal constant EMISSION_10_PCT = 1000; // 10%
 
-    uint64 constant internal EMISSION_10_PCT = 1000;  // 10%
-    
     // helper function
     function _setWeeklyPctSchedule(
         uint256 currentWeek,
@@ -25,7 +24,7 @@ contract EmissionScheduleTest is TestSetup {
 
         // schedule some emissions;
         // first parameter  : number of weeks from now, must be descending and unique
-        // second parameter : % of unallocated BABEL supply emitted in that week
+        // second parameter : % of unallocated BIMA supply emitted in that week
         uint64[2][] memory newScheduledWeeklyPct = new uint64[2][](4);
         newScheduledWeeklyPct[0] = [uint64(4), emissionPct4];
         newScheduledWeeklyPct[1] = [uint64(3), emissionPct3];
@@ -39,7 +38,7 @@ contract EmissionScheduleTest is TestSetup {
         currentScheduledWeeklyPct = emissionSchedule.getWeeklyPctSchedule();
         assertEq(currentScheduledWeeklyPct.length, 4);
 
-        for(uint256 i; i<4; i++) {
+        for (uint256 i; i < 4; i++) {
             // verify current week was added to input week to get actual week number
             assertEq(newScheduledWeeklyPct[i][0] + currentWeek, currentScheduledWeeklyPct[i][0]);
 
@@ -75,10 +74,10 @@ contract EmissionScheduleTest is TestSetup {
 
         // schedule some emissions;
         // first parameter  : number of weeks from now, must be descending and unique
-        // second parameter : % of unallocated BABEL supply emitted in that week
+        // second parameter : % of unallocated BIMA supply emitted in that week
         uint64[2][] memory newScheduledWeeklyPct = new uint64[2][](2);
-        newScheduledWeeklyPct[0] = [uint64(4),1];
-        newScheduledWeeklyPct[1] = [uint64(4),1];
+        newScheduledWeeklyPct[0] = [uint64(4), 1];
+        newScheduledWeeklyPct[1] = [uint64(4), 1];
 
         vm.expectRevert("Must sort by week descending");
         vm.prank(users.owner);
@@ -92,10 +91,10 @@ contract EmissionScheduleTest is TestSetup {
 
         // schedule some emissions;
         // first parameter  : number of weeks from now, must be descending and unique
-        // second parameter : % of unallocated BABEL supply emitted in that week
+        // second parameter : % of unallocated BIMA supply emitted in that week
         uint64[2][] memory newScheduledWeeklyPct = new uint64[2][](2);
-        newScheduledWeeklyPct[0] = [uint64(4),1];
-        newScheduledWeeklyPct[1] = [uint64(5),1];
+        newScheduledWeeklyPct[0] = [uint64(4), 1];
+        newScheduledWeeklyPct[1] = [uint64(5), 1];
 
         vm.expectRevert("Must sort by week descending");
         vm.prank(users.owner);
@@ -104,7 +103,7 @@ contract EmissionScheduleTest is TestSetup {
 
     function test_getTotalWeeklyEmissions_onlyVault() external {
         vm.expectRevert();
-        emissionSchedule.getTotalWeeklyEmissions(0,0);
+        emissionSchedule.getTotalWeeklyEmissions(0, 0);
     }
 
     function test_getTotalWeeklyEmissions(
@@ -135,11 +134,10 @@ contract EmissionScheduleTest is TestSetup {
 
         uint256 savedLockWeeks = emissionSchedule.lockWeeks();
 
-        vm.prank(address(babelVault));
-        (uint256 amount, uint256 lock) 
-            = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
+        vm.prank(address(bimaVault));
+        (uint256 amount, uint256 lock) = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct1 / BIMA_100_PCT);
+        assertEq(amount, (unallocatedTotal * emissionPct1) / BIMA_100_PCT);
 
         // lockWeeks reduced by 1 and storage updated
         assertEq(lock, savedLockWeeks - 1);
@@ -156,11 +154,10 @@ contract EmissionScheduleTest is TestSetup {
         currentWeek = emissionSchedule.getWeek();
         assertEq(currentWeek, 7);
 
-        vm.prank(address(babelVault));
-        (amount, lock) 
-            = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
+        vm.prank(address(bimaVault));
+        (amount, lock) = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct2 / BIMA_100_PCT);
+        assertEq(amount, (unallocatedTotal * emissionPct2) / BIMA_100_PCT);
 
         // lockWeeks reduced by 2 and storage updated
         assertEq(lock, savedLockWeeks - 2);
@@ -177,11 +174,10 @@ contract EmissionScheduleTest is TestSetup {
         currentWeek = emissionSchedule.getWeek();
         assertEq(currentWeek, 8);
 
-        vm.prank(address(babelVault));
-        (amount, lock) 
-            = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
+        vm.prank(address(bimaVault));
+        (amount, lock) = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct3 / BIMA_100_PCT);
+        assertEq(amount, (unallocatedTotal * emissionPct3) / BIMA_100_PCT);
 
         // lockWeeks reduced by 3 and storage updated
         assertEq(lock, savedLockWeeks - 3);
@@ -198,11 +194,10 @@ contract EmissionScheduleTest is TestSetup {
         currentWeek = emissionSchedule.getWeek();
         assertEq(currentWeek, 9);
 
-        vm.prank(address(babelVault));
-        (amount, lock) 
-            = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
+        vm.prank(address(bimaVault));
+        (amount, lock) = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
-        assertEq(amount, unallocatedTotal * emissionPct4 / BIMA_100_PCT);
+        assertEq(amount, (unallocatedTotal * emissionPct4) / BIMA_100_PCT);
 
         // lockWeeks reduced by 4 and storage updated
         assertEq(lock, savedLockWeeks - 4);
@@ -219,13 +214,12 @@ contract EmissionScheduleTest is TestSetup {
         currentWeek = emissionSchedule.getWeek();
         assertEq(currentWeek, 10);
 
-        vm.prank(address(babelVault));
-        (amount, lock) 
-            = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
+        vm.prank(address(bimaVault));
+        (amount, lock) = emissionSchedule.getTotalWeeklyEmissions(currentWeek, unallocatedTotal);
 
         // confirm it is using values from last week of schedule
         // since that was the last modification
-        assertEq(amount, unallocatedTotal * emissionPct4 / BIMA_100_PCT);
+        assertEq(amount, (unallocatedTotal * emissionPct4) / BIMA_100_PCT);
         assertEq(lock, savedLockWeeks - 4);
         assertEq(lock, emissionSchedule.lockWeeks());
         assertEq(emissionPct4, emissionSchedule.weeklyPct());
@@ -239,7 +233,7 @@ contract EmissionScheduleTest is TestSetup {
 
     function test_setLockParameters_failExceedMaxLockWeeks() external {
         uint64 lockWeeks = uint64(emissionSchedule.MAX_LOCK_WEEKS()) + 1;
-        
+
         vm.expectRevert("Cannot exceed MAX_LOCK_WEEKS");
         vm.prank(users.owner);
         emissionSchedule.setLockParameters(lockWeeks, 0);
@@ -247,14 +241,14 @@ contract EmissionScheduleTest is TestSetup {
 
     function test_setLockParameters_failZeroDecayWeeks() external {
         uint64 lockWeeks = uint64(emissionSchedule.MAX_LOCK_WEEKS());
-        
+
         vm.expectRevert("Decay weeks cannot be 0");
         vm.prank(users.owner);
         emissionSchedule.setLockParameters(lockWeeks, 0);
     }
 
     function test_setLockParameters(uint64 lockWeeks, uint64 decayWeeks) external {
-        lockWeeks  = uint64(bound(lockWeeks, 0, emissionSchedule.MAX_LOCK_WEEKS()));
+        lockWeeks = uint64(bound(lockWeeks, 0, emissionSchedule.MAX_LOCK_WEEKS()));
         decayWeeks = uint64(bound(decayWeeks, 1, type(uint64).max));
 
         vm.prank(users.owner);
@@ -263,5 +257,4 @@ contract EmissionScheduleTest is TestSetup {
         assertEq(emissionSchedule.lockWeeks(), lockWeeks);
         assertEq(emissionSchedule.lockDecayWeeks(), decayWeeks);
     }
-
 }

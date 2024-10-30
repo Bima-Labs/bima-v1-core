@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {ISystemStart} from "./ISystemStart.sol";
-import {IBabelToken} from "./IBabelToken.sol";
-import {IBabelCore} from "./IBabelCore.sol";
+import {IBimaToken} from "./IBimaToken.sol";
+import {IBimaCore} from "./IBimaCore.sol";
 import {IIncentiveVoting} from "./IIncentiveVoting.sol";
-interface ITokenLocker is IBabelOwnable, ISystemStart {
+
+interface ITokenLocker is IBimaOwnable, ISystemStart {
     struct LockData {
         uint256 amount;
         uint256 weeksToUnlock;
@@ -75,11 +76,11 @@ interface ITokenLocker is IBabelOwnable, ISystemStart {
 
     function lockToTokenRatio() external view returns (uint256);
 
-    function lockToken() external view returns (IBabelToken);
+    function lockToken() external view returns (IBimaToken);
 
     function penaltyWithdrawalsEnabled() external view returns (bool);
 
-    function babelCore() external view returns (IBabelCore);
+    function bimaCore() external view returns (IBimaCore);
 
     function totalDecayRate() external view returns (uint32);
 

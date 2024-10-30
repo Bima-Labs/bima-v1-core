@@ -8,7 +8,6 @@ import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 
 contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
-
     uint256 internal constant MIN_AMOUNT = 1e18;
     uint256 internal constant MAX_AMOUNT = 1_000_000_000_000e18;
 
@@ -18,7 +17,7 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
         // expected fee for borrowing 1e18
         uint256 borrowAmount = MIN_AMOUNT;
-        uint256 expectedFee  = borrowAmount * debtToken.FLASH_LOAN_FEE() / BIMA_100_PCT;
+        uint256 expectedFee = (borrowAmount * debtToken.FLASH_LOAN_FEE()) / BIMA_100_PCT;
 
         // fee should be > 0
         assertTrue(expectedFee > 0);
@@ -43,7 +42,7 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
     function test_transfer_failToZeroAddress(uint256 amount) external {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        
+
         vm.prank(address(borrowerOps));
         debtToken.mint(address(this), amount);
 
@@ -56,7 +55,7 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
     function test_transfer_failToDebtTokenContractAddress(uint256 amount) external {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        
+
         vm.prank(address(borrowerOps));
         debtToken.mint(address(this), amount);
 
@@ -69,7 +68,7 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
     function test_transfer_failToProtocolContractAddresses(uint256 amount) external {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        
+
         vm.prank(address(borrowerOps));
         debtToken.mint(address(this), amount);
 
@@ -92,7 +91,7 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
         vm.expectRevert("Debt: Cannot transfer tokens directly to the StabilityPool, TroveManager or BorrowerOps");
         debtToken.transferFrom(address(this), address(borrowerOps), amount);
     }
-    
+
     function test_transfer(uint256 amount) external {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
 
@@ -139,6 +138,6 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
         debtToken.mint(address(this), fee);
 
         // approve debt token contract to take amount + fee
-        debtToken.approve(address(debtToken), amount+fee);
+        debtToken.approve(address(debtToken), amount + fee);
     }
 }

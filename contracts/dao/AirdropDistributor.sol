@@ -6,19 +6,19 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
-import {IBabelVault} from "../interfaces/IVault.sol";
+import {IBimaVault} from "../interfaces/IVault.sol";
 
 interface IClaimCallback {
     function claimCallback(address claimant, uint256 amount) external returns (bool success);
 }
 
 /**
-    @title Babel veCRV Airdrop Distributor
-    @notice Distributes BABEL to veCRV holders that voted in favor of
-            Babel's initial Curve governance proposal.
-    @dev Airdropped BABEL tokens are given as a one year locked position.
+    @title Bima veCRV Airdrop Distributor
+    @notice Distributes BIMA to veCRV holders that voted in favor of
+            Bima's initial Curve governance proposal.
+    @dev Airdropped BIMA tokens are given as a one year locked position.
          Distribution is via a merkle proof. The proof and script used
-         to create are available on Github: https://github.com/babel-fi
+         to create are available on Github: https://github.com/bima-fi
  */
 contract AirdropDistributor is Ownable {
     using Address for address;
@@ -67,7 +67,7 @@ contract AirdropDistributor is Ownable {
         require(amount > 0, "Nothing to sweep");
         token.transferFrom(vault, address(this), amount);
         token.approve(vault, amount);
-        IBabelVault(vault).increaseUnallocatedSupply(amount);
+        IBimaVault(vault).increaseUnallocatedSupply(amount);
 
         emit SweepUnclaimedTokens(amount);
     }

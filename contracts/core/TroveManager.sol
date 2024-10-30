@@ -5,28 +5,28 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
-import {ITroveManager, IDebtToken, IBabelVault, IPriceFeed, ISortedTroves, IERC20} from "../interfaces/ITroveManager.sol";
+import {ITroveManager, IDebtToken, IBimaVault, IPriceFeed, ISortedTroves, IERC20} from "../interfaces/ITroveManager.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
-import {BabelBase} from "../dependencies/BabelBase.sol";
-import {BabelMath} from "../dependencies/BabelMath.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaBase} from "../dependencies/BimaBase.sol";
+import {BimaMath} from "../dependencies/BimaMath.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {BIMA_100_PCT, BIMA_DECIMAL_PRECISION, BIMA_REWARD_DURATION} from "../dependencies/Constants.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Trove Manager
+    @title Bima Trove Manager
     @notice Based on Liquity's `TroveManager`
             https://github.com/liquity/dev/blob/main/packages/contracts/contracts/TroveManager.sol
 
-            Babel's implementation is modified so that multiple `TroveManager` and `SortedTroves`
+            Bima's implementation is modified so that multiple `TroveManager` and `SortedTroves`
             contracts are deployed in tandem, with each pair managing troves of a single collateral
             type.
 
             Functionality related to liquidations has been moved to `LiquidationManager`. This was
             necessary to avoid the restriction on deployed bytecode size.
  */
-contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
+contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
     // --- Constants ---
@@ -44,8 +44,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     // Maximum interest rate must be lower than the minimum LST staking yield
     // so that over time the actual TCR becomes greater than the calculated TCR
     uint256 public constant MAX_INTEREST_RATE_IN_BPS = 400; // 4%
-    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) /
-                                                       (BIMA_100_PCT * SECONDS_IN_YEAR); //50%
+    uint256 public constant SUNSETTING_INTEREST_RATE = (INTEREST_PRECISION * 5000) / (BIMA_100_PCT * SECONDS_IN_YEAR); //50%
 
     // During bootsrap period redemptions are not allowed
     uint256 public constant BOOTSTRAP_PERIOD = 14 days;
@@ -61,7 +60,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     address public immutable liquidationManager;
     address immutable gasPoolAddress;
     IDebtToken public immutable debtToken;
-    IBabelVault public immutable vault;
+    IBimaVault public immutable vault;
 
     IPriceFeed public priceFeed;
     IERC20 public collateralToken;
@@ -206,18 +205,18 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         address _gasPoolAddress,
         address _debtTokenAddress,
         address _borrowerOperationsAddress,
         address _vault,
         address _liquidationManager,
         uint256 _gasCompensation
-    ) BabelOwnable(_babelCore) BabelBase(_gasCompensation) SystemStart(_babelCore) {
+    ) BimaOwnable(_bimaCore) BimaBase(_gasCompensation) SystemStart(_bimaCore) {
         gasPoolAddress = _gasPoolAddress;
         debtToken = IDebtToken(_debtTokenAddress);
         borrowerOperationsAddress = _borrowerOperationsAddress;
-        vault = IBabelVault(_vault);
+        vault = IBimaVault(_vault);
         liquidationManager = _liquidationManager;
     }
 
@@ -237,7 +236,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool success) {
-        // called by BabelVault when the TroveManager is registered
+        // called by BimaVault when the TroveManager is registered
         // as an emissions receiver
         require(msg.sender == address(vault));
 
@@ -247,8 +246,10 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         // enforce that both debt & mint ids have been provided
         require(_assignedIds.length == 2, "Incorrect ID count");
 
-        emissionId = EmissionId({ debt: SafeCast.toUint16(_assignedIds[0]),
-                                  minting: SafeCast.toUint16(_assignedIds[1]) });
+        emissionId = EmissionId({
+            debt: SafeCast.toUint16(_assignedIds[0]),
+            minting: SafeCast.toUint16(_assignedIds[1])
+        });
 
         periodFinish = uint32(((block.timestamp / 1 weeks) + 1) * 1 weeks);
 
@@ -334,10 +335,8 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             _minuteDecayFactor >= 977159968434245000 && // half-life of 30 minutes
                 _minuteDecayFactor <= 999931237762985000 // half-life of 1 week
         );
-        require(_redemptionFeeFloor <= _maxRedemptionFee &&
-                _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
-        require(_borrowingFeeFloor <= _maxBorrowingFee &&
-                _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
+        require(_redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
+        require(_borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
 
         // checks with storage reads next
         require(!sunsetting, "Cannot change after sunset");
@@ -359,8 +358,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         maxSystemDebt = _maxSystemDebt;
 
         // calculate interest rate using input bps
-        uint256 newInterestRate = (INTEREST_PRECISION * _interestRateInBPS) /
-                                  (BIMA_100_PCT * SECONDS_IN_YEAR);
+        uint256 newInterestRate = (INTEREST_PRECISION * _interestRateInBPS) / (BIMA_100_PCT * SECONDS_IN_YEAR);
 
         // if rate is changing, accrue interest under the old rate first
         // before updating to the new interest rate
@@ -373,14 +371,16 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         MCR = _MCR;
 
-        emit SetParameters(_minuteDecayFactor,
-                           _redemptionFeeFloor,
-                           _maxRedemptionFee,
-                           _borrowingFeeFloor,
-                           _maxBorrowingFee,
-                           _interestRateInBPS,
-                           _maxSystemDebt,
-                           _MCR);
+        emit SetParameters(
+            _minuteDecayFactor,
+            _redemptionFeeFloor,
+            _maxRedemptionFee,
+            _borrowingFeeFloor,
+            _maxBorrowingFee,
+            _interestRateInBPS,
+            _maxSystemDebt,
+            _MCR
+        );
     }
 
     function collectInterests() external {
@@ -393,7 +393,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         emit CollectedInterest(interestPayableCached);
 
         // interactions
-        debtToken.mint(BABEL_CORE.feeReceiver(), interestPayableCached);
+        debtToken.mint(BIMA_CORE.feeReceiver(), interestPayableCached);
     }
 
     // --- Getters ---
@@ -401,7 +401,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     function fetchPrice() public returns (uint256 price) {
         IPriceFeed _priceFeed = priceFeed;
         if (address(_priceFeed) == address(0)) {
-            _priceFeed = IPriceFeed(BABEL_CORE.priceFeed());
+            _priceFeed = IPriceFeed(BIMA_CORE.priceFeed());
         }
         price = _priceFeed.fetchPrice(address(collateralToken));
     }
@@ -494,14 +494,14 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     function getNominalICR(address _borrower) public view returns (uint256 NICR) {
         (uint256 currentCollateral, uint256 currentDebt) = getTroveCollAndDebt(_borrower);
 
-        NICR = BabelMath._computeNominalCR(currentCollateral, currentDebt);
+        NICR = BimaMath._computeNominalCR(currentCollateral, currentDebt);
     }
 
     // Return the current collateral ratio (ICR) of a given Trove. Takes a trove's pending coll and debt rewards from redistributions into account.
     function getCurrentICR(address _borrower, uint256 _price) public view returns (uint256 ICR) {
         (uint256 currentCollateral, uint256 currentDebt) = getTroveCollAndDebt(_borrower);
 
-        ICR = BabelMath._computeCR(currentCollateral, currentDebt, _price);
+        ICR = BimaMath._computeCR(currentCollateral, currentDebt, _price);
     }
 
     // excludes defaulted collateral
@@ -520,7 +520,9 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     // Get the borrower's pending accumulated collateral and debt rewards, earned by their stake
-    function getPendingCollAndDebtRewards(address _borrower) public view returns (uint256 pendingColl, uint256 pendingDebt) {
+    function getPendingCollAndDebtRewards(
+        address _borrower
+    ) public view returns (uint256 pendingColl, uint256 pendingDebt) {
         RewardSnapshot memory snapshot = rewardSnapshots[_borrower];
 
         uint256 coll = L_collateral - snapshot.collateral;
@@ -565,7 +567,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
         uint256 redeemedDebtFraction = (_collateralDrawn * _price) / _totalDebtSupply;
 
         newBaseRate = decayedBaseRate + (redeemedDebtFraction / BETA);
-        newBaseRate = BabelMath._min(newBaseRate, BIMA_DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
+        newBaseRate = BimaMath._min(newBaseRate, BIMA_DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
 
         // Update the baseRate state variable
         baseRate = newBaseRate;
@@ -583,18 +585,20 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function _calcRedemptionRate(uint256 _baseRate) internal view returns (uint256 rate) {
-        rate =
-            BabelMath._min(
-                redemptionFeeFloor + _baseRate,
-                maxRedemptionFee // cap at a maximum of 100%
-            );
+        rate = BimaMath._min(
+            redemptionFeeFloor + _baseRate,
+            maxRedemptionFee // cap at a maximum of 100%
+        );
     }
 
     function getRedemptionFeeWithDecay(uint256 _collateralDrawn) external view returns (uint256 feeWithDecay) {
         feeWithDecay = _calcRedemptionFee(getRedemptionRateWithDecay(), _collateralDrawn);
     }
 
-    function _calcRedemptionFee(uint256 _redemptionRate, uint256 _collateralDrawn) internal pure returns (uint256 redemptionFee) {
+    function _calcRedemptionFee(
+        uint256 _redemptionRate,
+        uint256 _collateralDrawn
+    ) internal pure returns (uint256 redemptionFee) {
         redemptionFee = (_redemptionRate * _collateralDrawn) / BIMA_DECIMAL_PRECISION;
         require(redemptionFee < _collateralDrawn, "Fee exceeds returned collateral");
     }
@@ -610,7 +614,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     }
 
     function _calcBorrowingRate(uint256 _baseRate) internal view returns (uint256 rate) {
-        rate = BabelMath._min(borrowingFeeFloor + _baseRate, maxBorrowingFee);
+        rate = BimaMath._min(borrowingFeeFloor + _baseRate, maxBorrowingFee);
     }
 
     function getBorrowingFee(uint256 _debt) external view returns (uint256 fee) {
@@ -633,7 +637,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         if (timePassed >= SECONDS_IN_ONE_MINUTE) {
             uint256 minutesPassed = timePassed / SECONDS_IN_ONE_MINUTE;
-            
+
             lastFeeOperationTime += minutesPassed * SECONDS_IN_ONE_MINUTE;
             emit LastFeeOpTimeUpdated(block.timestamp);
         }
@@ -641,7 +645,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
     function _calcDecayedBaseRate() internal view returns (uint256 rate) {
         uint256 minutesPassed = (block.timestamp - lastFeeOperationTime) / SECONDS_IN_ONE_MINUTE;
-        uint256 decayFactor = BabelMath._decPow(minuteDecayFactor, minutesPassed);
+        uint256 decayFactor = BimaMath._decPow(minuteDecayFactor, minutesPassed);
 
         rate = (baseRate * decayFactor) / BIMA_DECIMAL_PRECISION;
     }
@@ -693,7 +697,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         ISortedTroves _sortedTrovesCached = sortedTroves;
 
-        RedemptionTotals memory totals;        
+        RedemptionTotals memory totals;
         totals.price = fetchPrice();
 
         _updateBalances();
@@ -734,7 +738,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
             // Partial redemption was cancelled (out-of-date hint, or new net debt < minimum)
             // therefore we could not redeem from the last Trove
-            if (singleRedemption.cancelledPartial) break; 
+            if (singleRedemption.cancelledPartial) break;
 
             totals.totalDebtToRedeem += singleRedemption.debtLot;
             totals.totalCollateralDrawn += singleRedemption.collateralLot;
@@ -754,7 +758,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
 
         _requireUserAcceptsFee(totals.collateralFee, totals.totalCollateralDrawn, _maxFeePercentage);
 
-        _sendCollateral(BABEL_CORE.feeReceiver(), totals.collateralFee);
+        _sendCollateral(BIMA_CORE.feeReceiver(), totals.collateralFee);
 
         totals.collateralToSendToRedeemer = totals.totalCollateralDrawn - totals.collateralFee;
 
@@ -782,7 +786,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
     ) internal returns (SingleRedemptionValues memory singleRedemption) {
         Trove storage t = Troves[_borrower];
         // Determine the remaining amount (lot) to be redeemed, capped by the entire debt of the Trove minus the liquidation reserve
-        singleRedemption.debtLot = BabelMath._min(_maxDebtAmount, t.debt - DEBT_GAS_COMPENSATION);
+        singleRedemption.debtLot = BimaMath._min(_maxDebtAmount, t.debt - DEBT_GAS_COMPENSATION);
 
         // Get the CollateralLot of equivalent value in USD
         singleRedemption.collateralLot = (singleRedemption.debtLot * BIMA_DECIMAL_PRECISION) / _price;
@@ -797,7 +801,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
             _redeemCloseTrove(_borrower, DEBT_GAS_COMPENSATION, newColl);
             emit TroveUpdated(_borrower, 0, 0, 0, TroveManagerOperation.redeemCollateral);
         } else {
-            uint256 newNICR = BabelMath._computeNominalCR(newColl, newDebt);
+            uint256 newNICR = BimaMath._computeNominalCR(newColl, newDebt);
             /*
              * If the provided hint is out of date, we bail since trying to reinsert without a good hint will almost
              * certainly result in running out of gas.
@@ -1115,12 +1119,12 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
                 newColl -= _collChange;
                 _sendCollateral(_receiver, _collChange);
             }
-            
+
             // update borrower storage with new collateral value
             t.coll = newColl;
         }
 
-        uint256 newNICR = BabelMath._computeNominalCR(newColl, newDebt);
+        uint256 newNICR = BimaMath._computeNominalCR(newColl, newDebt);
         sortedTroves.reInsert(_borrower, newNICR, _upperHint, _lowerHint);
 
         newStake = _updateStakeAndTotalStakes(t);
@@ -1211,7 +1215,7 @@ contract TroveManager is ITroveManager, BabelBase, BabelOwnable, SystemStart {
                 uint256 pending = (dailyMintReward[data.week] * data.amount) / totalMints[data.week][data.day];
                 storedPendingReward[account] += pending;
             }
-            accountLatestMint[account] = VolumeData({ week: uint32(week), day: uint32(day), amount: amount });
+            accountLatestMint[account] = VolumeData({week: uint32(week), day: uint32(day), amount: amount});
         }
     }
 

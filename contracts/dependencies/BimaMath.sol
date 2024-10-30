@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {BIMA_DECIMAL_PRECISION} from "./Constants.sol";
 
-library BabelMath {
+library BimaMath {
     /* Precision for Nominal ICR (independent of price). Rationale for the value:
      *
      * - Making it “too high” could lead to overflows.
@@ -61,8 +61,7 @@ library BabelMath {
 
         if (_minutes == 0) {
             result = BIMA_DECIMAL_PRECISION;
-        }
-        else {
+        } else {
             uint256 y = BIMA_DECIMAL_PRECISION;
             uint256 x = _base;
             uint256 n = _minutes;

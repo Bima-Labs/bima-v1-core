@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelBase} from "./IBabelBase.sol";
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaBase} from "./IBimaBase.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {ISystemStart} from "./ISystemStart.sol";
 import {IDebtToken} from "./IDebtToken.sol";
-import {IBabelVault} from "./IVault.sol";
+import {IBimaVault} from "./IVault.sol";
 import {IPriceFeed} from "./IPriceFeed.sol";
 import {ISortedTroves} from "./ISortedTroves.sol";
 import {IEmissionReceiver} from "./IEmissionReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionReceiver {
+interface ITroveManager is IBimaBase, IBimaOwnable, ISystemStart, IEmissionReceiver {
     event BaseRateUpdated(uint256 _baseRate);
     event CollateralSent(address _to, uint256 _amount);
     event LTermsUpdated(uint256 _L_collateral, uint256 _L_debt);
@@ -27,19 +27,27 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionRec
     event TotalStakesUpdated(uint256 _newTotalStakes);
     event TroveIndexUpdated(address _borrower, uint256 _newIndex);
     event TroveSnapshotsUpdated(uint256 _L_collateral, uint256 _L_debt);
-    event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 _stake, TroveManagerOperation _operation);
+    event TroveUpdated(
+        address indexed _borrower,
+        uint256 _debt,
+        uint256 _coll,
+        uint256 _stake,
+        TroveManagerOperation _operation
+    );
     event Paused();
     event Unpaused();
     event SetPriceFeed(address);
     event StartSunset();
-    event SetParameters(uint256 _minuteDecayFactor,
-                        uint256 _redemptionFeeFloor,
-                        uint256 _maxRedemptionFee,
-                        uint256 _borrowingFeeFloor,
-                        uint256 _maxBorrowingFee,
-                        uint256 _interestRateInBPS,
-                        uint256 _maxSystemDebt,
-                        uint256 _MCR);
+    event SetParameters(
+        uint256 _minuteDecayFactor,
+        uint256 _redemptionFeeFloor,
+        uint256 _maxRedemptionFee,
+        uint256 _borrowingFeeFloor,
+        uint256 _maxBorrowingFee,
+        uint256 _interestRateInBPS,
+        uint256 _maxSystemDebt,
+        uint256 _MCR
+    );
     event CollectedInterest(uint256 amount);
 
     enum Status {
@@ -298,5 +306,5 @@ interface ITroveManager is IBabelBase, IBabelOwnable, ISystemStart, IEmissionRec
 
     function totalStakesSnapshot() external view returns (uint256);
 
-    function vault() external view returns (IBabelVault);
+    function vault() external view returns (IBimaVault);
 }

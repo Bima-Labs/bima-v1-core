@@ -5,7 +5,7 @@ import {ITroveManager} from "../../interfaces/ITroveManager.sol";
 import {ISortedTroves} from "../../interfaces/ISortedTroves.sol";
 import {IFactory} from "../../interfaces/IFactory.sol";
 
-/*  Helper contract for grabbing Trove data for the front end. Not part of the core Babel system. */
+/*  Helper contract for grabbing Trove data for the front end. Not part of the core Bima system. */
 contract MultiTroveGetter {
     struct CombinedTroveData {
         address owner;

@@ -3,26 +3,26 @@ pragma solidity 0.8.19;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
-import {IBabelVault, ITokenLocker, IBabelToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
+import {IBimaVault, ITokenLocker, IBimaToken, IIncentiveVoting, IEmissionSchedule, IBoostDelegate, IBoostCalculator, IRewards, IERC20} from "../interfaces/IVault.sol";
 import {IEmissionReceiver} from "../interfaces/IEmissionReceiver.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Vault
-    @notice The total supply of BABEL is initially minted to this contract.
+    @title Bima Vault
+    @notice The total supply of BIMA is initially minted to this contract.
             The token balance held here can be considered "uncirculating". The
             vault gradually releases tokens to registered emissions receivers
             as determined by `EmissionSchedule` and `BoostCalculator`.
  */
-contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
+contract BimaVault is IBimaVault, BimaOwnable, SystemStart {
     using Address for address;
     using SafeERC20 for IERC20;
 
-    IBabelToken public immutable babelToken;
+    IBimaToken public immutable bimaToken;
     ITokenLocker public immutable locker;
     IIncentiveVoting public immutable voter;
     address public immutable deploymentManager;
@@ -31,13 +31,13 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     IEmissionSchedule public emissionSchedule;
     IBoostCalculator public boostCalculator;
 
-    // `babelToken` balance within the treasury that is not yet allocated.
-    // Starts as `babelToken.totalSupply()` and decreases over time.
+    // `bimaToken` balance within the treasury that is not yet allocated.
+    // Starts as `bimaToken.totalSupply()` and decreases over time.
     uint128 public unallocatedTotal;
     // most recent week that `unallocatedTotal` was reduced by a call to
     // `emissionSchedule.getTotalWeeklyEmissions`
     uint64 public totalUpdateWeek;
-    // number of weeks that BABEL is locked for when transferred using
+    // number of weeks that BIMA is locked for when transferred using
     // `transferAllocatedTokens`. updated weekly by the emission schedule.
     uint64 public lockWeeks;
 
@@ -51,7 +51,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     // receiver -> remaining tokens which have been allocated but not yet distributed
     mapping(address receiver => uint256 remainingAllocated) public allocated;
 
-    // account -> week -> BABEL amount claimed in that week (used for calculating boost)
+    // account -> week -> BIMA amount claimed in that week (used for calculating boost)
     mapping(address account => uint128[65535] weeklyEarned) accountWeeklyEarned;
 
     // pending rewards for an address (dust after locking, fees from delegation)
@@ -72,14 +72,14 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     constructor(
-        address _babelCore,
-        IBabelToken _token,
+        address _bimaCore,
+        IBimaToken _token,
         ITokenLocker _locker,
         IIncentiveVoting _voter,
         address _stabilityPool,
         address _manager
-    ) BabelOwnable(_babelCore) SystemStart(_babelCore) {
-        babelToken = _token;
+    ) BimaOwnable(_bimaCore) SystemStart(_bimaCore) {
+        bimaToken = _token;
         locker = _locker;
         voter = _voter;
         lockToTokenRatio = _locker.lockToTokenRatio();
@@ -89,9 +89,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         uint256 id = _voter.registerNewReceiver();
         require(id == 0, "Stability pool must have receiver ID 0");
 
-        idToReceiver[id] = Receiver({ account: _stabilityPool,
-                                      isActive: true,
-                                      updatedWeek: 0 });
+        idToReceiver[id] = Receiver({account: _stabilityPool, isActive: true, updatedWeek: 0});
         emit NewReceiverRegistered(_stabilityPool, id);
     }
 
@@ -104,8 +102,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         InitialAllowance[] calldata initialAllowances
     ) external {
         // enforce invariant described in TokenLocker to prevent overflows
-        require(totalSupply <= type(uint32).max * locker.lockToTokenRatio(), 
-                "Total supply must be <= type(uint32).max * lockToTokenRatio");
+        require(
+            totalSupply <= type(uint32).max * locker.lockToTokenRatio(),
+            "Total supply must be <= type(uint32).max * lockToTokenRatio"
+        );
 
         // only deployment manager can set initial parameters
         require(msg.sender == deploymentManager, "!deploymentManager");
@@ -114,7 +114,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         boostCalculator = _boostCalculator;
 
         // mint totalSupply to vault - this reverts after the first call
-        babelToken.mintToVault(totalSupply);
+        bimaToken.mintToVault(totalSupply);
 
         // working data
         uint256 totalAllocated;
@@ -135,7 +135,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // set initial transfer allowances for airdrops, vests, bribes
         for (uint256 i; i < initialAllowances.length; i++) {
             // initial allocations are given as approvals
-            babelToken.increaseAllowance(initialAllowances[i].receiver, initialAllowances[i].amount);
+            bimaToken.increaseAllowance(initialAllowances[i].receiver, initialAllowances[i].amount);
 
             // update working data
             totalAllocated += initialAllowances[i].amount;
@@ -176,9 +176,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             assignedIds[i] = id;
 
             // set receiver data for new receiver id
-            idToReceiver[id] = Receiver({ account: receiver,
-                                          isActive: true,
-                                          updatedWeek: week });
+            idToReceiver[id] = Receiver({account: receiver, isActive: true, updatedWeek: week});
 
             emit NewReceiverRegistered(receiver, id);
         }
@@ -186,8 +184,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // notify the receiver contract of the newly registered ID
         // also serves as a sanity check to ensure the contract
         // is capable of receiving emissions
-        require(IEmissionReceiver(receiver).notifyRegisteredId(assignedIds),
-                "notifyRegisteredId must return true");
+        require(IEmissionReceiver(receiver).notifyRegisteredId(assignedIds), "notifyRegisteredId must return true");
 
         success = true;
     }
@@ -212,7 +209,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         success = true;
     }
 
-    function isReceiverActive(uint256 id) external view returns(bool isActive) {
+    function isReceiverActive(uint256 id) external view returns (bool isActive) {
         isActive = idToReceiver[id].isActive;
     }
 
@@ -243,7 +240,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // if token being transferred is the protocol's token,
         // then prevent transfers into the vault via this function
         // and update storage unallocated total
-        if (address(token) == address(babelToken)) {
+        if (address(token) == address(bimaToken)) {
             require(receiver != address(this), "Self transfer denied");
 
             uint256 unallocated = unallocatedTotal - amount;
@@ -258,11 +255,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     /**
-        @notice Receive BABEL tokens and add them to the unallocated supply
+        @notice Receive BIMA tokens and add them to the unallocated supply
      */
     function increaseUnallocatedSupply(uint256 amount) external returns (bool success) {
         // safe to use `transferFrom` here since it is the protocol's token
-        babelToken.transferFrom(msg.sender, address(this), amount);
+        bimaToken.transferFrom(msg.sender, address(this), amount);
 
         // update storage unallocated total
         uint256 unallocated = unallocatedTotal + amount;
@@ -304,9 +301,9 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             weeklyEmissions[week] = SafeCast.toUint128(weeklyAmount);
 
             // update working data
-            if(weeklyAmount > 0) {
+            if (weeklyAmount > 0) {
                 unallocated = unallocated - weeklyAmount;
-                
+
                 emit UnallocatedSupplyReduced(weeklyAmount, unallocated);
             }
         }
@@ -318,10 +315,10 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     /**
-        @notice Allocate additional `babelToken` allowance to an emission receiver
+        @notice Allocate additional `bimaToken` allowance to an emission receiver
                 based on the emission schedule
         @param id Receiver ID. The caller must be the receiver mapped to this ID.
-        @return amount Additional `babelToken` allowance for the receiver. The receiver
+        @return amount Additional `bimaToken` allowance for the receiver. The receiver
                        accesses the tokens using `Vault.transferAllocatedTokens`
      */
     function allocateNewEmissions(uint256 id) external returns (uint256 amount) {
@@ -330,7 +327,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
 
         // if receiver is active, then only account linked to receiver
         // can call this function
-        if(receiver.isActive) {
+        if (receiver.isActive) {
             require(receiver.account == msg.sender, "Not receiver account");
         }
         // otherwise anyone can call this function - required so that tokens
@@ -355,7 +352,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
             // update storage receiver last processed week to
             // current system week
             idToReceiver[id].updatedWeek = SafeCast.toUint16(currentWeek);
-        
+
             // if a valid emission schedule exists perform additional
             // processing otherwise return default 0
             if (address(_emissionSchedule) != address(0)) {
@@ -366,9 +363,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                     ++receiver.updatedWeek;
 
                     // update output with emissions for previous week being processed
-                    amount += _emissionSchedule.getReceiverWeeklyEmissions(id,
-                                                                           receiver.updatedWeek,
-                                                                           weeklyEmissions[receiver.updatedWeek]);
+                    amount += _emissionSchedule.getReceiverWeeklyEmissions(
+                        id,
+                        receiver.updatedWeek,
+                        weeklyEmissions[receiver.updatedWeek]
+                    );
                 }
 
                 // if receiver is active, update storage allocated amount
@@ -377,7 +376,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                     allocated[msg.sender] += amount;
 
                     emit IncreasedAllocation(msg.sender, amount);
-                } 
+                }
                 // otherwise return allocation to the unallocated supply
                 else {
                     uint256 unallocated = unallocatedTotal + amount;
@@ -394,7 +393,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     /**
-        @notice Transfer `babelToken` tokens previously allocated to the caller
+        @notice Transfer `bimaToken` tokens previously allocated to the caller
         @dev Callable only by registered receiver contracts which were previously
              allocated tokens using `allocateNewEmissions`.
         @param claimant Address that is claiming the tokens
@@ -402,7 +401,11 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         @param amount Desired amount of tokens to transfer. This value always assumes max boost.
         @return success bool
      */
-    function transferAllocatedTokens(address claimant, address receiver, uint256 amount) external returns (bool success) {
+    function transferAllocatedTokens(
+        address claimant,
+        address receiver,
+        uint256 amount
+    ) external returns (bool success) {
         if (amount > 0) {
             allocated[msg.sender] -= amount;
             _transferAllocated(0, claimant, receiver, address(0), amount);
@@ -448,7 +451,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
 
         // transfer total claimed rewards to receiver
         _transferAllocated(maxFeePct, msg.sender, receiver, boostDelegate, total);
-        
+
         success = true;
     }
 
@@ -467,7 +470,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // either transfer or lock the rewards based on
         // value of storage `lockWeeks`
         _transferOrLock(msg.sender, receiver, amount);
-        
+
         success = true;
     }
 
@@ -591,7 +594,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         // if no forced lock, reset pending rewards and transfer claimed tokens
         if (lockWeekCache == 0) {
             storedPendingReward[claimant] = 0;
-            babelToken.transfer(receiver, amount);
+            bimaToken.transfer(receiver, amount);
         }
         // otherwise perform a forced lock
         else {
@@ -612,7 +615,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
     }
 
     /**
-        @notice Claimable BABEL amount for `account` in `rewardContract` after applying boost
+        @notice Claimable BIMA amount for `account` in `rewardContract` after applying boost
         @dev Returns (0, 0) if the boost delegate is invalid, or the delegate's callback fee
              function is incorrectly configured.
         @param account Address claiming rewards
@@ -699,8 +702,7 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
                 feePct: feePct,
                 callback: IBoostDelegate(callback)
             });
-        }
-        else {
+        } else {
             delete boostDelegation[msg.sender];
         }
 
@@ -736,18 +738,18 @@ contract BabelVault is IBabelVault, BabelOwnable, SystemStart {
         amount = storedPendingReward[claimant];
 
         // if smaller than lock to token ratio, return 0
-        if(amount < lockToTokenRatio) amount = 0;
+        if (amount < lockToTokenRatio) amount = 0;
     }
 
     function getAccountWeeklyEarned(address claimant, uint16 week) external view returns (uint128 amount) {
         amount = accountWeeklyEarned[claimant][week];
     }
 
-    function getStoredPendingReward(address claimant) external view returns(uint256 amount) {
+    function getStoredPendingReward(address claimant) external view returns (uint256 amount) {
         amount = storedPendingReward[claimant];
     }
 
-    function isBoostDelegatedEnabled(address account) external view returns(bool isEnabled) {
+    function isBoostDelegatedEnabled(address account) external view returns (bool isEnabled) {
         isEnabled = boostDelegation[account].isEnabled;
     }
 }

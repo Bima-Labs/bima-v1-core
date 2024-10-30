@@ -4,20 +4,20 @@ pragma solidity 0.8.19;
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILiquidityGauge} from "../../interfaces/ILiquidityGauge.sol";
-import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+import {BimaOwnable} from "../../dependencies/BimaOwnable.sol";
 import {BIMA_100_PCT} from "../../dependencies/Constants.sol";
 
 import {ICurveProxy, IGaugeController, IERC20, IMinter, IFeeDistributor, IVotingEscrow, IAragon} from "../../interfaces/ICurveProxy.sol";
 
 /**
-    @title Babel Curve Proxy
+    @title Bima Curve Proxy
     @notice Locks CRV in Curve's `VotingEscrow` and interacts with various Curve
             contracts that require / provide benefit from the locked CRV position.
     @dev This contract cannot operate without approval in Curve's VotingEscrow
          smart wallet whitelist. See the Curve documentation for more info:
          https://docs.curve.fi/curve_dao/VotingEscrow/#smart-wallet-whitelist
  */
-contract CurveProxy is ICurveProxy, BabelOwnable {
+contract CurveProxy is ICurveProxy, BimaOwnable {
     using Address for address;
     using SafeERC20 for IERC20;
 
@@ -49,13 +49,13 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
     mapping(address caller => mapping(address target => mapping(bytes4 selector => bool))) executePermissions;
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         IERC20 _CRV,
         IGaugeController _gaugeController,
         IMinter _minter,
         IVotingEscrow _votingEscrow,
         IFeeDistributor _feeDistributor
-    ) BabelOwnable(_babelCore) {
+    ) BimaOwnable(_bimaCore) {
         CRV = _CRV;
         gaugeController = _gaugeController;
         minter = _minter;
@@ -139,7 +139,7 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         feeDistributor.claim();
         amount = feeToken.balanceOf(address(this));
 
-        feeToken.transfer(BABEL_CORE.feeReceiver(), amount);
+        feeToken.transfer(BIMA_CORE.feeReceiver(), amount);
     }
 
     /**
@@ -196,7 +196,11 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
     /**
         @notice Submit a vote within the Curve DAO
      */
-    function voteInCurveDao(IAragon aragon, uint256 id, bool support) external ownerOrVoteManager returns (bool success) {
+    function voteInCurveDao(
+        IAragon aragon,
+        uint256 id,
+        bool support
+    ) external ownerOrVoteManager returns (bool success) {
         aragon.vote(id, support, false);
 
         success = true;
@@ -206,7 +210,10 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         @notice Approve a 3rd-party caller to deposit into a specific gauge
         @dev Only required for some older Curve gauges
      */
-    function approveGaugeDeposit(address gauge, address depositor) external onlyApprovedGauge(gauge) returns (bool success) {
+    function approveGaugeDeposit(
+        address gauge,
+        address depositor
+    ) external onlyApprovedGauge(gauge) returns (bool success) {
         ILiquidityGauge(gauge).set_approve_deposit(depositor, true);
 
         success = true;
@@ -216,7 +223,10 @@ contract CurveProxy is ICurveProxy, BabelOwnable {
         @notice Set the default receiver for extra rewards on a specific gauge
         @dev Only works on some gauge versions
      */
-    function setGaugeRewardsReceiver(address gauge, address receiver) external onlyApprovedGauge(gauge) returns (bool success) {
+    function setGaugeRewardsReceiver(
+        address gauge,
+        address receiver
+    ) external onlyApprovedGauge(gauge) returns (bool success) {
         ILiquidityGauge(gauge).set_rewards_receiver(receiver);
 
         success = true;

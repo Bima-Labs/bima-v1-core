@@ -10,15 +10,15 @@ import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
 import {IStabilityPool} from "../../contracts/interfaces/IStabilityPool.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";
 import {ILiquidationManager} from "../../contracts/interfaces/ILiquidationManager.sol";
-import {IBabelVault, IRewards, IBoostDelegate} from "../../contracts/interfaces/IVault.sol";
-import {IBabelToken} from "../../contracts/interfaces/IBabelToken.sol";
+import {IBimaVault, IRewards, IBoostDelegate} from "../../contracts/interfaces/IVault.sol";
+import {IBimaToken} from "../../contracts/interfaces/IBimaToken.sol";
 import {IIncentiveVoting} from "../../contracts/interfaces/IIncentiveVoting.sol";
 import {ITokenLocker} from "../../contracts/interfaces/ITokenLocker.sol";
 import {IEmissionSchedule} from "../../contracts/interfaces/IEmissionSchedule.sol";
 import {IBoostCalculator} from "../../contracts/interfaces/IBoostCalculator.sol";
 
 // core
-import {BabelCore} from "../../contracts/core/BabelCore.sol";
+import {BimaCore} from "../../contracts/core/BimaCore.sol";
 import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
 import {Factory, IFactory} from "../../contracts/core/Factory.sol";
 import {LiquidationManager} from "../../contracts/core/LiquidationManager.sol";
@@ -33,8 +33,8 @@ import {FeeReceiver} from "../../contracts/dao/FeeReceiver.sol";
 import {InterimAdmin} from "../../contracts/dao/InterimAdmin.sol";
 import {TokenLocker} from "../../contracts/dao/TokenLocker.sol";
 import {IncentiveVoting} from "../../contracts/dao/IncentiveVoting.sol";
-import {BabelToken} from "../../contracts/dao/BabelToken.sol";
-import {BabelVault, IEmissionReceiver} from "../../contracts/dao/Vault.sol";
+import {BimaToken} from "../../contracts/dao/BimaToken.sol";
+import {BimaVault, IEmissionReceiver} from "../../contracts/dao/Vault.sol";
 import {EmissionSchedule} from "../../contracts/dao/EmissionSchedule.sol";
 import {BoostCalculator} from "../../contracts/dao/BoostCalculator.sol";
 
@@ -66,8 +66,8 @@ struct DeployAddresses {
     address troveMgr;
     address tokenLocker;
     address incentiveVoting;
-    address babelToken;
-    address babelVault;
+    address bimaToken;
+    address bimaVault;
 }
 
 contract TestSetup is Test {
@@ -77,7 +77,7 @@ contract TestSetup is Test {
     StakedBTC stakedBTC;
 
     // core contracts
-    BabelCore internal babelCore;
+    BimaCore internal bimaCore;
     PriceFeed internal priceFeed;
     Factory internal factory;
     LiquidationManager internal liquidationMgr;
@@ -92,10 +92,10 @@ contract TestSetup is Test {
     InterimAdmin internal interimAdmin;
     TokenLocker internal tokenLocker;
     IncentiveVoting internal incentiveVoting;
-    BabelToken internal babelToken;
-    BabelVault internal babelVault;
+    BimaToken internal bimaToken;
+    BimaVault internal bimaVault;
     EmissionSchedule internal emissionSchedule;
-    BoostCalculator  internal boostCalc;
+    BoostCalculator internal boostCalc;
 
     // constants
     uint256 internal constant INIT_MCR = 2e18; // 200%
@@ -115,10 +115,10 @@ contract TestSetup is Test {
     uint64 internal constant INIT_ES_LOCK_WEEKS = 4;
     uint64 internal constant INIT_ES_LOCK_DECAY_WEEKS = 1;
     uint64 internal constant INIT_ES_WEEKLY_PCT = 2500; // 25%
-    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max*INIT_LOCK_TO_TOKEN_RATIO;
+    uint256 internal constant INIT_BAB_TKN_TOTAL_SUPPLY = type(uint32).max * INIT_LOCK_TO_TOKEN_RATIO;
     uint64 internal constant INIT_VLT_LOCK_WEEKS = 2;
 
-    uint256 internal constant MIN_BTC_PRICE_8DEC = 10_000  * 10 ** 8;
+    uint256 internal constant MIN_BTC_PRICE_8DEC = 10_000 * 10 ** 8;
     uint256 internal constant MAX_BTC_PRICE_8DEC = 500_000 * 10 ** 8;
 
     function setUp() public virtual {
@@ -153,24 +153,26 @@ contract TestSetup is Test {
         // create and configure contracts in the required dependency order
         //
         // Core
-        babelCore = new BabelCore(users.owner, users.guardian, addresses.priceFeed, addresses.feeReceiver);
-        assertEq(addresses.core, address(babelCore));
-        
+        bimaCore = new BimaCore(users.owner, users.guardian, addresses.priceFeed, addresses.feeReceiver);
+        assertEq(addresses.core, address(bimaCore));
+
         // PriceFeed
         priceFeed = new PriceFeed(addresses.core, address(mockOracle));
         assertEq(addresses.priceFeed, address(priceFeed));
-        priceFeed.setOracle(address(stakedBTC),
-                            address(mockOracle),
-                            80000, // heartbeat,
-                            bytes4(0x00000000), // Read pure data assume stBTC is 1:1 with BTC :)
-                            18, // sharePriceDecimals
-                            false //_isEthIndexed
-                            );
+        priceFeed.setOracle(
+            address(stakedBTC),
+            address(mockOracle),
+            80000, // heartbeat,
+            bytes4(0x00000000), // Read pure data assume stBTC is 1:1 with BTC :)
+            18, // sharePriceDecimals
+            false //_isEthIndexed
+        );
         assertEq(priceFeed.owner(), users.owner);
         assertEq(priceFeed.guardian(), users.guardian);
 
         // FeeReceiver
-        feeReceiver = new FeeReceiver(addresses.core); ++addresses.nonce;
+        feeReceiver = new FeeReceiver(addresses.core);
+        ++addresses.nonce;
         assertEq(addresses.feeReceiver, address(feeReceiver));
 
         // InterimAdmin
@@ -189,96 +191,113 @@ contract TestSetup is Test {
         addresses.troveMgr = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.tokenLocker = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.incentiveVoting = vm.computeCreateAddress(users.owner, ++addresses.nonce);
-        addresses.babelToken = vm.computeCreateAddress(users.owner, ++addresses.nonce);
-        addresses.babelVault = vm.computeCreateAddress(users.owner, ++addresses.nonce);
+        addresses.bimaToken = vm.computeCreateAddress(users.owner, ++addresses.nonce);
+        addresses.bimaVault = vm.computeCreateAddress(users.owner, ++addresses.nonce);
 
         // Factory
-        factory = new Factory(addresses.core, 
-                              IDebtToken(addresses.debtToken),
-                              IStabilityPool(addresses.stabilityPool),
-                              IBorrowerOperations(addresses.borrowerOps),
-                              address(sortedTroves),
-                              addresses.troveMgr,
-                              ILiquidationManager(addresses.liquidationMgr));
+        factory = new Factory(
+            addresses.core,
+            IDebtToken(addresses.debtToken),
+            IStabilityPool(addresses.stabilityPool),
+            IBorrowerOperations(addresses.borrowerOps),
+            address(sortedTroves),
+            addresses.troveMgr,
+            ILiquidationManager(addresses.liquidationMgr)
+        );
         assertEq(addresses.factory, address(factory));
 
         // LiquidationManager
-        liquidationMgr = new LiquidationManager(IStabilityPool(addresses.stabilityPool),
-                                                IBorrowerOperations(addresses.borrowerOps),
-                                                addresses.factory,
-                                                INIT_GAS_COMPENSATION);
+        liquidationMgr = new LiquidationManager(
+            IStabilityPool(addresses.stabilityPool),
+            IBorrowerOperations(addresses.borrowerOps),
+            addresses.factory,
+            INIT_GAS_COMPENSATION
+        );
         assertEq(addresses.liquidationMgr, address(liquidationMgr));
 
         // DebtToken
-        debtToken = new DebtToken("BUSD", "BUSD",
-                                  addresses.stabilityPool,
-                                  addresses.borrowerOps,
-                                  babelCore,
-                                  ZERO_ADDRESS, // LayerZero endpoint
-                                  addresses.factory,
-                                  users.gasPool,
-                                  INIT_GAS_COMPENSATION);
+        debtToken = new DebtToken(
+            "BUSD",
+            "BUSD",
+            addresses.stabilityPool,
+            addresses.borrowerOps,
+            bimaCore,
+            ZERO_ADDRESS, // LayerZero endpoint
+            addresses.factory,
+            users.gasPool,
+            INIT_GAS_COMPENSATION
+        );
         assertEq(addresses.debtToken, address(debtToken));
 
         // BorrowerOperations
-        borrowerOps = new BorrowerOperations(addresses.core,
-                                             addresses.debtToken,
-                                             addresses.factory,
-                                             INIT_MIN_NET_DEBT,
-                                             INIT_GAS_COMPENSATION);
+        borrowerOps = new BorrowerOperations(
+            addresses.core,
+            addresses.debtToken,
+            addresses.factory,
+            INIT_MIN_NET_DEBT,
+            INIT_GAS_COMPENSATION
+        );
         assertEq(addresses.borrowerOps, address(borrowerOps));
 
         // StabilityPool
-        stabilityPool = new StabilityPool(addresses.core,
-                                          IDebtToken(addresses.debtToken),
-                                          IBabelVault(addresses.babelVault),
-                                          addresses.factory,
-                                          addresses.liquidationMgr);
+        stabilityPool = new StabilityPool(
+            addresses.core,
+            IDebtToken(addresses.debtToken),
+            IBimaVault(addresses.bimaVault),
+            addresses.factory,
+            addresses.liquidationMgr
+        );
         assertEq(addresses.stabilityPool, address(stabilityPool));
 
         // TroveManager
-        troveMgr = new TroveManager(addresses.core,
-                                    users.gasPool,
-                                    addresses.debtToken,
-                                    addresses.borrowerOps,
-                                    addresses.babelVault,
-                                    addresses.liquidationMgr,
-                                    INIT_GAS_COMPENSATION);
+        troveMgr = new TroveManager(
+            addresses.core,
+            users.gasPool,
+            addresses.debtToken,
+            addresses.borrowerOps,
+            addresses.bimaVault,
+            addresses.liquidationMgr,
+            INIT_GAS_COMPENSATION
+        );
         assertEq(addresses.troveMgr, address(troveMgr));
 
         // TokenLocker
-        tokenLocker = new TokenLocker(addresses.core,
-                                      IBabelToken(addresses.babelToken),
-                                      IIncentiveVoting(addresses.incentiveVoting),
-                                      users.owner,
-                                      INIT_LOCK_TO_TOKEN_RATIO);
+        tokenLocker = new TokenLocker(
+            addresses.core,
+            IBimaToken(addresses.bimaToken),
+            IIncentiveVoting(addresses.incentiveVoting),
+            users.owner,
+            INIT_LOCK_TO_TOKEN_RATIO
+        );
         assertEq(addresses.tokenLocker, address(tokenLocker));
 
         // IncentiveVoting
-        incentiveVoting = new IncentiveVoting(addresses.core,
-                                              ITokenLocker(addresses.tokenLocker),
-                                              addresses.babelVault);
+        incentiveVoting = new IncentiveVoting(addresses.core, ITokenLocker(addresses.tokenLocker), addresses.bimaVault);
         assertEq(addresses.incentiveVoting, address(incentiveVoting));
 
-        // BabelToken
-        babelToken = new BabelToken(addresses.babelVault,
-                                    ZERO_ADDRESS, // LayerZero endpoint
-                                    addresses.tokenLocker);
-        assertEq(addresses.babelToken, address(babelToken));
+        // BimaToken
+        bimaToken = new BimaToken(
+            addresses.bimaVault,
+            ZERO_ADDRESS, // LayerZero endpoint
+            addresses.tokenLocker
+        );
+        assertEq(addresses.bimaToken, address(bimaToken));
 
-        // BabelVault
-        babelVault = new BabelVault(addresses.core,
-                                    IBabelToken(addresses.babelToken),
-                                    ITokenLocker(addresses.tokenLocker),
-                                    IIncentiveVoting(addresses.incentiveVoting),
-                                    addresses.stabilityPool,
-                                    users.owner);
-        assertEq(addresses.babelVault, address(babelVault));
+        // BimaVault
+        bimaVault = new BimaVault(
+            addresses.core,
+            IBimaToken(addresses.bimaToken),
+            ITokenLocker(addresses.tokenLocker),
+            IIncentiveVoting(addresses.incentiveVoting),
+            addresses.stabilityPool,
+            users.owner
+        );
+        assertEq(addresses.bimaVault, address(bimaVault));
 
         // use Factory to deploy new instances of `TroveManager` and `SortedTroves`
         // to add StakedBTC as valid collateral in the protocol
         IFactory.DeploymentParams memory params = IFactory.DeploymentParams({
-            minuteDecayFactor : 999037758833783000,
+            minuteDecayFactor: 999037758833783000,
             redemptionFeeFloor: INIT_REDEMPTION_FEE_FLOOR,
             maxRedemptionFee: INIT_MAX_REDEMPTION_FEE,
             borrowingFeeFloor: INIT_BORROWING_FEE_FLOOR,
@@ -288,24 +307,28 @@ contract TestSetup is Test {
             MCR: INIT_MCR
         });
 
-        factory.deployNewInstance(address(stakedBTC), 
-                                  addresses.priceFeed,
-                                  ZERO_ADDRESS, // customTroveManagerImpl
-                                  ZERO_ADDRESS, // customSortedTrovesImpl
-                                  params);
+        factory.deployNewInstance(
+            address(stakedBTC),
+            addresses.priceFeed,
+            ZERO_ADDRESS, // customTroveManagerImpl
+            ZERO_ADDRESS, // customSortedTrovesImpl
+            params
+        );
 
         // 1 TroveManager deployed
         assertEq(1, factory.troveManagerCount());
 
         // create EmissionSchedule
         uint64[2][] memory scheduledWeeklyPct;
-        emissionSchedule = new EmissionSchedule(address(babelCore), 
-                                                incentiveVoting,
-                                                babelVault,
-                                                INIT_ES_LOCK_WEEKS,
-                                                INIT_ES_LOCK_DECAY_WEEKS,
-                                                INIT_ES_WEEKLY_PCT,
-                                                scheduledWeeklyPct);
+        emissionSchedule = new EmissionSchedule(
+            address(bimaCore),
+            incentiveVoting,
+            bimaVault,
+            INIT_ES_LOCK_WEEKS,
+            INIT_ES_LOCK_DECAY_WEEKS,
+            INIT_ES_WEEKLY_PCT,
+            scheduledWeeklyPct
+        );
 
         // EmissionSchedule storage correctly set
         assertEq(emissionSchedule.lockWeeks(), INIT_ES_LOCK_WEEKS);
@@ -313,17 +336,15 @@ contract TestSetup is Test {
         assertEq(emissionSchedule.weeklyPct(), INIT_ES_WEEKLY_PCT);
 
         // create BoostCalculator
-        boostCalc = new BoostCalculator(address(babelCore),
-                                        tokenLocker,
-                                        INIT_BS_GRACE_WEEKS);
+        boostCalc = new BoostCalculator(address(bimaCore), tokenLocker, INIT_BS_GRACE_WEEKS);
 
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later
         //
-        // Register new TroveManager with BabelVault to receive token emissions
+        // Register new TroveManager with BimaVault to receive token emissions
         // address newTroveMsg = factory.troveManagers(0);
-        // babelVault.registerReceiver(newTroveMsg, 2);
-        // 
+        // bimaVault.registerReceiver(newTroveMsg, 2);
+        //
         // approve BorrowerOperations for 50 StakedBTC tokens
         // stakedBTC.approve(addresses.borrowerOps, 50e18);
         vm.stopPrank();
@@ -334,121 +355,128 @@ contract TestSetup is Test {
 
     // common helper functions used in tests
     function _sendStakedBtc(address user, uint256 amount) internal {
-        if(user != users.owner) {
+        if (user != users.owner) {
             vm.prank(users.owner);
             stakedBTC.transfer(user, amount);
         }
     }
 
-    function _getScaledOraclePrice() internal view returns(uint256 scaledPrice) {
+    function _getScaledOraclePrice() internal view returns (uint256 scaledPrice) {
         scaledPrice = uint256(mockOracle.answer()) * 10 ** 10;
     }
 
     function _vaultSetDefaultInitialParameters() internal {
         uint128[] memory _fixedInitialAmounts;
-        IBabelVault.InitialAllowance[] memory initialAllowances;
+        IBimaVault.InitialAllowance[] memory initialAllowances;
 
         vm.prank(users.owner);
-        babelVault.setInitialParameters(emissionSchedule,
-                                        boostCalc,
-                                        INIT_BAB_TKN_TOTAL_SUPPLY,
-                                        INIT_VLT_LOCK_WEEKS,
-                                        _fixedInitialAmounts,
-                                        initialAllowances);
+        bimaVault.setInitialParameters(
+            emissionSchedule,
+            boostCalc,
+            INIT_BAB_TKN_TOTAL_SUPPLY,
+            INIT_VLT_LOCK_WEEKS,
+            _fixedInitialAmounts,
+            initialAllowances
+        );
 
         // addresses correctly set
-        assertEq(address(babelVault.emissionSchedule()), address(emissionSchedule));
-        assertEq(address(babelVault.boostCalculator()), address(boostCalc));
+        assertEq(address(bimaVault.emissionSchedule()), address(emissionSchedule));
+        assertEq(address(bimaVault.boostCalculator()), address(boostCalc));
 
-        // BabelToken supply correct
-        assertEq(babelToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
-        assertEq(babelToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        // BimaToken supply correct
+        assertEq(bimaToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(bimaToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
 
-        // BabelToken supply minted to BabelVault
-        assertEq(babelToken.balanceOf(address(babelVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
+        // BimaToken supply minted to BimaVault
+        assertEq(bimaToken.balanceOf(address(bimaVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
 
-        // BabelVault::unallocatedTotal correct (no initial allowances)
-        assertEq(babelVault.unallocatedTotal(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        // BimaVault::unallocatedTotal correct (no initial allowances)
+        assertEq(bimaVault.unallocatedTotal(), INIT_BAB_TKN_TOTAL_SUPPLY);
 
-        // BabelVault::totalUpdateWeek correct
-        assertEq(babelVault.totalUpdateWeek(), _fixedInitialAmounts.length + babelVault.getWeek());
+        // BimaVault::totalUpdateWeek correct
+        assertEq(bimaVault.totalUpdateWeek(), _fixedInitialAmounts.length + bimaVault.getWeek());
 
-        // BabelVault::lockWeeks correct
-        assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+        // BimaVault::lockWeeks correct
+        assertEq(bimaVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
     }
 
-    function _vaultSetupAndLockTokens(uint256 user1Allocation, bool lock) internal returns (uint256 initialUnallocated) {
-        // setup the vault to get BabelTokens which are used for voting
+    function _vaultSetupAndLockTokens(
+        uint256 user1Allocation,
+        bool lock
+    ) internal returns (uint256 initialUnallocated) {
+        // setup the vault to get BimaTokens which are used for voting
         uint128[] memory _fixedInitialAmounts;
-        IBabelVault.InitialAllowance[] memory initialAllowances 
-            = new IBabelVault.InitialAllowance[](1);
-        
+        IBimaVault.InitialAllowance[] memory initialAllowances = new IBimaVault.InitialAllowance[](1);
+
         // give user1 initial allocation
         initialAllowances[0].receiver = users.user1;
         initialAllowances[0].amount = user1Allocation;
 
         vm.prank(users.owner);
-        babelVault.setInitialParameters(emissionSchedule,
-                                        boostCalc,
-                                        INIT_BAB_TKN_TOTAL_SUPPLY,
-                                        INIT_VLT_LOCK_WEEKS,
-                                        _fixedInitialAmounts,
-                                        initialAllowances);
+        bimaVault.setInitialParameters(
+            emissionSchedule,
+            boostCalc,
+            INIT_BAB_TKN_TOTAL_SUPPLY,
+            INIT_VLT_LOCK_WEEKS,
+            _fixedInitialAmounts,
+            initialAllowances
+        );
 
         // addresses correctly set
-        assertEq(address(babelVault.emissionSchedule()), address(emissionSchedule));
-        assertEq(address(babelVault.boostCalculator()), address(boostCalc));
+        assertEq(address(bimaVault.emissionSchedule()), address(emissionSchedule));
+        assertEq(address(bimaVault.boostCalculator()), address(boostCalc));
 
-        // BabelToken supply correct
-        assertEq(babelToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
-        assertEq(babelToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        // BimaToken supply correct
+        assertEq(bimaToken.totalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(bimaToken.maxTotalSupply(), INIT_BAB_TKN_TOTAL_SUPPLY);
 
-        // BabelToken supply minted to BabelVault
-        assertEq(babelToken.balanceOf(address(babelVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
+        // BimaToken supply minted to BimaVault
+        assertEq(bimaToken.balanceOf(address(bimaVault)), INIT_BAB_TKN_TOTAL_SUPPLY);
 
-        // BabelVault::totalUpdateWeek correct
-        assertEq(babelVault.totalUpdateWeek(), _fixedInitialAmounts.length + babelVault.getWeek());
+        // BimaVault::totalUpdateWeek correct
+        assertEq(bimaVault.totalUpdateWeek(), _fixedInitialAmounts.length + bimaVault.getWeek());
 
-        // BabelVault::lockWeeks correct
-        assertEq(babelVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
+        // BimaVault::lockWeeks correct
+        assertEq(bimaVault.lockWeeks(), INIT_VLT_LOCK_WEEKS);
 
         // transfer voting tokens to recipients
         vm.prank(users.user1);
-        babelToken.transferFrom(address(babelVault), users.user1, user1Allocation);
+        bimaToken.transferFrom(address(bimaVault), users.user1, user1Allocation);
 
         // verify recipients have received voting tokens
-        assertEq(babelToken.balanceOf(users.user1), user1Allocation);
+        assertEq(bimaToken.balanceOf(users.user1), user1Allocation);
 
         // verify remaining supply is unallocated
-        initialUnallocated = babelVault.unallocatedTotal();
+        initialUnallocated = bimaVault.unallocatedTotal();
         assertEq(initialUnallocated, INIT_BAB_TKN_TOTAL_SUPPLY - user1Allocation);
 
-        if(lock) {
+        if (lock) {
             // receiver locks up their tokens to get voting weight
             vm.prank(users.user1);
-            tokenLocker.lock(users.user1, user1Allocation/INIT_LOCK_TO_TOKEN_RATIO, 52);
+            tokenLocker.lock(users.user1, user1Allocation / INIT_LOCK_TO_TOKEN_RATIO, 52);
 
             // verify receiver balance after lock; calculated this way because of how
             // lock amount gets scaled down by INIT_LOCK_TO_TOKEN_RATIO then for token
             // transfer scales it up by INIT_LOCK_TO_TOKEN_RATIO
             uint256 users1TokensAfterLock = user1Allocation -
-                                            (user1Allocation/INIT_LOCK_TO_TOKEN_RATIO)*INIT_LOCK_TO_TOKEN_RATIO;
-            assertEq(babelToken.balanceOf(users.user1), users1TokensAfterLock);
+                (user1Allocation / INIT_LOCK_TO_TOKEN_RATIO) *
+                INIT_LOCK_TO_TOKEN_RATIO;
+            assertEq(bimaToken.balanceOf(users.user1), users1TokensAfterLock);
         }
     }
 
-    function _vaultRegisterReceiver(address receiverAddr, uint256 count) internal returns(uint256 firstReceiverId) {
+    function _vaultRegisterReceiver(address receiverAddr, uint256 count) internal returns (uint256 firstReceiverId) {
         // cache next id and system week
         firstReceiverId = incentiveVoting.receiverCount();
-        uint16 currentWeek = SafeCast.toUint16(babelVault.getWeek());
+        uint16 currentWeek = SafeCast.toUint16(bimaVault.getWeek());
 
         // owner registers receiver
         vm.prank(users.owner);
-        assertTrue(babelVault.registerReceiver(receiverAddr, count));
+        assertTrue(bimaVault.registerReceiver(receiverAddr, count));
 
         // verify all receivers registered
         for (uint256 i = firstReceiverId; i <= count; i++) {
-            (address registeredReceiver, bool isActive, uint16 updatedWeek) = babelVault.idToReceiver(i);
+            (address registeredReceiver, bool isActive, uint16 updatedWeek) = bimaVault.idToReceiver(i);
             assertEq(registeredReceiver, receiverAddr);
             assertTrue(isActive);
             assertEq(updatedWeek, currentWeek);
@@ -509,8 +537,15 @@ contract MockBoostDelegate is IBoostDelegate {
         val = feePct;
     }
 
-    function delegatedBoostCallback(address , address , uint256 , uint256 ,
-                                    uint256 , uint256 , uint256) external pure returns (bool success) {
+    function delegatedBoostCallback(
+        address,
+        address,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256
+    ) external pure returns (bool success) {
         success = true;
     }
 }

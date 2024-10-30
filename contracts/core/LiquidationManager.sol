@@ -3,12 +3,12 @@ pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
-import {ILiquidationManager, IBabelBase, IStabilityPool, IBorrowerOperations, ITroveManager} from "../interfaces/ILiquidationManager.sol";
-import {BabelMath} from "../dependencies/BabelMath.sol";
-import {BabelBase} from "../dependencies/BabelBase.sol";
+import {ILiquidationManager, IBimaBase, IStabilityPool, IBorrowerOperations, ITroveManager} from "../interfaces/ILiquidationManager.sol";
+import {BimaMath} from "../dependencies/BimaMath.sol";
+import {BimaBase} from "../dependencies/BimaBase.sol";
 
 /**
-    @title Babel Liquidation Manager
+    @title Bima Liquidation Manager
     @notice Based on Liquity's `TroveManager`
             https://github.com/liquity/dev/blob/main/packages/contracts/contracts/TroveManager.sol
 
@@ -33,7 +33,7 @@ import {BabelBase} from "../dependencies/BabelBase.sol";
                the value of the debt is distributed between stability pool depositors. The remaining
                collateral is left claimable by the trove owner.
  */
-contract LiquidationManager is ILiquidationManager, BabelBase {
+contract LiquidationManager is ILiquidationManager, BimaBase {
     IStabilityPool public immutable stabilityPool;
     IBorrowerOperations public immutable borrowerOperations;
     address public immutable factory;
@@ -108,7 +108,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         IBorrowerOperations _borrowerOperations,
         address _factory,
         uint256 _gasCompensation
-    ) BabelBase(_gasCompensation) {
+    ) BimaBase(_gasCompensation) {
         stabilityPool = _stabilityPoolAddress;
         borrowerOperations = _borrowerOperations;
         factory = _factory;
@@ -119,7 +119,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         _enabledTroveManagers[_troveManager] = true;
     }
 
-    function isTroveManagerEnabled(ITroveManager troveManager) external view returns(bool isEnabled) {
+    function isTroveManagerEnabled(ITroveManager troveManager) external view returns (bool isEnabled) {
         isEnabled = _enabledTroveManagers[troveManager];
     }
 
@@ -131,8 +131,10 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
         @param borrower Borrower address to liquidate
      */
     function liquidate(ITroveManager troveManager, address borrower) external {
-        require(troveManager.getTroveStatus(borrower) == ITroveManager.Status.active,
-                "LiquidationManager: Trove does not exist or is closed");
+        require(
+            troveManager.getTroveStatus(borrower) == ITroveManager.Status.active,
+            "LiquidationManager: Trove does not exist or is closed"
+        );
 
         address[] memory borrowers = new address[](1);
         borrowers[0] = borrower;
@@ -216,7 +218,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                 address account = nextAccount;
                 nextAccount = sortedTrovesCached.getPrev(account);
 
-                uint256 TCR = BabelMath._computeCR(entireSystemColl, entireSystemDebt);
+                uint256 TCR = BimaMath._computeCR(entireSystemColl, entireSystemDebt);
                 if (TCR >= CCR || ICR >= TCR) break;
 
                 singleLiquidation = _tryLiquidateWithCap(
@@ -311,8 +313,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
             uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
             if (ICR <= _100pct) {
                 singleLiquidation = _liquidateWithoutSP(troveManager, account);
-            }
-            else if (ICR < troveManagerValues.MCR) {
+            } else if (ICR < troveManagerValues.MCR) {
                 singleLiquidation = _liquidateNormalMode(
                     troveManager,
                     account,
@@ -320,8 +321,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                     troveManagerValues.sunsetting
                 );
                 debtInStabPool -= singleLiquidation.debtToOffset;
-            }
-            else {
+            } else {
                 // As soon as we find a trove with ICR >= MCR we need to start tracking the global TCR with the next loop
                 break;
             }
@@ -345,21 +345,19 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
                 unchecked {
                     ++troveIter;
                 }
-                
+
                 if (ICR <= _100pct) {
                     singleLiquidation = _liquidateWithoutSP(troveManager, account);
-                }
-                else if (ICR < troveManagerValues.MCR) {
+                } else if (ICR < troveManagerValues.MCR) {
                     singleLiquidation = _liquidateNormalMode(
                         troveManager,
                         account,
                         debtInStabPool,
                         troveManagerValues.sunsetting
                     );
-                }
-                else {
+                } else {
                     if (troveManagerValues.sunsetting) continue;
-                    uint256 TCR = BabelMath._computeCR(entireSystemColl, entireSystemDebt);
+                    uint256 TCR = BimaMath._computeCR(entireSystemColl, entireSystemDebt);
                     if (TCR >= CCR || ICR >= TCR) continue;
                     singleLiquidation = _tryLiquidateWithCap(
                         troveManager,
@@ -582,7 +580,7 @@ contract LiquidationManager is ILiquidationManager, BabelBase {
              *  - Send a fraction of the trove's collateral to the Stability Pool, equal to the fraction of its offset debt
              *
              */
-            debtToOffset = BabelMath._min(_debt, _debtInStabPool);
+            debtToOffset = BimaMath._min(_debt, _debtInStabPool);
             collToSendToSP = (_coll * debtToOffset) / _debt;
             debtToRedistribute = _debt - debtToOffset;
             collToRedistribute = _coll - collToSendToSP;

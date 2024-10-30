@@ -5,16 +5,16 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
-import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BimaMath} from "../dependencies/BimaMath.sol";
 import {ITokenLocker} from "../interfaces/ITokenLocker.sol";
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {IBimaCore} from "../interfaces/IBimaCore.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel DAO Admin Voter
-    @notice Primary ownership contract for all Babel contracts. Allows executing
-            arbitrary function calls only after a required percentage of BABEL
+    @title Bima DAO Admin Voter
+    @notice Primary ownership contract for all Bima contracts. Allows executing
+            arbitrary function calls only after a required percentage of BIMA
             lockers have signalled in favor of performing the action.
  */
 contract AdminVoting is DelegatedOps, SystemStart {
@@ -62,7 +62,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
     uint256 public constant SET_GUARDIAN_PASSING_PCT = 5010;
 
     ITokenLocker public immutable tokenLocker;
-    IBabelCore public immutable babelCore;
+    IBimaCore public immutable bimaCore;
 
     Proposal[] proposalData;
 
@@ -81,13 +81,13 @@ contract AdminVoting is DelegatedOps, SystemStart {
     uint256 public passingPct;
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         ITokenLocker _tokenLocker,
         uint256 _minCreateProposalPct,
         uint256 _passingPct
-    ) SystemStart(_babelCore) {
+    ) SystemStart(_bimaCore) {
         tokenLocker = _tokenLocker;
-        babelCore = IBabelCore(_babelCore);
+        bimaCore = IBimaCore(_bimaCore);
 
         minCreateProposalPct = _minCreateProposalPct;
         passingPct = _passingPct;
@@ -105,10 +105,10 @@ contract AdminVoting is DelegatedOps, SystemStart {
         weight = getWeek();
 
         // if week == 0 nothing else to do since weight also 0
-        if(weight != 0) {
+        if (weight != 0) {
             // otherwise over-write output with weight calculation subtracting
             // 1 from the week
-            weight = _minCreateProposalWeight(weight-1);
+            weight = _minCreateProposalWeight(weight - 1);
         }
     }
 
@@ -120,7 +120,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         require(weight > 0, "Zero total voting weight for given week");
 
         // over-write output return with weight calculation
-        weight = (weight * minCreateProposalPct / BIMA_100_PCT);
+        weight = ((weight * minCreateProposalPct) / BIMA_100_PCT);
     }
 
     /**
@@ -159,49 +159,57 @@ contract AdminVoting is DelegatedOps, SystemStart {
 
     // helper functions added because getProposalData returns a lot of fields
     // which can result in "stack too deep" errors
-    function getProposalWeek(uint256 id) external view returns(uint256 week) {
+    function getProposalWeek(uint256 id) external view returns (uint256 week) {
         week = proposalData[id].week;
     }
-    function getProposalCreatedAt(uint256 id) external view returns(uint32 createdAt) {
+
+    function getProposalCreatedAt(uint256 id) external view returns (uint32 createdAt) {
         createdAt = proposalData[id].createdAt;
     }
-    function getProposalCurrentWeight(uint256 id) external view returns(uint256 currentWeight) {
+
+    function getProposalCurrentWeight(uint256 id) external view returns (uint256 currentWeight) {
         currentWeight = proposalData[id].currentWeight;
     }
-    function getProposalRequiredWeight(uint256 id) external view returns(uint256 requiredWeight) {
+
+    function getProposalRequiredWeight(uint256 id) external view returns (uint256 requiredWeight) {
         requiredWeight = proposalData[id].requiredWeight;
     }
-    function getProposalCanExecuteAfter(uint256 id) external view returns(uint32 canExecAfter) {
+
+    function getProposalCanExecuteAfter(uint256 id) external view returns (uint32 canExecAfter) {
         canExecAfter = proposalData[id].canExecuteAfter;
     }
-    function getProposalProcessed(uint256 id) external view returns(bool processed) {
+
+    function getProposalProcessed(uint256 id) external view returns (bool processed) {
         processed = proposalData[id].processed;
     }
-    function getProposalCanExecute(uint256 id) external view returns(bool canExec) {
+
+    function getProposalCanExecute(uint256 id) external view returns (bool canExec) {
         Proposal memory proposal = proposalData[id];
 
         canExec = (!proposal.processed &&
-                   proposal.currentWeight >= proposal.requiredWeight &&
-                   proposal.canExecuteAfter < block.timestamp &&
-                   proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
+            proposal.currentWeight >= proposal.requiredWeight &&
+            proposal.canExecuteAfter < block.timestamp &&
+            proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
     }
-    function getProposalPayload(uint256 id) external view returns(Action[] memory payload) {
+
+    function getProposalPayload(uint256 id) external view returns (Action[] memory payload) {
         payload = proposalPayloads[id];
     }
-    function getProposalPassed(uint256 id) external view returns(bool passed) {
+
+    function getProposalPassed(uint256 id) external view returns (bool passed) {
         Proposal memory proposal = proposalData[id];
         passed = proposal.currentWeight >= proposal.requiredWeight;
     }
-
 
     /**
         @notice Create a new proposal
         @param payload Tuple of [(target address, calldata), ... ] to be
                        executed if the proposal is passed.
      */
-    function createNewProposal(address account, 
-                               Action[] calldata payload)
-    external callerOrDelegated(account) returns(uint256 proposalId) {
+    function createNewProposal(
+        address account,
+        Action[] calldata payload
+    ) external callerOrDelegated(account) returns (uint256 proposalId) {
         // enforce >=1 payload
         require(payload.length > 0, "Empty payload");
 
@@ -220,7 +228,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
         uint256 accountWeight = tokenLocker.getAccountWeightAt(account, week);
         require(accountWeight >= _minCreateProposalWeight(week), "Not enough weight to propose");
 
-        // if any of the payloads call `IBabelCore::setGuardian`,
+        // if any of the payloads call `IBimaCore::setGuardian`,
         // then enforce the `SET_GUARDIAN_PASSING_PCT` 50.1% majority
         uint256 proposalPassPct;
 
@@ -231,7 +239,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
             // enforce 50.1% majority for setGuardian proposals; if the default
             // passing percent is greater than the hard-coded setGuardian percent
             // then use that instead
-            proposalPassPct = BabelMath._max(SET_GUARDIAN_PASSING_PCT, passingPct);
+            proposalPassPct = BimaMath._max(SET_GUARDIAN_PASSING_PCT, passingPct);
         }
         // otherwise for ordinary proposals enforce standard configured passing %
         else proposalPassPct = passingPct;
@@ -301,8 +309,8 @@ contract AdminVoting is DelegatedOps, SystemStart {
 
             // enforce minimum weight > 0 to vote
             require(weight > 0, "No vote weight");
-        // otherwise if account specified an exact voting weight > 0 then
-        // enforce it is <= their max voting weight
+            // otherwise if account specified an exact voting weight > 0 then
+            // enforce it is <= their max voting weight
         } else {
             require(weight <= accountWeight, "Weight exceeds account weight");
         }
@@ -343,7 +351,7 @@ contract AdminVoting is DelegatedOps, SystemStart {
      */
     function cancelProposal(uint256 id) external {
         // enforce only guardian can cancel
-        require(msg.sender == babelCore.guardian(), "Only guardian can cancel proposals");
+        require(msg.sender == bimaCore.guardian(), "Only guardian can cancel proposals");
 
         // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
@@ -447,16 +455,19 @@ contract AdminVoting is DelegatedOps, SystemStart {
     }
 
     /**
-        @dev Unguarded method to allow accepting ownership transfer of `BabelCore`
+        @dev Unguarded method to allow accepting ownership transfer of `BimaCore`
              at the end of the deployment sequence
      */
     function acceptTransferOwnership() external {
-        babelCore.acceptTransferOwnership();
+        bimaCore.acceptTransferOwnership();
     }
 
-    function _containsSetGuardianPayload(uint256 payloadLength, Action[] memory payload) internal pure returns (bool success) {
+    function _containsSetGuardianPayload(
+        uint256 payloadLength,
+        Action[] memory payload
+    ) internal pure returns (bool success) {
         // iterate through every payload
-        for(uint256 i; i<payloadLength; i++) {
+        for (uint256 i; i < payloadLength; i++) {
             bytes memory data = payload[i].data;
 
             // Extract the call sig from payload data
@@ -465,8 +476,8 @@ contract AdminVoting is DelegatedOps, SystemStart {
                 sig := mload(add(data, 0x20))
             }
 
-            // return true if any payload calls `IBabelCore::setGuardian`
-            if(sig == IBabelCore.setGuardian.selector) return true;
+            // return true if any payload calls `IBimaCore::setGuardian`
+            if (sig == IBimaCore.setGuardian.selector) return true;
         }
 
         // if reach here return default false

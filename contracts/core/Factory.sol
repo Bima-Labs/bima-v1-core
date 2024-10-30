@@ -4,18 +4,18 @@ pragma solidity 0.8.19;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {BIMA_COLLATERAL_DECIMALS} from "../dependencies/Constants.sol";
 import {ITroveManager} from "../interfaces/ITroveManager.sol";
 import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
 import {IFactory, IDebtToken, ILiquidationManager, IBorrowerOperations, IStabilityPool} from "../interfaces/IFactory.sol";
 
 /**
-    @title Babel Trove Factory
+    @title Bima Trove Factory
     @notice Deploys cloned pairs of `TroveManager` and `SortedTroves` in order to
             add new collateral types within the system.
  */
-contract Factory is IFactory, BabelOwnable {
+contract Factory is IFactory, BimaOwnable {
     using Clones for address;
 
     // fixed single-deployment contracts
@@ -31,14 +31,14 @@ contract Factory is IFactory, BabelOwnable {
     address[] public troveManagers;
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         IDebtToken _debtToken,
         IStabilityPool _stabilityPool,
         IBorrowerOperations _borrowerOperations,
         address _sortedTroves,
         address _troveManager,
         ILiquidationManager _liquidationManager
-    ) BabelOwnable(_babelCore) {
+    ) BimaOwnable(_bimaCore) {
         debtToken = _debtToken;
         stabilityPool = _stabilityPool;
         borrowerOperations = _borrowerOperations;
@@ -58,7 +58,7 @@ contract Factory is IFactory, BabelOwnable {
         @dev * When using the default `PriceFeed`, ensure it is configured correctly
                prior to calling this function.
              * After calling this function, the owner should also call `Vault.registerReceiver`
-               to enable BABEL emissions on the newly deployed `TroveManager`
+               to enable BIMA emissions on the newly deployed `TroveManager`
         @param collateral Collateral token to use in new deployment
         @param priceFeed Custom `PriceFeed` deployment. Leave as `address(0)` to use the default.
         @param customTroveManagerImpl Custom `TroveManager` implementation to clone from.

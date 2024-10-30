@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BabelBase} from "../dependencies/BabelBase.sol";
-import {BabelMath} from "../dependencies/BabelMath.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaBase} from "../dependencies/BimaBase.sol";
+import {BimaMath} from "../dependencies/BimaMath.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 import {IBorrowerOperations, ITroveManager, IDebtToken} from "../interfaces/IBorrowerOperations.sol";
@@ -12,14 +12,14 @@ import {IBorrowerOperations, ITroveManager, IDebtToken} from "../interfaces/IBor
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Borrower Operations
+    @title Bima Borrower Operations
     @notice Based on Liquity's `BorrowerOperations`
             https://github.com/liquity/dev/blob/main/packages/contracts/contracts/BorrowerOperations.sol
 
-            Babel's implementation is modified to support multiple collaterals. There is a 1:n
+            Bima's implementation is modified to support multiple collaterals. There is a 1:n
             relationship between `BorrowerOperations` and each `TroveManager` / `SortedTroves` pair.
  */
-contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, DelegatedOps {
+contract BorrowerOperations is IBorrowerOperations, BimaBase, BimaOwnable, DelegatedOps {
     using SafeERC20 for IERC20;
 
     IDebtToken public immutable debtToken;
@@ -64,12 +64,12 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
     }
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         address _debtTokenAddress,
         address _factory,
         uint256 _minNetDebt,
         uint256 _gasCompensation
-    ) BabelOwnable(_babelCore) BabelBase(_gasCompensation) {
+    ) BimaOwnable(_bimaCore) BimaBase(_gasCompensation) {
         debtToken = IDebtToken(_debtTokenAddress);
         factory = _factory;
         _setMinNetDebt(_minNetDebt);
@@ -89,8 +89,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
     function configureCollateral(ITroveManager troveManager, IERC20 collateralToken) external {
         require(msg.sender == factory, "!factory");
 
-        troveManagersData[troveManager] = TroveManagerData(collateralToken,
-                                                            SafeCast.toUint16(_troveManagers.length));
+        troveManagersData[troveManager] = TroveManagerData(collateralToken, SafeCast.toUint16(_troveManagers.length));
         _troveManagers.push(troveManager);
 
         emit CollateralConfigured(troveManager, collateralToken);
@@ -153,8 +152,8 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         });
 
         for (uint256 i; i < loopEnd; ) {
-            (balances.collaterals[i], balances.debts[i], balances.prices[i])
-                = _troveManagers[i].getEntireSystemBalances();
+            (balances.collaterals[i], balances.debts[i], balances.prices[i]) = _troveManagers[i]
+                .getEntireSystemBalances();
 
             unchecked {
                 ++i;
@@ -181,7 +180,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         address _upperHint,
         address _lowerHint
     ) external callerOrDelegated(account) {
-        require(!BABEL_CORE.paused(), "Deposits are paused");
+        require(!BIMA_CORE.paused(), "Deposits are paused");
         _requireValidMaxFeePercentage(_maxFeePercentage);
 
         IERC20 collateralToken;
@@ -198,11 +197,13 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         vars.netDebt = _debtAmount;
 
         if (!isRecoveryMode) {
-            vars.netDebt += _triggerBorrowingFee(troveManager,
-                                                 collateralToken,
-                                                 account,
-                                                 _maxFeePercentage,
-                                                 _debtAmount);
+            vars.netDebt += _triggerBorrowingFee(
+                troveManager,
+                collateralToken,
+                account,
+                _maxFeePercentage,
+                _debtAmount
+            );
         }
 
         _requireAtLeastMinNetDebt(vars.netDebt);
@@ -210,18 +211,17 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         // ICR is based on the composite debt, i.e. the requested Debt amount + Debt borrowing fee + Debt gas comp.
         vars.compositeDebt = _getCompositeDebt(vars.netDebt);
 
-        vars.ICR = BabelMath._computeCR(_collateralAmount, vars.compositeDebt, vars.price);
-        vars.NICR = BabelMath._computeNominalCR(_collateralAmount, vars.compositeDebt);
+        vars.ICR = BimaMath._computeCR(_collateralAmount, vars.compositeDebt, vars.price);
+        vars.NICR = BimaMath._computeNominalCR(_collateralAmount, vars.compositeDebt);
 
         // ICR = Individual Collateral Ratio
         // MCR = Minimum Collateral Ratio for individual troves (see TroveManager.sol)
-        // CCR = Critical Collateral Ratio (see BabelBase.sol)
-        // TCR = Total Collateral Ratio (see BabelBase.sol)
+        // CCR = Critical Collateral Ratio (see BimaBase.sol)
+        // TCR = Total Collateral Ratio (see BimaBase.sol)
 
         if (isRecoveryMode) {
             _requireICRisAboveCCR(vars.ICR);
-        }
-        else {
+        } else {
             _requireICRisAboveMCR(vars.ICR, troveManager.MCR());
 
             uint256 newTCR = _getNewTCRFromTroveChange(
@@ -266,7 +266,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         address _upperHint,
         address _lowerHint
     ) external callerOrDelegated(account) {
-        require(!BABEL_CORE.paused(), "Trove adjustments are paused");
+        require(!BIMA_CORE.paused(), "Trove adjustments are paused");
         _adjustTrove(troveManager, account, 0, _collateralAmount, 0, 0, false, _upperHint, _lowerHint);
     }
 
@@ -290,7 +290,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         address _upperHint,
         address _lowerHint
     ) external callerOrDelegated(account) {
-        require(!BABEL_CORE.paused(), "Withdrawals are paused");
+        require(!BIMA_CORE.paused(), "Withdrawals are paused");
         _adjustTrove(troveManager, account, _maxFeePercentage, 0, 0, _debtAmount, true, _upperHint, _lowerHint);
     }
 
@@ -316,7 +316,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         address _upperHint,
         address _lowerHint
     ) external callerOrDelegated(account) {
-        require((_collDeposit == 0 && !_isDebtIncrease) || !BABEL_CORE.paused(), "Trove adjustments are paused");
+        require((_collDeposit == 0 && !_isDebtIncrease) || !BIMA_CORE.paused(), "Trove adjustments are paused");
         require(_collDeposit == 0 || _collWithdrawal == 0, "BorrowerOperations: Cannot withdraw and add coll");
         _adjustTrove(
             troveManager,
@@ -373,11 +373,13 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
             if (!isRecoveryMode) {
                 // If the adjustment incorporates a debt increase and system is in Normal Mode, trigger a borrowing fee
-                vars.netDebtChange += _triggerBorrowingFee(troveManager,
-                                                           collateralToken,
-                                                           msg.sender,
-                                                           _maxFeePercentage,
-                                                           _debtChange);
+                vars.netDebtChange += _triggerBorrowingFee(
+                    troveManager,
+                    collateralToken,
+                    msg.sender,
+                    _maxFeePercentage,
+                    _debtChange
+                );
             }
         }
 
@@ -422,8 +424,9 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         uint256 totalPricedCollateral;
         uint256 totalDebt;
 
-        (collateralToken, price, totalPricedCollateral, totalDebt, isRecoveryMode)
-            = _getCollateralAndTCRData(troveManager);
+        (collateralToken, price, totalPricedCollateral, totalDebt, isRecoveryMode) = _getCollateralAndTCRData(
+            troveManager
+        );
         require(!isRecoveryMode, "BorrowerOps: Operation not permitted during Recovery Mode");
 
         (uint256 coll, uint256 debt) = troveManager.applyPendingRewards(account);
@@ -452,7 +455,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
 
         _requireUserAcceptsFee(debtFee, _debtAmount, _maxFeePercentage);
 
-        debtToken.mint(BABEL_CORE.feeReceiver(), debtFee);
+        debtToken.mint(BIMA_CORE.feeReceiver(), debtFee);
 
         emit BorrowingFeePaid(_caller, collateralToken, debtFee);
     }
@@ -492,7 +495,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
          */
 
         // Get the trove's old ICR before the adjustment
-        uint256 oldICR = BabelMath._computeCR(_vars.coll, _vars.debt, _vars.price);
+        uint256 oldICR = BimaMath._computeCR(_vars.coll, _vars.debt, _vars.price);
 
         // Get the trove's new ICR after the adjustment
         uint256 newICR = _getNewICRFromTroveChange(
@@ -512,8 +515,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
                 _requireICRisAboveCCR(newICR);
                 _requireNewICRisAboveOldICR(newICR, oldICR);
             }
-        }
-        else {
+        } else {
             // if Normal Mode
             _requireICRisAboveMCR(newICR, _vars.MCR);
 
@@ -573,7 +575,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             _isDebtIncrease
         );
 
-        newICR = BabelMath._computeCR(newColl, newDebt, _price);
+        newICR = BimaMath._computeCR(newColl, newDebt, _price);
     }
 
     function _getNewTroveAmounts(
@@ -599,7 +601,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
         totalDebt = _isDebtIncrease ? totalDebt + _debtChange : totalDebt - _debtChange;
         totalColl = _isCollIncrease ? totalColl + _collChange : totalColl - _collChange;
 
-        newTCR = BabelMath._computeCR(totalColl, totalDebt);
+        newTCR = BimaMath._computeCR(totalColl, totalDebt);
     }
 
     function _getTCRData(
@@ -616,7 +618,7 @@ contract BorrowerOperations is IBorrowerOperations, BabelBase, BabelOwnable, Del
             }
         }
 
-        amount = BabelMath._computeCR(totalPricedCollateral, totalDebt);
+        amount = BimaMath._computeCR(totalPricedCollateral, totalDebt);
     }
 
     function _getCollateralAndTCRData(

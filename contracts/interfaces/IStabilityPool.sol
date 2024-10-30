@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {ISystemStart} from "./ISystemStart.sol";
 import {IDebtToken} from "./IDebtToken.sol";
-import {IBabelVault} from "./IVault.sol";
+import {IBimaVault} from "./IVault.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IStabilityPool is IBabelOwnable, ISystemStart {
+interface IStabilityPool is IBimaOwnable, ISystemStart {
     event CollateralGainWithdrawn(address indexed _depositor, uint256[] _collateralGains);
     event CollateralOverwritten(IERC20 oldCollateral, IERC20 newCollateral);
     event DepositSnapshotUpdated(address indexed _depositor, uint256 _P, uint256 _G);
@@ -78,7 +78,7 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function lastDebtLossError_Offset() external view returns (uint256);
 
-    function lastBabelError() external view returns (uint256);
+    function lastBimaError() external view returns (uint256);
 
     function lastUpdate() external view returns (uint32);
 
@@ -88,5 +88,5 @@ interface IStabilityPool is IBabelOwnable, ISystemStart {
 
     function rewardRate() external view returns (uint128);
 
-    function vault() external view returns (IBabelVault);
+    function vault() external view returns (IBimaVault);
 }

@@ -8,15 +8,15 @@ import {BIMA_SCALE_FACTOR} from "../dependencies/Constants.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Boost Calculator
-    @notice "Boost" refers to a bonus to claimable BABEL tokens that an account
-            receives based on it's locked BABEL weight. An account with "Max boost"
-            is earning BABEL rewards at 2x the rate of an account that is unboosted.
+    @title Bima Boost Calculator
+    @notice "Boost" refers to a bonus to claimable BIMA tokens that an account
+            receives based on it's locked BIMA weight. An account with "Max boost"
+            is earning BIMA rewards at 2x the rate of an account that is unboosted.
             Boost works as follows:
 
-            * In a given week, the percentage of the weekly BABEL rewards that an
+            * In a given week, the percentage of the weekly BIMA rewards that an
             account can claim with maximum boost is the same as the percentage
-            of BABEL lock weight that the account has, relative to the total lock
+            of BIMA lock weight that the account has, relative to the total lock
             weight.
             * Once an account's weekly claims exceed the amount allowed with max boost,
             the boost rate decays linearly from 2x to 1x. This decay occurs over the same
@@ -29,12 +29,12 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
             * At the end of week 1, Alice has a lock weight of 100. There is a total
               lock weight of 1,000. Alice controls 10% of the total lock weight.
-            * During week 2, a total of 500,000 new BABEL rewards are made available
+            * During week 2, a total of 500,000 new BIMA rewards are made available
             * Because Alice has 10% of the lock weight in week 1, during week 2 she
-              can claim up to 10% of the rewards (50,000 BABEL) with her full boost.
-            * Once Alice's weekly claim exceeds 50,000 BABEL, her boost decays linearly
-              as she claims another 50,000 BABEL.
-            * Once Alice's weekly claims exceed 100,000 BABEL, any further claims are
+              can claim up to 10% of the rewards (50,000 BIMA) with her full boost.
+            * Once Alice's weekly claim exceeds 50,000 BIMA, her boost decays linearly
+              as she claims another 50,000 BIMA.
+            * Once Alice's weekly claims exceed 100,000 BIMA, any further claims are
               "unboosted" and receive only half as many tokens as they would have boosted.
             * At the start of the next week, Alice's boost is fully replenished. She still
               controls 10% of the total lock weight, so she can claim another 10% of this
@@ -66,7 +66,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
     // account -> week -> % of lock weight (where BIMA_SCALE_FACTOR represents 100%)
     mapping(address account => uint32[65535] weeklyLockPercent) accountWeeklyLockPct;
 
-    constructor(address _babelCore, ITokenLocker _locker, uint256 _graceWeeks) SystemStart(_babelCore) {
+    constructor(address _bimaCore, ITokenLocker _locker, uint256 _graceWeeks) SystemStart(_bimaCore) {
         require(_graceWeeks > 0, "Grace weeks cannot be 0");
         locker = _locker;
         MAX_BOOST_GRACE_WEEKS = _graceWeeks + getWeek();
@@ -77,8 +77,8 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
         @param account Address claiming the reward
         @param amount Amount being claimed (assuming maximum boost)
         @param previousAmount Amount that was already claimed in the current week
-        @param totalWeeklyEmissions Total BABEL emissions released this week
-        @return adjustedAmount Amount of BABEL received after applying boost
+        @param totalWeeklyEmissions Total BIMA emissions released this week
+        @return adjustedAmount Amount of BIMA received after applying boost
      */
     function getBoostedAmount(
         address account,
@@ -123,7 +123,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
         @notice Get the remaining claimable amounts this week that will receive boost
         @param claimant address to query boost amounts for
         @param previousAmount Amount that was already claimed in the current week
-        @param totalWeeklyEmissions Total BABEL emissions released this week
+        @param totalWeeklyEmissions Total BIMA emissions released this week
         @return maxBoosted remaining claimable amount that will receive max boost
         @return boosted remaining claimable amount that will receive some amount of boost (including max boost)
      */
@@ -140,8 +140,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
         if (week < MAX_BOOST_GRACE_WEEKS) {
             maxBoosted = totalWeeklyEmissions - previousAmount;
             boosted = maxBoosted;
-        }
-        else {
+        } else {
             // otherwise go back one week before current system week
             week -= 1;
 
@@ -163,7 +162,7 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
 
             // if account had 0%, give them 0; since output variables are
             // initialized to default values, no need to explicit return
-            if(pct != 0) {
+            if (pct != 0) {
                 // otherwise account had > 0 pct of weekly weight so
                 // perform additional processing
 
@@ -190,8 +189,8 @@ contract BoostCalculator is IBoostCalculator, SystemStart {
         @param account Address claiming the reward
         @param amount Amount being claimed (assuming maximum boost)
         @param previousAmount Amount that was already claimed in the current week
-        @param totalWeeklyEmissions Total BABEL emissions released this week
-        @return adjustedAmount Amount of BABEL received after applying boost
+        @param totalWeeklyEmissions Total BIMA emissions released this week
+        @return adjustedAmount Amount of BIMA received after applying boost
      */
     function getBoostedAmountWrite(
         address account,

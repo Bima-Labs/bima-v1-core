@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
-import {IBabelOwnable} from "../interfaces/IEmissionSchedule.sol";
+import {IBimaCore} from "../interfaces/IBimaCore.sol";
+import {IBimaOwnable} from "../interfaces/IEmissionSchedule.sol";
 
 /**
-    @title Babel Ownable
-    @notice Contracts inheriting `BabelOwnable` have the same owner as `BabelCore`.
+    @title Bima Ownable
+    @notice Contracts inheriting `BimaOwnable` have the same owner as `BimaCore`.
             The ownership cannot be independently modified or renounced.
  */
-contract BabelOwnable is IBabelOwnable {
-    IBabelCore public immutable BABEL_CORE;
+contract BimaOwnable is IBimaOwnable {
+    IBimaCore public immutable BIMA_CORE;
 
-    constructor(address _babelCore) {
-        BABEL_CORE = IBabelCore(_babelCore);
+    constructor(address _bimaCore) {
+        BIMA_CORE = IBimaCore(_bimaCore);
     }
 
     modifier onlyOwner() {
-        require(msg.sender == BABEL_CORE.owner(), "Only owner");
+        require(msg.sender == BIMA_CORE.owner(), "Only owner");
         _;
     }
 
     function owner() public view returns (address result) {
-        result = BABEL_CORE.owner();
+        result = BIMA_CORE.owner();
     }
 
     function guardian() public view returns (address result) {
-        result = BABEL_CORE.guardian();
+        result = BIMA_CORE.guardian();
     }
 }

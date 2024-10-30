@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {ISystemStart} from "./ISystemStart.sol";
 import {IBoostCalculator} from "./IBoostCalculator.sol";
 import {IBoostDelegate} from "./IBoostDelegate.sol";
 import {ITokenLocker} from "./ITokenLocker.sol";
 import {IIncentiveVoting} from "./IIncentiveVoting.sol";
-import {IBabelToken} from "./IBabelToken.sol";
+import {IBimaToken} from "./IBimaToken.sol";
 import {IEmissionSchedule} from "./IEmissionSchedule.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -17,7 +17,7 @@ interface IRewards {
     function claimableReward(address account) external view returns (uint256);
 }
 
-interface IBabelVault is IBabelOwnable, ISystemStart {
+interface IBimaVault is IBimaOwnable, ISystemStart {
     struct InitialAllowance {
         address receiver;
         uint256 amount;
@@ -85,9 +85,9 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
 
     function idToReceiver(uint256) external view returns (address account, bool isActive, uint16 updatedWeek);
 
-    function isReceiverActive(uint256 id) external view returns(bool isActive);
+    function isReceiverActive(uint256 id) external view returns (bool isActive);
 
-    function isBoostDelegatedEnabled(address account) external view returns(bool isEnabled);
+    function isBoostDelegatedEnabled(address account) external view returns (bool isEnabled);
 
     function lockWeeks() external view returns (uint64);
 
@@ -95,7 +95,7 @@ interface IBabelVault is IBabelOwnable, ISystemStart {
 
     function claimableBoostDelegationFees(address claimant) external view returns (uint256 amount);
 
-    function babelToken() external view returns (IBabelToken);
+    function bimaToken() external view returns (IBimaToken);
 
     function totalUpdateWeek() external view returns (uint64);
 
