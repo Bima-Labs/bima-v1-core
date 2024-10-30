@@ -4,15 +4,15 @@ pragma solidity 0.8.19;
 import {DelegatedOps} from "../dependencies/DelegatedOps.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {IIncentiveVoting, ITokenLocker} from "../interfaces/IIncentiveVoting.sol";
-import {IBabelVault} from "../interfaces/IVault.sol";
+import {IBimaVault} from "../interfaces/IVault.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Incentive Voting
-    @notice Users with BABEL balances locked in `TokenLocker` may register their
+    @title Bima Incentive Voting
+    @notice Users with BIMA balances locked in `TokenLocker` may register their
             lock weights in this contract, and use this weight to vote on where
-            new BABEL emissions will be released in the following week.
+            new BIMA emissions will be released in the following week.
 
             Conceptually, incentive voting functions similarly to Curve's gauge weight voting.
  */
@@ -60,7 +60,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
     uint40[65535] totalWeeklyWeights;
     uint32[65535] public totalWeeklyUnlocks;
 
-    constructor(address _babelCore, ITokenLocker _tokenLocker, address _vault) SystemStart(_babelCore) {
+    constructor(address _bimaCore, ITokenLocker _tokenLocker, address _vault) SystemStart(_bimaCore) {
         tokenLocker = _tokenLocker;
         vault = _vault;
     }
@@ -77,7 +77,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         uint16[2][MAX_POINTS] storage storedVotes = accountLockData[account].activeVotes;
         uint256 length = votes.length;
         for (uint256 i; i < length; i++) {
-            votes[i] = Vote({ id: storedVotes[i][0], points: storedVotes[i][1] });
+            votes[i] = Vote({id: storedVotes[i][0], points: storedVotes[i][1]});
         }
     }
 
@@ -87,7 +87,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
 
     function getReceiverWeightAt(uint256 idx, uint256 week) public view returns (uint256 weight) {
         // if idx >= receiver count nothing to do, default 0 will be returned
-        if(idx < receiverCount) {
+        if (idx < receiverCount) {
             // get last updated week for input idx
             uint256 updatedWeek = receiverUpdatedWeek[idx];
 
@@ -230,8 +230,10 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         }
     }
 
-    function getReceiverVoteInputs(uint256 id, uint256 week) external 
-    returns (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight) {
+    function getReceiverVoteInputs(
+        uint256 id,
+        uint256 week
+    ) external returns (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight) {
         // lookback one week
         week -= 1;
 
@@ -244,7 +246,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         totalWeeklyWeight = totalWeeklyWeights[week];
 
         // if not zero, also output receiver weekly weight
-        if(totalWeeklyWeight != 0) {
+        if (totalWeeklyWeight != 0) {
             receiverWeeklyWeight = receiverWeeklyWeights[id][week];
         }
     }
@@ -264,8 +266,8 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         // if not zero, calculate the actual vote percent
         // for the lookback week; using votePct as denominator
         // since it contains the totalWeight
-        if(votePct != 0) {
-            votePct = 1e18 * uint256(receiverWeeklyWeights[id][week]) / votePct;
+        if (votePct != 0) {
+            votePct = (1e18 * uint256(receiverWeeklyWeights[id][week])) / votePct;
         }
     }
 
@@ -410,8 +412,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
      */
     function clearRegisteredWeight(address account) external returns (bool success) {
         require(
-            msg.sender == account || msg.sender == address(tokenLocker) ||
-            isApprovedDelegate[account][msg.sender],
+            msg.sender == account || msg.sender == address(tokenLocker) || isApprovedDelegate[account][msg.sender],
             "Delegate not approved"
         );
 
@@ -497,7 +498,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
             }
 
             ITokenLocker.LockData[] memory lockData = new ITokenLocker.LockData[](1);
-            lockData[0] = ITokenLocker.LockData({ amount: amount, weeksToUnlock: MAX_LOCK_WEEKS });
+            lockData[0] = ITokenLocker.LockData({amount: amount, weeksToUnlock: MAX_LOCK_WEEKS});
             emit AccountWeightRegistered(account, week, 0, lockData);
         }
         // user may have had votes registered prior to freezing their weight so
@@ -554,8 +555,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
                 break;
             }
 
-            lockData[idx] = ITokenLocker.LockData({ amount: amounts[idx],
-                                                    weeksToUnlock: unlockWeek - systemWeek });
+            lockData[idx] = ITokenLocker.LockData({amount: amounts[idx], weeksToUnlock: unlockWeek - systemWeek});
         }
     }
 
@@ -615,11 +615,13 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         // cache length since calldata
         for (uint256 i; i < votes.length; i++) {
             // prevent voting for disabled receivers
-            require(IBabelVault(vault).isReceiverActive(votes[i].id), "Can't vote for disabled receivers - clearVote first");
+            require(
+                IBimaVault(vault).isReceiverActive(votes[i].id),
+                "Can't vote for disabled receivers - clearVote first"
+            );
 
             // record each vote
-            storedVotes[offset + i] = [SafeCast.toUint16(votes[i].id),
-                                        SafeCast.toUint16(votes[i].points)];
+            storedVotes[offset + i] = [SafeCast.toUint16(votes[i].id), SafeCast.toUint16(votes[i].points)];
             points += votes[i].points;
         }
 
@@ -712,8 +714,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         // iterate through every lock updating storage total weekly unlocks
         for (uint256 i; i < lockLength; i++) {
             uint256 weeksToUnlock = lockData[i].weeksToUnlock;
-            totalWeeklyUnlocks[systemWeek + weeksToUnlock]
-                += SafeCast.toUint32(weeklyUnlocks[weeksToUnlock]);
+            totalWeeklyUnlocks[systemWeek + weeksToUnlock] += SafeCast.toUint32(weeklyUnlocks[weeksToUnlock]);
         }
 
         // update storage total weekly weights and decay rate
@@ -801,8 +802,7 @@ contract IncentiveVoting is IIncentiveVoting, DelegatedOps, SystemStart {
         // iterate through every lock updating storage total weekly unlocks
         for (uint256 i; i < lockLength; i++) {
             uint256 weeksToUnlock = lockData[i].weeksToUnlock;
-            totalWeeklyUnlocks[systemWeek + weeksToUnlock]
-                -= SafeCast.toUint32(weeklyUnlocks[weeksToUnlock]);
+            totalWeeklyUnlocks[systemWeek + weeksToUnlock] -= SafeCast.toUint32(weeklyUnlocks[weeksToUnlock]);
         }
 
         // update storage total weekly weights and decay rate

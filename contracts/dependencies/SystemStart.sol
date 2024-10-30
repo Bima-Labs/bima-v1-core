@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import {ISystemStart} from "../interfaces/ISystemStart.sol";
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {IBimaCore} from "../interfaces/IBimaCore.sol";
 
 /**
-    @title Babel System Start Time
+    @title Bima System Start Time
     @dev Provides a unified `startTime` and `getWeek`, used for emissions.
  */
 contract SystemStart is ISystemStart {
     uint256 immutable startTime;
 
-    constructor(address babelCore) {
-        startTime = IBabelCore(babelCore).startTime();
+    constructor(address bimaCore) {
+        startTime = IBimaCore(bimaCore).startTime();
     }
 
     function getWeek() public view returns (uint256 week) {

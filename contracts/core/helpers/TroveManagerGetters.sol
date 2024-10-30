@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {ITroveManager} from "../../interfaces/ITroveManager.sol";
 import {IFactory} from "../../interfaces/IFactory.sol";
 
-/*  Helper contract for grabbing Trove data for the front end. Not part of the core Babel system. */
+/*  Helper contract for grabbing Trove data for the front end. Not part of the core Bima system. */
 contract TroveManagerGetters {
     struct Collateral {
         address collateral;
@@ -39,7 +39,7 @@ contract TroveManagerGetters {
                 }
             }
         }
-        
+
         collateralMap = new Collateral[](collateralCount);
         for (uint256 i; i < collateralCount; i++) {
             collateralMap[i].collateral = uniqueCollaterals[i];

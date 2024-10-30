@@ -1,47 +1,47 @@
 # Testnet Smart Contract Addresses
 
-- [Arbitrum Sepolia Testnet](#Arbitrum-sepolia-testnet)
-- [Bob Testnet](#Bob-testnet)
-- [Linea Testnet](#Linea-testnet)
-- [Base Sepolia Testnet](#Base-sepolia-testnet)
-- [Polygon Amoy Testnet](#Polygon-amoy-testnet)
-- [Holesky Testnet](#Holesky-testnet)
-- [Citrea Testnet](#Citrea-testnet)
-- [Lorenzo Testnet](#Lorenzo-testnet)
-- [Bitlayer Testnet](#Bitlayer-testnet)
-- [BEVM Testnet](#BEVM-testnet)
-- [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
-- [Movement Lab Testnet](#Movement-lab-testnet)
-- [Berachain Testnet](#Berachain-testnet)
-- [Blast Testnet](#Blast-testnet)
-- [Scroll Testnet](#Scroll-testnet)
-- [Fluent Testnet](#Fluent-Testnet)
-- [Core chain Testnet](#Core-chain-testnet)
-- [Zetachain Testnet](#Zetachain-Testnet)
-- [Filecoin Testnet](#Filecoin-Testnet)
-- [Optimism Sepolia Testnet](#Optimism-Sepolia-Testnet)
-- [X Layer Testnet](#X-Layer-Testnet)
-- [OKX Testnet](#OkX-Testnet)
-- [Moonbase Alpha Testnet](#moonbase-alpha-testnet)
-- [Bnb Testnet](#Bnb-Testnet)
-- [Fantom Testnet](#Fantom-Testnet)
-- [StratoVM Sepolia Testnet](#stratovm-sepolia-testnet)
-- [Godwoken Testnet](#Godwoken-testnet)
-- [Morph Testnet](#morph-testnet)
-- [Aurora Testnet](#Aurora-Testnet)
-- [Soneium Minato Testnet](#Soneium-Minato-Testnet)
-- [Rootstock Testnet](#rootstock-testnet)
-- [Ethereum Sepolia Testnet](#Ethereum-Sepolia-Testnet)
-- [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
-- [Merlin Testnet](#merlin-testnet)
-- [Manta Pacific Sepolia Testnet](#Manta-Pacific-Sepolia-Testnet)
-- [Plume-Devnet](#Plume-Devnet)
+-   [Arbitrum Sepolia Testnet](#Arbitrum-sepolia-testnet)
+-   [Bob Testnet](#Bob-testnet)
+-   [Linea Testnet](#Linea-testnet)
+-   [Base Sepolia Testnet](#Base-sepolia-testnet)
+-   [Polygon Amoy Testnet](#Polygon-amoy-testnet)
+-   [Holesky Testnet](#Holesky-testnet)
+-   [Citrea Testnet](#Citrea-testnet)
+-   [Lorenzo Testnet](#Lorenzo-testnet)
+-   [Bitlayer Testnet](#Bitlayer-testnet)
+-   [BEVM Testnet](#BEVM-testnet)
+-   [Avalanche Fuji Testnet](#Avalanche-fuji-testnet)
+-   [Movement Lab Testnet](#Movement-lab-testnet)
+-   [Berachain Testnet](#Berachain-testnet)
+-   [Blast Testnet](#Blast-testnet)
+-   [Scroll Testnet](#Scroll-testnet)
+-   [Fluent Testnet](#Fluent-Testnet)
+-   [Core chain Testnet](#Core-chain-testnet)
+-   [Zetachain Testnet](#Zetachain-Testnet)
+-   [Filecoin Testnet](#Filecoin-Testnet)
+-   [Optimism Sepolia Testnet](#Optimism-Sepolia-Testnet)
+-   [X Layer Testnet](#X-Layer-Testnet)
+-   [OKX Testnet](#OkX-Testnet)
+-   [Moonbase Alpha Testnet](#moonbase-alpha-testnet)
+-   [Bnb Testnet](#Bnb-Testnet)
+-   [Fantom Testnet](#Fantom-Testnet)
+-   [StratoVM Sepolia Testnet](#stratovm-sepolia-testnet)
+-   [Godwoken Testnet](#Godwoken-testnet)
+-   [Morph Testnet](#morph-testnet)
+-   [Aurora Testnet](#Aurora-Testnet)
+-   [Soneium Minato Testnet](#Soneium-Minato-Testnet)
+-   [Rootstock Testnet](#rootstock-testnet)
+-   [Ethereum Sepolia Testnet](#Ethereum-Sepolia-Testnet)
+-   [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
+-   [Merlin Testnet](#merlin-testnet)
+-   [Manta Pacific Sepolia Testnet](#Manta-Pacific-Sepolia-Testnet)
+-   [Plume-Devnet](#Plume-Devnet)
 
 ## Arbitrum Sepolia Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -55,19 +55,19 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69 |
-| aBTC   | 0xeFcb867D484CE645766F09d8F67561b838Bb3FFd | 0x811d08B09a0FFB0cEA34472523770Bef30297259 | 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69 |
+| aBTC            | 0xeFcb867D484CE645766F09d8F67561b838Bb3FFd | 0x811d08B09a0FFB0cEA34472523770Bef30297259 | 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69 |
 
 ## Bob Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
+| BimaCore           | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
 | PriceFeed          | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 | FeeReceiver        | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E |
 | InterimAdmin       | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
@@ -81,11 +81,11 @@
 | SortedTroves       | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
 | TokenLocker        | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
 | IncentiveVoting    | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
-| BabelToken         | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
-| BabelVault         | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
+| BimaToken          | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
+| BimaVault          | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
 | BimaFaucet         | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
 
-| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)                             |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | tBTC            | 0xF87766ab34F863503D36394B624a436f436DAf87 | 0xB4A2b7B818eB310771fa2F4afF84a6ffa1aC4606 | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 | wBTC            | 0x2868d708e442A6a940670d26100036d426F1e16b | 0x10D257e8F496A84d792EBCC4384957390DFb6543 | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
@@ -95,7 +95,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x90865ce4ceAEaE7cB97600B9D96353851A7645B6 |
+| BimaCore           | 0x90865ce4ceAEaE7cB97600B9D96353851A7645B6 |
 | PriceFeed          | 0x2a383aC922DEDd746F3cA9E4047B5E9eF743b293 |
 | FeeReceiver        | 0x4fF0CA9eA032b360C50cD2ab1f8A811f6446c746 |
 | InterimAdmin       | 0x3beD0a0A02c1ee681f774FA3Cf94a7C4A0814b82 |
@@ -109,8 +109,8 @@
 | SortedTroves       | 0x0Db7253431be739BDF24BFe528ED0aA2A8668A6B |
 | TokenLocker        | 0x64f55f4c6957E88C7453Eb172dC6dB503D71B97d |
 | IncentiveVoting    | 0xE8f3D74d4C7Bf3b1518c253e2601980744b820B9 |
-| BabelToken         | 0x736B69e3B233Ad39c330CA122FB139419D8B6302 |
-| BabelVault         | 0xccE85a2BD0CbEA70f1e1492f6a81Ab97f675a8AB |
+| BimaToken          | 0x736B69e3B233Ad39c330CA122FB139419D8B6302 |
+| BimaVault          | 0xccE85a2BD0CbEA70f1e1492f6a81Ab97f675a8AB |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -120,7 +120,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x98cb20D30da0389028EB71eF299B688979F5cB8b |
+| BimaCore           | 0x98cb20D30da0389028EB71eF299B688979F5cB8b |
 | PriceFeed          | 0x4608fb6aBCf7841855A8E797B7E1fc08Ab9a1E67 |
 | FeeReceiver        | 0x6539C23868dc9Ac70f78a6034af853476477BcEc |
 | InterimAdmin       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
@@ -134,8 +134,8 @@
 | SortedTroves       | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 | TokenLocker        | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E |
 | IncentiveVoting    | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
-| BabelToken         | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
-| BabelVault         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
+| BimaToken          | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
+| BimaVault          | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
 | BimaFaucet         | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
@@ -146,7 +146,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xD4DE601BB7CBb14DC3623128706E465Fa1CC2027 |
+| BimaCore           | 0xD4DE601BB7CBb14DC3623128706E465Fa1CC2027 |
 | PriceFeed          | 0x340460Fdf8b8173fBfA0Ede60c0E013dF23bc81A |
 | FeeReceiver        | 0xbDC10467B80C8CF86243D818c10a23Da6af85f2B |
 | InterimAdmin       | 0x4B2e2E04CeF598cAE566359897559B2cF6678d3f |
@@ -160,19 +160,19 @@
 | SortedTroves       | 0x15e47CF518073bd980f10a1064231db14238858A |
 | TokenLocker        | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
 | IncentiveVoting    | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
-| BabelToken         | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
-| BabelVault         | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
+| BimaToken          | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
+| BimaVault          | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
 | BimaFaucet         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc | 0x8D0613DD3FBdA427c76c6EC55D50074E6Cb34e4a | 0xe7656e23fE8077D438aEfbec2fAbDf2D8e070C4f |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc | 0x8D0613DD3FBdA427c76c6EC55D50074E6Cb34e4a | 0xe7656e23fE8077D438aEfbec2fAbDf2D8e070C4f |
 
 ## Holesky Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -186,8 +186,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0x46A822FA030cEd1a0D6D49cfC88AEd3bD1a17578 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
@@ -198,7 +198,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
+| BimaCore           | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
 | PriceFeed          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | FeeReceiver        | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
 | InterimAdmin       | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
@@ -212,19 +212,19 @@
 | SortedTroves       | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 | TokenLocker        | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
 | IncentiveVoting    | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
-| BabelToken         | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
-| BabelVault         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
+| BimaToken          | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
+| BimaVault          | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
 | BimaFaucet         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D | 0x710aB13F1Bf405bCBDc9Ad8851bcab749faA3337 | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D | 0x710aB13F1Bf405bCBDc9Ad8851bcab749faA3337 | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 |
 
 ## Lorenzo Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xB982C667a3c3625094B4BD5912DeF81f88930a88 |
+| BimaCore           | 0xB982C667a3c3625094B4BD5912DeF81f88930a88 |
 | PriceFeed          | 0x1D4C6b776Df97AA3845FA4d634c867e3d8f3717e |
 | FeeReceiver        | 0x7A7392E6aCf20112741E0b9CE12Bd046941115c8 |
 | InterimAdmin       | 0x929187A6Ee57d776b3d4d95C899b34cBf5F89044 |
@@ -238,8 +238,8 @@
 | SortedTroves       | 0xb987269cf9D97328386A4af53Efc6A8FA5273288 |
 | TokenLocker        | 0xda44ba634C00FA570D262F63beBC7Eb1E7982129 |
 | IncentiveVoting    | 0x8dDBA7EC3d86D72F4c5AA6Af10FD7Cc9fE3601d8 |
-| BabelToken         | 0x22ad4179B37E48DF838CdD5614863b86200a61b8 |
-| BabelVault         | 0xc2BC9DB5565a31ac98bbBE635E7536Abd0b13Bc1 |
+| BimaToken          | 0x22ad4179B37E48DF838CdD5614863b86200a61b8 |
+| BimaVault          | 0xc2BC9DB5565a31ac98bbBE635E7536Abd0b13Bc1 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address                             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
@@ -249,7 +249,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
+| BimaCore           | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
 | PriceFeed          | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
 | FeeReceiver        | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
 | InterimAdmin       | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
@@ -263,8 +263,8 @@
 | SortedTroves       | 0x3175c8E8C107c34D69D6884e1CC9c240B227Db06 |
 | TokenLocker        | 0x9a64371655872B16395342B0C7A27C16d9eaC78e |
 | IncentiveVoting    | 0xb50b156c2f9418DE5c38Ca9070Ef2c3FA5e1AFA2 |
-| BabelToken         | 0xA385C1494F7540CF3e6e35C0FBcCab2Fa6696C9C |
-| BabelVault         | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
+| BimaToken          | 0xA385C1494F7540CF3e6e35C0FBcCab2Fa6696C9C |
+| BimaVault          | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
 | BimaFaucet         | 0x0E9B3208BBc81C18ED32a72e6Aa9505bfeB85eD9 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
@@ -276,7 +276,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
+| BimaCore           | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | PriceFeed          | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
 | FeeReceiver        | 0xD4DE601BB7CBb14DC3623128706E465Fa1CC2027 |
 | InterimAdmin       | 0x340460Fdf8b8173fBfA0Ede60c0E013dF23bc81A |
@@ -290,8 +290,8 @@
 | SortedTroves       | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | TokenLocker        | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | IncentiveVoting    | 0x15e47CF518073bd980f10a1064231db14238858A |
-| BabelToken         | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
-| BabelVault         | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| BimaToken          | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
+| BimaVault          | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 | BimaFaucet         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork)                     |
@@ -303,7 +303,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaCore           | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | PriceFeed          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | FeeReceiver        | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
 | InterimAdmin       | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
@@ -317,19 +317,19 @@
 | SortedTroves       | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | TokenLocker        | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
 | IncentiveVoting    | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
-| BabelToken         | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
-| BabelVault         | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 |
+| BimaToken          | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
+| BimaVault          | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 |
 | BimaFaucet         | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 | 0x96446938F8Cd78612C70b64790A21B063675752E | 0x31CF013A08c6Ac228C94551d535d5BAfE19c602a |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 | 0x96446938F8Cd78612C70b64790A21B063675752E | 0x31CF013A08c6Ac228C94551d535d5BAfE19c602a |
 
 ## Movement Lab Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x0C5eFB8ec77E3464AB85C0564371Ec1E067F8546 |
+| BimaCore           | 0x0C5eFB8ec77E3464AB85C0564371Ec1E067F8546 |
 | PriceFeed          | 0x522255a7691B0FE5af6294B0745dFA513eBc39f3 |
 | FeeReceiver        | 0x68089f91cB17dF1E6F0E6F034742250ecDeAF211 |
 | InterimAdmin       | 0x90865ce4ceAEaE7cB97600B9D96353851A7645B6 |
@@ -343,8 +343,8 @@
 | SortedTroves       | 0x26DE099ea754bb0F65aa69413042be6F7fBB1Aa7 |
 | TokenLocker        | 0x7805Fb36fdA0852caEca541bFcbDA5A35Fb23458 |
 | IncentiveVoting    | 0x3a5b283780AACe06f4e099bBcAc9021F483F9BDd |
-| BabelToken         | 0x0Db7253431be739BDF24BFe528ED0aA2A8668A6B |
-| BabelVault         | 0x64f55f4c6957E88C7453Eb172dC6dB503D71B97d |
+| BimaToken          | 0x0Db7253431be739BDF24BFe528ED0aA2A8668A6B |
+| BimaVault          | 0x64f55f4c6957E88C7453Eb172dC6dB503D71B97d |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -354,7 +354,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x2F8B7139B7D83C466B4900e73629531C5168bDFA |
+| BimaCore           | 0x2F8B7139B7D83C466B4900e73629531C5168bDFA |
 | PriceFeed          | 0x13FBe5aBf94E72cAd64152BA8bF6D7632B1f0995 |
 | FeeReceiver        | 0x3a4048efA6de3E87e698976f2A317616b87c3442 |
 | InterimAdmin       | 0x2c1E00715CB98a9e234DbfFb76b3cC6213B08A2B |
@@ -368,8 +368,8 @@
 | SortedTroves       | 0xaE36c951C6C3fFFCDdCdE990AAB5056e722B09dc |
 | TokenLocker        | 0xBA49C88f3d70A5d6A29E13B38ff7B05c636A7476 |
 | IncentiveVoting    | 0x8953752b6E7b1636F81C772f6f86662adc2C38fC |
-| BabelToken         | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
-| BabelVault         | 0x1cf11b3e7Af70341fCd21D5e17c6a5024D1e158d |
+| BimaToken          | 0x0A44D12C88fC0b551fb2208Bdb23F215BD347cC7 |
+| BimaVault          | 0x1cf11b3e7Af70341fCd21D5e17c6a5024D1e158d |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -379,7 +379,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xafFeF770dD339633755e8C9A4f77322e00C7ed4C |
+| BimaCore           | 0xafFeF770dD339633755e8C9A4f77322e00C7ed4C |
 | PriceFeed          | 0xfa0F2ddce34e5c2292390F00fB18512ec5E8c8E6 |
 | FeeReceiver        | 0x333A349a29702B4c6497c7fb6c3ca40aa97B52b4 |
 | InterimAdmin       | 0xB60b49199f26b912Bb458FCb77019DdE3F63709e |
@@ -393,8 +393,8 @@
 | SortedTroves       | 0x184Bc03D76a9351f3A2A775944D9242fddf51135 |
 | TokenLocker        | 0xDFa6f9ea4238f57f88D23e5af2B040de014e8064 |
 | IncentiveVoting    | 0x427c9501e1733c4E0509e3d1239238617E931C0B |
-| BabelToken         | 0x5cCefD3DEF2E1d997Ce5Ea10f56B79F83080ab33 |
-| BabelVault         | 0x1798E78Efd0B9E2053583eBC02C10557690987e6 |
+| BimaToken          | 0x5cCefD3DEF2E1d997Ce5Ea10f56B79F83080ab33 |
+| BimaVault          | 0x1798E78Efd0B9E2053583eBC02C10557690987e6 |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -404,7 +404,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -418,19 +418,19 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0x87dce67002e66C17BC0d723Fe20D736b80CAaFda |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0x1B2f879Ab2a3eB125a650cd53a6964052cf53613 | 0x87dce67002e66C17BC0d723Fe20D736b80CAaFda |
 
 ## Core chain Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
+| BimaCore           | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | PriceFeed          | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
 | FeeReceiver        | 0xD4DE601BB7CBb14DC3623128706E465Fa1CC2027 |
 | InterimAdmin       | 0x340460Fdf8b8173fBfA0Ede60c0E013dF23bc81A |
@@ -444,19 +444,19 @@
 | SortedTroves       | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | TokenLocker        | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
 | IncentiveVoting    | 0x15e47CF518073bd980f10a1064231db14238858A |
-| BabelToken         | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
-| BabelVault         | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| BimaToken          | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
+| BimaVault          | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 | BimaFaucet         | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 | 0x72C56eD0D46364C08257F8502b7cf17CB8f596D6 | 0x4260121248Db5c3330A55A415A6A5C8aF4936182 |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 | 0x72C56eD0D46364C08257F8502b7cf17CB8f596D6 | 0x4260121248Db5c3330A55A415A6A5C8aF4936182 |
 
 ## Fluent Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x0C5eFB8ec77E3464AB85C0564371Ec1E067F8546 |
+| BimaCore           | 0x0C5eFB8ec77E3464AB85C0564371Ec1E067F8546 |
 | PriceFeed          | 0x522255a7691B0FE5af6294B0745dFA513eBc39f3 |
 | FeeReceiver        | 0x68089f91cB17dF1E6F0E6F034742250ecDeAF211 |
 | InterimAdmin       | 0x90865ce4ceAEaE7cB97600B9D96353851A7645B6 |
@@ -470,8 +470,8 @@
 | SortedTroves       | 0x26DE099ea754bb0F65aa69413042be6F7fBB1Aa7 |
 | TokenLocker        | 0x7805Fb36fdA0852caEca541bFcbDA5A35Fb23458 |
 | IncentiveVoting    | 0x3a5b283780AACe06f4e099bBcAc9021F483F9BDd |
-| BabelToken         | 0x0Db7253431be739BDF24BFe528ED0aA2A8668A6B |
-| BabelVault         | 0x64f55f4c6957E88C7453Eb172dC6dB503D71B97d |
+| BimaToken          | 0x0Db7253431be739BDF24BFe528ED0aA2A8668A6B |
+| BimaVault          | 0x64f55f4c6957E88C7453Eb172dC6dB503D71B97d |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -481,7 +481,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| BimaCore           | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | PriceFeed          | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
 | FeeReceiver        | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
 | InterimAdmin       | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
@@ -495,20 +495,19 @@
 | SortedTroves       | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
 | TokenLocker        | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
 | IncentiveVoting    | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
-| BabelToken         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
-| BabelVault         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
+| BimaToken          | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
+| BimaVault          | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
 | BimaFaucet         | 0xe128DA406fAEDd16a08702726B52E10B8C7A8587 |
 
-
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF | 0x3ec595ee68E1D2A80009A8F9122EEdc95B06f2Fc | 0xDbB15AC4e44b999eFaeDA902A4f8F59bF881382B |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF | 0x3ec595ee68E1D2A80009A8F9122EEdc95B06f2Fc | 0xDbB15AC4e44b999eFaeDA902A4f8F59bF881382B |
 
 ## Filecoin Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x340460Fdf8b8173fBfA0Ede60c0E013dF23bc81A |
+| BimaCore           | 0x340460Fdf8b8173fBfA0Ede60c0E013dF23bc81A |
 | PriceFeed          | 0xbDC10467B80C8CF86243D818c10a23Da6af85f2B |
 | FeeReceiver        | 0x4B2e2E04CeF598cAE566359897559B2cF6678d3f |
 | InterimAdmin       | 0x5F4aF136342B4A56fB2dAb7B8a453F9CB8900663 |
@@ -522,19 +521,19 @@
 | SortedTroves       | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
 | TokenLocker        | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 | IncentiveVoting    | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
-| BabelToken         | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
-| BabelVault         | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
+| BimaToken          | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
+| BimaVault          | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 | BimaFaucet         | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 | 0xA08788E54E80Ea422AD3e316cD0B2FD3d7F38B13 | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 | 0xA08788E54E80Ea422AD3e316cD0B2FD3d7F38B13 | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E |
 
 ## Optimism Sepolia Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
+| BimaCore           | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
 | PriceFeed          | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
 | FeeReceiver        | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
 | InterimAdmin       | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
@@ -548,20 +547,20 @@
 | SortedTroves       | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF |
 | TokenLocker        | 0xe05295f7be167a9bFfEd5b0a4626b42dEdDC955f |
 | IncentiveVoting    | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 |
-| BabelToken         | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D |
-| BabelVault         | 0x3175c8E8C107c34D69D6884e1CC9c240B227Db06 |
+| BimaToken          | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D |
+| BimaVault          | 0x3175c8E8C107c34D69D6884e1CC9c240B227Db06 |
 | BimaFaucet         | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0x9a64371655872B16395342B0C7A27C16d9eaC78e | 0xA6f932aefd02269Fd4897283774Ce22a2Ba5Fc07 | 0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D |
-|  aBTC | 0x2394a5832b021788b4263d226c2b0faea765234d | 0xb0925C437c7e0D3151ec9c3e928987a04f186cf9 | 0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0x9a64371655872B16395342B0C7A27C16d9eaC78e | 0xA6f932aefd02269Fd4897283774Ce22a2Ba5Fc07 | 0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D |
+| aBTC            | 0x2394a5832b021788b4263d226c2b0faea765234d | 0xb0925C437c7e0D3151ec9c3e928987a04f186cf9 | 0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D |
 
 ## X Layer Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
+| BimaCore           | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
 | PriceFeed          | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
 | FeeReceiver        | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
 | InterimAdmin       | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
@@ -575,19 +574,19 @@
 | SortedTroves       | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
 | TokenLocker        | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
 | IncentiveVoting    | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
-| BabelToken         | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
-| BabelVault         | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
+| BimaToken          | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
+| BimaVault          | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
 | BimaFaucet         | 0xe05295f7be167a9bFfEd5b0a4626b42dEdDC955f |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 | 0xa5876FDe789b918fa856b79caE7b5BBeCC412934 | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 | 0xa5876FDe789b918fa856b79caE7b5BBeCC412934 | 0x2288125D557B9E0f3dC84731Ab57bEf60af47fbF |
 
 ## Okx Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| BimaCore           | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 | PriceFeed          | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
 | FeeReceiver        | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
 | InterimAdmin       | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
@@ -601,8 +600,8 @@
 | SortedTroves       | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
 | TokenLocker        | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 |
 | IncentiveVoting    | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
-| BabelToken         | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
-| BabelVault         | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
+| BimaToken          | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
+| BimaVault          | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -612,7 +611,7 @@
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
+| BimaCore           | 0xd296Ea42A6dBbd171025d6087AAe4dBFBfc7c70d |
 | PriceFeed          | 0x75e30CE7c54569eD628592970ddf92980adcF1B0 |
 | FeeReceiver        | 0xcFd7Fc6D664FFcc2FC74b68C321ECd6a400d2118 |
 | InterimAdmin       | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
@@ -626,8 +625,8 @@
 | SortedTroves       | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
 | TokenLocker        | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 |
 | IncentiveVoting    | 0x6B7Bfc6880f3ca892E0f1800bf1F5bc58Cd560b1 |
-| BabelToken         | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
-| BabelVault         | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
+| BimaToken          | 0xE10e3B519e0222A0C973B062A1760f8fb67676E0 |
+| BimaVault          | 0x911450A656185B2F3CAc631c7a0e9b653dfe335f |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -637,7 +636,7 @@
 
 | Contracts          | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -651,8 +650,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
@@ -664,7 +663,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -678,19 +677,19 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Chainlink) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0x65E8d79f3e8e36fE48eC31A2ae935e92F5bBF529 |
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0x65E8d79f3e8e36fE48eC31A2ae935e92F5bBF529 |
 
 ## StratoVM Sepolia Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -704,8 +703,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -715,7 +714,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -729,8 +728,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -740,7 +739,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -754,8 +753,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -765,7 +764,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
+| BimaCore           | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
 | PriceFeed          | 0x5b6785476bC7834bfEd85e74A79aC3a144affB31 |
 | FeeReceiver        | 0x80E4C64dE6733dAa9784b4667CA471a8E9aA2FDd |
 | InterimAdmin       | 0xC3b8593869Be9f8c4154015AF1CDb69f0B6f0949 |
@@ -779,8 +778,8 @@
 | SortedTroves       | 0xe05295f7be167a9bFfEd5b0a4626b42dEdDC955f |
 | TokenLocker        | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 |
 | IncentiveVoting    | 0x7adAF14C8E26564dE61BDFcD0d4448db02F7B72D |
-| BabelToken         | 0x3175c8E8C107c34D69D6884e1CC9c240B227Db06 |
-| BabelVault         | 0x9a64371655872B16395342B0C7A27C16d9eaC78e |
+| BimaToken          | 0x3175c8E8C107c34D69D6884e1CC9c240B227Db06 |
+| BimaVault          | 0x9a64371655872B16395342B0C7A27C16d9eaC78e |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -790,7 +789,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -804,8 +803,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0x73A991e3cDFF08E729F2e663Da33A975f521FdEc |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
@@ -816,7 +815,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -830,8 +829,8 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
@@ -841,7 +840,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
+| BimaCore           | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | PriceFeed          | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | FeeReceiver        | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
 | InterimAdmin       | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
@@ -855,21 +854,21 @@
 | SortedTroves       | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
 | TokenLocker        | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
 | IncentiveVoting    | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
-| BabelToken         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
-| BabelVault         | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
+| BimaToken          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| BimaVault          | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
 | BimaFaucet         | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xF2f5354B51AcF096df9eCaeBfEEF050922FaDf49 | 0xB39403dE269198651837f54501Bc28f55Cfc4ee2 | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
 | SolvBTC         | 0xE33109766662932a26d978123383ff9E7bdeF346 | 0x509aAb1A2501Ee6ce056De0D517Fc1ee44D45933 | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
-| nBTC         | 0xA229EaE06B1F8137461A9D309478da3C8d910E53 | 0x80348B8F4EFfB4C8992e577Ad506e5b77348Db5c | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
+| nBTC            | 0xA229EaE06B1F8137461A9D309478da3C8d910E53 | 0x80348B8F4EFfB4C8992e577Ad506e5b77348Db5c | 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43 |
 
 ## Polygon zkEVM Cardona Testnet
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| BimaCore           | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | PriceFeed          | 0x7Bb3a6d55DF48d7B5A9419712743e326235e3887 |
 | FeeReceiver        | 0x1f21E97cb89b03C414846ebffb482076753399C3 |
 | InterimAdmin       | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
@@ -883,8 +882,8 @@
 | SortedTroves       | 0xac392ef4106EBE101D5Baee573a8Ff0471c5Cd37 |
 | TokenLocker        | 0x678Ed24ec99e569B502B1D34001852f0595BD2df |
 | IncentiveVoting    | 0xaDBf99AD3d108220576d3B2aAF8B955de2729364 |
-| BabelToken         | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
-| BabelVault         | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
+| BimaToken          | 0xc13265Cb35a63aCe3BBd8dF5C249551355070321 |
+| BimaVault          | 0x0B446824fc53b7898DCcAE72743Ac4c1AD3c2Af7 |
 | BimaFaucet         | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
@@ -895,7 +894,7 @@
 
 | Core Contracts     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -909,20 +908,19 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 | BimaFaucet         | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
-
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xacBce5cFD3703E6F6e59f596deF42feDBCfD964E | 0xBc78150ea2C7F2d5AAf9312dF13548D5b1D2B04B | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 |
 
 ## Manta Pacific Sepolia Testnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x6539C23868dc9Ac70f78a6034af853476477BcEc |
+| BimaCore           | 0x6539C23868dc9Ac70f78a6034af853476477BcEc |
 | PriceFeed          | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | FeeReceiver        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | InterimAdmin       | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
@@ -936,21 +934,20 @@
 | SortedTroves       | 0x9540dd2AF8242518562101b42D71Ce2ec169A5a3 |
 | TokenLocker        | 0xEd0Ac2EEA2cEC5C27E509e29814574603587f682 |
 | IncentiveVoting    | 0xE66E60c64d7295e5CB5d1C00A3531ff33e8B09ce |
-| BabelToken         | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
-| BabelVault         | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
+| BimaToken          | 0x6EE35974e29F9F53E051B00EAcc153552fC87dbb |
+| BimaVault          | 0x5F94BAa95341CfCAE98cfc5480BCa38FcB132740 |
 | BimaFaucet         | 0x05b5044984747e8FB4D1B4837Ad4bD4Fd8b78428 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address (Stork Wrapper) |
-| --------------- | ------------------ | -------------------- | -------------- |
-|  Bima Mock BTC | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
-|  mBTC | 0x7e7d0b2a82a11C25f46645f08294aFaBeeaFF07c | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
-
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Bima Mock BTC   | 0xe8ce5A9A4B8f64E7e91a1d640E2661c5897492D6 | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
+| mBTC            | 0x7e7d0b2a82a11C25f46645f08294aFaBeeaFF07c | 0x811aE5d50363dbd38B0aae5FE83915A39F7d57d8 | 0x21531c13E104B7b074bEE2BF56FD3A68B37B24a7 |
 
 ## Plume Devnet
 
 | Contract           | Address                                    |
 | ------------------ | ------------------------------------------ |
-| BabelCore          | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
+| BimaCore           | 0x466C92d5bf1Adc11D62e08e3CAae6DB2b7D42A85 |
 | PriceFeed          | 0xEdd95b1325140Eb6c06d8C738DE98accb2104dFB |
 | FeeReceiver        | 0x5622b9036d762979FF50b3B131ad3F9a1Dc4c1A2 |
 | InterimAdmin       | 0x8b6a055BcF85203e320A62b0D1baEbBa0AA5ef13 |
@@ -964,10 +961,9 @@
 | SortedTroves       | 0x96F0EaCF9097fcEA88bDe9de3f7E8B215f6757Df |
 | TokenLocker        | 0x0bA523Cd5Aa725C66C3FE015BD52e7A16D3Fdb32 |
 | IncentiveVoting    | 0xEc63b8a3a2402892d3E6AB97b89CF47132a29dAa |
-| BabelToken         | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
-| BabelVault         | 0x15e47CF518073bd980f10a1064231db14238858A |
+| BimaToken          | 0x0BB0aA6Aa3A3FD4F7a43FB5e3d90bF9e6B4ef799 |
+| BimaVault          | 0x15e47CF518073bd980f10a1064231db14238858A |
 
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
-

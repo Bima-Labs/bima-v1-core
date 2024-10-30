@@ -2,23 +2,23 @@
 pragma solidity 0.8.19;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
-import {BabelMath} from "../dependencies/BabelMath.sol";
+import {BimaMath} from "../dependencies/BimaMath.sol";
 import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR, BIMA_REWARD_DURATION} from "../dependencies/Constants.sol";
-import {IStabilityPool, IDebtToken, IBabelVault, IERC20} from "../interfaces/IStabilityPool.sol";
+import {IStabilityPool, IDebtToken, IBimaVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Stability Pool
+    @title Bima Stability Pool
     @notice Based on Liquity's `StabilityPool`
             https://github.com/liquity/dev/blob/main/packages/contracts/contracts/StabilityPool.sol
 
-            Babel's implementation is modified to support multiple collaterals. Deposits into
+            Bima's implementation is modified to support multiple collaterals. Deposits into
             the stability pool may be used to liquidate any supported collateral type.
  */
-contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
+contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     using SafeERC20 for IERC20;
 
     // constants
@@ -26,12 +26,12 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     uint256 constant MAX_COLLATERAL_COUNT = 256;
 
     // stability pool is registered with receiver ID 0
-    // in BabelVault::constructor
+    // in BimaVault::constructor
     uint256 public constant SP_EMISSION_ID = 0;
 
     // immutable
     IDebtToken public immutable debtToken;
-    IBabelVault public immutable vault;
+    IBimaVault public immutable vault;
     address public immutable factory;
     address public immutable liquidationManager;
 
@@ -44,7 +44,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // based on time duration since last update
     uint32 public lastUpdate;
 
-    // used to periodically trigger calls to BabelVault::allocateNewEmissions
+    // used to periodically trigger calls to BimaVault::allocateNewEmissions
     uint32 public periodFinish;
 
     // here for storage packing
@@ -56,8 +56,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     // With each offset that fully empties the Pool, the epoch is incremented by 1
     uint128 public currentEpoch;
 
-    // Error tracker for the error correction in the Babel issuance calculation
-    uint256 public lastBabelError;
+    // Error tracker for the error correction in the Bima issuance calculation
+    uint256 public lastBimaError;
     // Error trackers for the error correction in the offset calculation
     uint256[MAX_COLLATERAL_COUNT] public lastCollateralError_Offset;
     uint256 public lastDebtLossError_Offset;
@@ -109,11 +109,11 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     mapping(uint128 epoch => mapping(uint128 scale => uint256[MAX_COLLATERAL_COUNT] sumS)) public epochToScaleToSums;
 
     /*
-     * Similarly, the sum 'G' is used to calculate Babel gains. During it's lifetime, each deposit d_t earns a Babel gain of
+     * Similarly, the sum 'G' is used to calculate Bima gains. During it's lifetime, each deposit d_t earns a Bima gain of
      *  ( d_t * [G - G_t] )/P_t, where G_t is the depositor's snapshot of G taken at time t when  the deposit was made.
      *
-     *  Babel reward events occur are triggered by depositor operations (new deposit, topup, withdrawal), and liquidations.
-     *  In each case, the Babel reward is issued (i.e. G is updated), before other state changes are made.
+     *  Bima reward events occur are triggered by depositor operations (new deposit, topup, withdrawal), and liquidations.
+     *  In each case, the Bima reward is issued (i.e. G is updated), before other state changes are made.
      */
     mapping(uint128 epoch => mapping(uint128 scale => uint256 sumG)) public epochToScaleToG;
 
@@ -140,12 +140,12 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         IDebtToken _debtTokenAddress,
-        IBabelVault _vault,
+        IBimaVault _vault,
         address _factory,
         address _liquidationManager
-    ) BabelOwnable(_babelCore) SystemStart(_babelCore) {
+    ) BimaOwnable(_bimaCore) SystemStart(_bimaCore) {
         debtToken = _debtTokenAddress;
         vault = _vault;
         factory = _factory;
@@ -269,12 +269,12 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         count = collateralTokens.length;
     }
 
-    function getSunsetQueueKeys() external view returns(uint16 firstSunsetIndexKey, uint16 nextSunsetIndexKey) {
+    function getSunsetQueueKeys() external view returns (uint16 firstSunsetIndexKey, uint16 nextSunsetIndexKey) {
         SunsetQueue memory data = queue;
         (firstSunsetIndexKey, nextSunsetIndexKey) = (data.firstSunsetIndexKey, data.nextSunsetIndexKey);
     }
 
-    function getSunsetIndexes(uint16 indexKey) external view returns(uint128 idx, uint128 expiry) {
+    function getSunsetIndexes(uint16 indexKey) external view returns (uint128 idx, uint128 expiry) {
         SunsetIndex memory data = _sunsetIndexes[indexKey];
         (idx, expiry) = (data.idx, data.expiry);
     }
@@ -291,15 +291,15 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     /*  provideToSP():
      *
-     * - Triggers a Babel issuance, based on time passed since the last issuance.
-     *   The Babel issuance is shared between *all* depositors and front ends
+     * - Triggers a Bima issuance, based on time passed since the last issuance.
+     *   The Bima issuance is shared between *all* depositors and front ends
      * - Tags the deposit with the provided front end tag param, if it's a new deposit
-     * - Sends depositor's accumulated gains (Babel, collateral) to depositor
-     * - Sends the tagged front end's accumulated Babel gains to the tagged front end
+     * - Sends depositor's accumulated gains (Bima, collateral) to depositor
+     * - Sends the tagged front end's accumulated Bima gains to the tagged front end
      * - Increases deposit and tagged front end's stake, and takes new snapshots for each.
      */
     function provideToSP(uint256 _amount) external {
-        require(!BABEL_CORE.paused(), "Deposits are paused");
+        require(!BIMA_CORE.paused(), "Deposits are paused");
         require(_amount > 0, "StabilityPool: Amount must be non-zero");
 
         // perform processes prior to crediting new deposit
@@ -331,11 +331,11 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
     /*  withdrawFromSP():
      *
-     * - Triggers a Babel issuance, based on time passed since the last issuance.
-     *   The Babel issuance is shared between *all* depositors and front ends
+     * - Triggers a Bima issuance, based on time passed since the last issuance.
+     *   The Bima issuance is shared between *all* depositors and front ends
      * - Removes the deposit's front end tag if it is a full withdrawal
-     * - Sends all depositor's accumulated gains (Babel, collateral) to depositor
-     * - Sends the tagged front end's accumulated Babel gains to the tagged front end
+     * - Sends all depositor's accumulated gains (Bima, collateral) to depositor
+     * - Sends the tagged front end's accumulated Bima gains to the tagged front end
      * - Decreases deposit and tagged front end's stake, and takes new snapshots for each.
      *
      * If _amount > userDeposit, the user withdraws all of their compounded deposit.
@@ -352,7 +352,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         _accrueDepositorCollateralGain(msg.sender);
 
         uint256 compoundedDebtDeposit = getCompoundedDebtDeposit(msg.sender);
-        uint256 debtToWithdraw = BabelMath._min(_amount, compoundedDebtDeposit);
+        uint256 debtToWithdraw = BimaMath._min(_amount, compoundedDebtDeposit);
         _accrueRewards(msg.sender);
 
         // transfer the tokens being withdrawn
@@ -374,7 +374,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         emit UserDepositChanged(msg.sender, newTotalDeposited);
     }
 
-    // --- Babel issuance functions ---
+    // --- Bima issuance functions ---
 
     function _triggerRewardIssuance() internal {
         _updateG(_vestedEmissions());
@@ -384,7 +384,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
 
         // if the current system week is the same as the last update week
         // or if the last update week was in the past, then claim new
-        // emissions from BabelVault
+        // emissions from BimaVault
         if (getWeek() >= lastUpdateWeek) {
             uint256 amount = vault.allocateNewEmissions(SP_EMISSION_ID);
 
@@ -403,12 +403,12 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         lastUpdate = uint32(block.timestamp);
     }
 
-    function _vestedEmissions() internal view returns (uint256 babelIssuance) {
+    function _vestedEmissions() internal view returns (uint256 bimaIssuance) {
         uint256 updated = periodFinish;
 
         // Period is not ended we max at current timestamp
         if (updated > block.timestamp) updated = block.timestamp;
-        
+
         // if the last update was after the current update time
         // it means all rewards have been vested already so return
         // default zero
@@ -417,40 +417,40 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         // otherwise calculate vested emissions
         if (lastUpdateCached < updated) {
             uint256 duration = updated - lastUpdateCached;
-            babelIssuance = duration * rewardRate;
+            bimaIssuance = duration * rewardRate;
         }
     }
 
-    function _updateG(uint256 _babelIssuance) internal {
+    function _updateG(uint256 _bimaIssuance) internal {
         uint256 totalDebt = totalDebtTokenDeposits;
 
         // When total deposits is 0, G is not updated. In this case
-        // the Babel issued can not be obtained by later depositors;
+        // the Bima issued can not be obtained by later depositors;
         // it is missed out on, and remains in the balanceOf the Treasury contract.
-        if (totalDebt == 0 || _babelIssuance == 0) {
+        if (totalDebt == 0 || _bimaIssuance == 0) {
             return;
         }
 
-        uint256 babelPerUnitStaked;
-        babelPerUnitStaked = _computeBabelPerUnitStaked(_babelIssuance, totalDebt);
+        uint256 bimaPerUnitStaked;
+        bimaPerUnitStaked = _computeBimaPerUnitStaked(_bimaIssuance, totalDebt);
 
         uint128 currentEpochCached = currentEpoch;
         uint128 currentScaleCached = currentScale;
-        
-        uint256 marginalBabelGain = babelPerUnitStaked * P;
-        uint256 newG = epochToScaleToG[currentEpochCached][currentScaleCached] + marginalBabelGain;
+
+        uint256 marginalBimaGain = bimaPerUnitStaked * P;
+        uint256 newG = epochToScaleToG[currentEpochCached][currentScaleCached] + marginalBimaGain;
 
         epochToScaleToG[currentEpochCached][currentScaleCached] = newG;
 
         emit G_Updated(newG, currentEpochCached, currentScaleCached);
     }
 
-    function _computeBabelPerUnitStaked(
-        uint256 _babelIssuance,
+    function _computeBimaPerUnitStaked(
+        uint256 _bimaIssuance,
         uint256 _totalDebtTokenDeposits
-    ) internal returns (uint256 babelPerUnitStaked) {
+    ) internal returns (uint256 bimaPerUnitStaked) {
         /*
-         * Calculate the Babel-per-unit staked.  Division uses a "feedback" error correction, to keep the
+         * Calculate the Bima-per-unit staked.  Division uses a "feedback" error correction, to keep the
          * cumulative error low in the running total G:
          *
          * 1) Form a numerator which compensates for the floor division error that occurred the last time this
@@ -460,10 +460,10 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
          * 4) Store this error for use in the next correction when this function is called.
          * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
          */
-        uint256 babelNumerator = (_babelIssuance * BIMA_DECIMAL_PRECISION) + lastBabelError;
+        uint256 bimaNumerator = (_bimaIssuance * BIMA_DECIMAL_PRECISION) + lastBimaError;
 
-        babelPerUnitStaked = babelNumerator / _totalDebtTokenDeposits;
-        lastBabelError = babelNumerator - (babelPerUnitStaked * _totalDebtTokenDeposits);
+        bimaPerUnitStaked = bimaNumerator / _totalDebtTokenDeposits;
+        lastBimaError = bimaNumerator - (bimaPerUnitStaked * _totalDebtTokenDeposits);
     }
 
     // --- Liquidation functions ---
@@ -536,7 +536,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         }
 
         collateralGainPerUnitStaked = collateralNumerator / _totalDebtTokenDeposits;
-       lastCollateralError_Offset[idx] = collateralNumerator - (collateralGainPerUnitStaked * _totalDebtTokenDeposits);
+        lastCollateralError_Offset[idx] = collateralNumerator - (collateralGainPerUnitStaked * _totalDebtTokenDeposits);
     }
 
     // Update the Stability Pool reward sum S and product P
@@ -623,7 +623,10 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
             uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
-            collateralGains[i] += (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
+            collateralGains[i] +=
+                (initialDeposit * (firstPortion + secondPortion)) /
+                P_Snapshot /
+                BIMA_DECIMAL_PRECISION;
         }
     }
 
@@ -637,7 +640,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         // cache user's initial deposit amount
         uint256 initialDeposit = accountDeposits[_depositor].amount;
 
-        if(initialDeposit != 0) {
+        if (initialDeposit != 0) {
             uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
             uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
             uint256 P_Snapshot = depositSnapshots[_depositor].P;
@@ -662,8 +665,8 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     }
 
     /*
-     * Calculate the Babel gain earned by a deposit since its last snapshots were taken.
-     * Given by the formula:  Babel = d0 * (G - G(0))/P(0)
+     * Calculate the Bima gain earned by a deposit since its last snapshots were taken.
+     * Given by the formula:  Bima = d0 * (G - G(0))/P(0)
      * where G(0) and P(0) are the depositor's snapshots of the sum G and product P, respectively.
      * d0 is the last recorded deposit value.
      */
@@ -675,9 +678,9 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         reward = storedPendingReward[_depositor];
 
         // if depositor has deposits & debt perform additional calculations
-        if(totalDebt != 0 && initialDeposit != 0) {
-            uint256 babelNumerator = (_vestedEmissions() * BIMA_DECIMAL_PRECISION) + lastBabelError;
-            uint256 babelPerUnitStaked = babelNumerator / totalDebt;
+        if (totalDebt != 0 && initialDeposit != 0) {
+            uint256 bimaNumerator = (_vestedEmissions() * BIMA_DECIMAL_PRECISION) + lastBimaError;
+            uint256 bimaPerUnitStaked = bimaNumerator / totalDebt;
 
             Snapshots memory snapshots = depositSnapshots[_depositor];
             uint128 epochSnapshot = snapshots.epoch;
@@ -685,20 +688,22 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             uint256 firstPortion;
             uint256 secondPortion;
 
-            uint256 marginalBabelGain = epochSnapshot == currentEpoch ? babelPerUnitStaked * P : 0;
+            uint256 marginalBimaGain = epochSnapshot == currentEpoch ? bimaPerUnitStaked * P : 0;
 
             if (scaleSnapshot == currentScale) {
-                firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G + marginalBabelGain;
+                firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G + marginalBimaGain;
                 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
             } else {
                 firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - snapshots.G;
-                secondPortion = (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBabelGain) / BIMA_SCALE_FACTOR;
+                secondPortion =
+                    (epochToScaleToG[epochSnapshot][scaleSnapshot + 1] + marginalBimaGain) /
+                    BIMA_SCALE_FACTOR;
             }
 
             // add additional calculation to stored pending reward already in output
             reward += (initialDeposit * (firstPortion + secondPortion)) / snapshots.P / BIMA_DECIMAL_PRECISION;
         } else {
-            reward += _claimableReward(_depositor); 
+            reward += _claimableReward(_depositor);
         }
     }
 
@@ -710,18 +715,18 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         if (reward != 0) {
             Snapshots memory snapshots = depositSnapshots[_depositor];
 
-            reward = _getBabelGainFromSnapshots(reward, snapshots);
+            reward = _getBimaGainFromSnapshots(reward, snapshots);
         }
     }
 
-    function _getBabelGainFromSnapshots(
+    function _getBimaGainFromSnapshots(
         uint256 initialStake,
         Snapshots memory snapshots
-    ) internal view returns (uint256 babelGain) {
+    ) internal view returns (uint256 bimaGain) {
         /*
          * Grab the sum 'G' from the epoch at which the stake was made.
-         * The Babel gain may span up to one scale change.
-         * If it does, the second portion of the Babel gain is scaled by 1e9.
+         * The Bima gain may span up to one scale change.
+         * If it does, the second portion of the Bima gain is scaled by 1e9.
          * If the gain spans no scale change, the second portion will be 0.
          */
         uint128 epochSnapshot = snapshots.epoch;
@@ -733,7 +738,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
         uint256 firstPortion = epochToScaleToG[epochSnapshot][scaleSnapshot] - G_Snapshot;
         uint256 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot + 1] / BIMA_SCALE_FACTOR;
 
-        babelGain = (initialStake * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
+        bimaGain = (initialStake * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
     }
 
     // --- Compounded deposit and compounded front end stake ---
@@ -761,23 +766,23 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
     ) internal view returns (uint256 compoundedStake) {
         // If stake was made before a pool-emptying event (epochSnapshot < currentEpoch)
         // then it has been fully cancelled with debt so return default 0 value - nothing to do
-        if(snapshots.epoch >= currentEpoch) {
+        if (snapshots.epoch >= currentEpoch) {
             uint128 scaleDiff = currentScale - snapshots.scale;
 
             /* Compute the compounded stake. If a scale change in P was made during the stake's lifetime,
-            * account for it. If more than one scale change was made, then the stake has decreased by a factor of
-            * at least 1e-9 -- so return 0.
-            */
+             * account for it. If more than one scale change was made, then the stake has decreased by a factor of
+             * at least 1e-9 -- so return 0.
+             */
             if (scaleDiff == 0) {
                 compoundedStake = (initialStake * P) / snapshots.P;
             } else if (scaleDiff == 1) {
                 compoundedStake = (initialStake * P) / snapshots.P / BIMA_SCALE_FACTOR;
-            } 
+            }
             // if scaleDiff >= 2, return default zero value
         }
     }
 
-    // --- Sender functions for Debt deposit, collateral gains and Babel gains ---
+    // --- Sender functions for Debt deposit, collateral gains and Bima gains ---
     function claimCollateralGains(address recipient, uint256[] calldata collateralIndexes) external {
         // trigger reward claims prior to claiming collateral gains
         claimReward(recipient);
@@ -813,14 +818,13 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             delete depositSnapshots[_depositor];
 
             uint256 length = collateralTokens.length;
-            
+
             for (uint256 i; i < length; i++) {
                 depositSums[_depositor][i] = 0;
             }
-            
+
             emit DepositSnapshotUpdated(_depositor, 0, 0);
-        }
-        else {
+        } else {
             uint128 currentScaleCached = currentScale;
             uint128 currentEpochCached = currentEpoch;
             uint256 currentP = P;
@@ -836,7 +840,7 @@ contract StabilityPool is IStabilityPool, BabelOwnable, SystemStart {
             depositSnapshots[_depositor].epoch = currentEpochCached;
 
             uint256 length = collateralTokens.length;
-            
+
             for (uint256 i; i < length; i++) {
                 depositSums[_depositor][i] = currentS[i];
             }

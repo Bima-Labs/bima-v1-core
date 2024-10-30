@@ -2,11 +2,10 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {BorrowerOperationsTest, BabelMath, ITroveManager, SafeCast, Math} from "./BorrowerOperationsTest.t.sol";
+import {BorrowerOperationsTest, BimaMath, ITroveManager, SafeCast, Math} from "./BorrowerOperationsTest.t.sol";
 import {BIMA_DECIMAL_PRECISION} from "../../../contracts/dependencies/Constants.sol";
 
 contract LiquidationManagerTest is BorrowerOperationsTest {
-
     uint256 internal constant COLL_REDUCTION_FACTOR = 30_000;
     uint256 internal constant LM_100pct = 1000000000000000000;
 
@@ -24,52 +23,54 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
     // used to save important state for verification
     struct LiquidationState {
-        uint256 troveOwnersCount; 
-
+        uint256 troveOwnersCount;
         uint256 totalDebt;
         uint256 totalColl;
-
         uint256 userDebt;
         uint256 userColl;
         uint256 userPendingDebtReward;
         uint256 userPendingCollateralReward;
-
         uint256 stabPoolTotalDebtTokenDeposits;
         uint256 stabPoolStakedBTCBal;
         uint256 stabPoolDebtTokenBal;
     }
+
     function _getLiquidationState(address user) internal view returns (LiquidationState memory state) {
         state.troveOwnersCount = stakedBTCTroveMgr.getTroveOwnersCount();
 
         state.totalDebt = stakedBTCTroveMgr.getTotalActiveDebt();
         state.totalColl = stakedBTCTroveMgr.getTotalActiveCollateral();
 
-        (state.userDebt, state.userColl, state.userPendingDebtReward, state.userPendingCollateralReward)
-            = stakedBTCTroveMgr.getEntireDebtAndColl(user);
+        (
+            state.userDebt,
+            state.userColl,
+            state.userPendingDebtReward,
+            state.userPendingCollateralReward
+        ) = stakedBTCTroveMgr.getEntireDebtAndColl(user);
 
         state.stabPoolTotalDebtTokenDeposits = stabilityPool.getTotalDebtTokenDeposits();
         state.stabPoolStakedBTCBal = stakedBTC.balanceOf(address(stabilityPool));
         state.stabPoolDebtTokenBal = debtToken.balanceOf(address(stabilityPool));
     }
 
-    function test_liquidate_oneTroveWithoutStabilityPool(
-        uint256 collateralAmount, bool functionSwitch) external {
-
+    function test_liquidate_oneTroveWithoutStabilityPool(uint256 collateralAmount, bool functionSwitch) external {
         // bound fuzz inputs - reduce max debt to prevent over-collateralization
         // so that liquidation will occur
-        collateralAmount = bound(collateralAmount, minCollateral, maxCollateral/COLL_REDUCTION_FACTOR);
+        collateralAmount = bound(collateralAmount, minCollateral, maxCollateral / COLL_REDUCTION_FACTOR);
 
         // get max debt
         uint256 debtAmountMax = _getMaxDebtAmount(collateralAmount);
-        
+
         _openTrove(users.user1, collateralAmount, debtAmountMax);
-        
+
         // set new value of btc to $50,000 to make trove liquidatable
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                               int256(50000 * 10 ** 8),
-                               block.timestamp + 1,
-                               block.timestamp + 1,
-                               mockOracle.answeredInRound() + 1);
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(50000 * 10 ** 8),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
         // warp time to prevent cached price being used
         vm.warp(block.timestamp + 1);
 
@@ -80,10 +81,9 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePre.stabPoolTotalDebtTokenDeposits, 0);
 
         // function switch uses different liquidate functions
-        if(functionSwitch) {
+        if (functionSwitch) {
             liquidationMgr.liquidateTroves(stakedBTCTroveMgr, 1, type(uint256).max);
-        }
-        else {
+        } else {
             liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
         }
 
@@ -94,8 +94,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                 uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         // user after state all zeros
         assertEq(statePost.userDebt, 0);
@@ -108,10 +107,11 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.totalColl, statePre.totalColl - collateralAmount);
 
         // verify defaulted debt & collateral calculated correctly
-        assertEq(stakedBTCTroveMgr.defaultedDebt(),
-                 statePre.userDebt + statePre.userPendingDebtReward);
-        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
-                 statePre.userColl - _getCollGasCompensation(statePre.userColl));
+        assertEq(stakedBTCTroveMgr.defaultedDebt(), statePre.userDebt + statePre.userPendingDebtReward);
+        assertEq(
+            stakedBTCTroveMgr.defaultedCollateral(),
+            statePre.userColl - _getCollGasCompensation(statePre.userColl)
+        );
 
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
@@ -126,15 +126,17 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
     }
 
     function test_liquidate_oneTroveWithStabilityPool(
-        uint96 spDepositAmount, uint256 collateralAmount, bool functionSwitch) external {
-
+        uint96 spDepositAmount,
+        uint256 collateralAmount,
+        bool functionSwitch
+    ) external {
         // user2 deposits into the stability pool
         spDepositAmount = uint96(bound(spDepositAmount, 1, type(uint96).max));
         _provideToSP(users.user2, spDepositAmount, 1);
 
         // bound fuzz inputs - reduce max debt to prevent over-collateralization
         // so that liquidation will occur
-        collateralAmount = bound(collateralAmount, minCollateral, maxCollateral/COLL_REDUCTION_FACTOR);
+        collateralAmount = bound(collateralAmount, minCollateral, maxCollateral / COLL_REDUCTION_FACTOR);
 
         // get max debt
         uint256 debtAmountMax = _getMaxDebtAmount(collateralAmount);
@@ -142,11 +144,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         _openTrove(users.user1, collateralAmount, debtAmountMax);
 
         // set new value of btc to $50,000 to make trove liquidatable
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                               int256(50000 * 10 ** 8),
-                               block.timestamp + 1,
-                               block.timestamp + 1,
-                               mockOracle.answeredInRound() + 1);
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(50000 * 10 ** 8),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
         // warp time to prevent cached price being used
         vm.warp(block.timestamp + 1);
 
@@ -157,10 +161,9 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePre.stabPoolTotalDebtTokenDeposits, spDepositAmount);
 
         // function switch uses different liquidate functions
-        if(functionSwitch) {
+        if (functionSwitch) {
             liquidationMgr.liquidateTroves(stakedBTCTroveMgr, 1, type(uint256).max);
-        }
-        else {
+        } else {
             liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
         }
 
@@ -171,8 +174,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                 uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         // user after state all zeros
         assertEq(statePost.userDebt, 0);
@@ -186,26 +188,27 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // verify stability pool debt token deposits reduced by amount used to offset liquidation
         uint256 userDebtPlusPendingRewards = statePre.userDebt + statePre.userPendingDebtReward;
-        uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
-                                                                statePre.stabPoolTotalDebtTokenDeposits);
-        
-        // verify defaulted debt calculated correctly
-        assertEq(statePost.stabPoolTotalDebtTokenDeposits,
-                 statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
-        assertEq(stakedBTCTroveMgr.defaultedDebt(),
-                 userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+        uint256 debtToOffsetUsingStabilityPool = BimaMath._min(
+            userDebtPlusPendingRewards,
+            statePre.stabPoolTotalDebtTokenDeposits
+        );
 
-        // calculate expected collateral to liquidate        
+        // verify defaulted debt calculated correctly
+        assertEq(
+            statePost.stabPoolTotalDebtTokenDeposits,
+            statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool
+        );
+        assertEq(stakedBTCTroveMgr.defaultedDebt(), userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+
+        // calculate expected collateral to liquidate
         uint256 collToLiquidate = statePre.userColl - _getCollGasCompensation(statePre.userColl);
-        
+
         // calculate expected collateral to send to stability pool
-        uint256 collToSendToStabilityPool = collToLiquidate *
-                                            debtToOffsetUsingStabilityPool /
-                                            userDebtPlusPendingRewards;
+        uint256 collToSendToStabilityPool = (collToLiquidate * debtToOffsetUsingStabilityPool) /
+            userDebtPlusPendingRewards;
 
         // verify defaulted collateral calculated correctly
-        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
-                 collToLiquidate - collToSendToStabilityPool);
+        assertEq(stakedBTCTroveMgr.defaultedCollateral(), collToLiquidate - collToSendToStabilityPool);
 
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
@@ -259,11 +262,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(userICR, 2250000000000000000);
 
         // set new value of btc to $50,000 to make trove liquidatable
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                               int256(50000 * 10 ** 8),
-                               block.timestamp + 1,
-                               block.timestamp + 1,
-                               mockOracle.answeredInRound() + 1);
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(50000 * 10 ** 8),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
         // warp time to prevent cached price being used
         vm.warp(block.timestamp + 1);
 
@@ -290,8 +295,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                 uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         // user after state all zeros
         assertEq(statePost.userDebt, 0);
@@ -305,26 +309,27 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // verify stability pool debt token deposits reduced by amount used to offset liquidation
         uint256 userDebtPlusPendingRewards = statePre.userDebt + statePre.userPendingDebtReward;
-        uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
-                                                                statePre.stabPoolTotalDebtTokenDeposits);
+        uint256 debtToOffsetUsingStabilityPool = BimaMath._min(
+            userDebtPlusPendingRewards,
+            statePre.stabPoolTotalDebtTokenDeposits
+        );
 
         // verify defaulted debt calculated correctly
-        assertEq(statePost.stabPoolTotalDebtTokenDeposits,
-                 statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
-        assertEq(stakedBTCTroveMgr.defaultedDebt(),
-                 userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+        assertEq(
+            statePost.stabPoolTotalDebtTokenDeposits,
+            statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool
+        );
+        assertEq(stakedBTCTroveMgr.defaultedDebt(), userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
 
         // calculate expected collateral to liquidate
         uint256 collToLiquidate = statePre.userColl - _getCollGasCompensation(statePre.userColl);
 
         // calculate expected collateral to send to stability pool
-        uint256 collToSendToStabilityPool = collToLiquidate *
-                                            debtToOffsetUsingStabilityPool /
-                                            userDebtPlusPendingRewards;
+        uint256 collToSendToStabilityPool = (collToLiquidate * debtToOffsetUsingStabilityPool) /
+            userDebtPlusPendingRewards;
 
         // verify defaulted collateral calculated correctly
-        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
-                 collToLiquidate - collToSendToStabilityPool);
+        assertEq(stakedBTCTroveMgr.defaultedCollateral(), collToLiquidate - collToSendToStabilityPool);
 
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
@@ -361,14 +366,17 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
     }
 
     function test_liquidate_oneTroveWithStabilityPool_ICRlt100(
-        uint96 spDepositAmount, uint256 collateralAmount, bool functionSwitch) external {
+        uint96 spDepositAmount,
+        uint256 collateralAmount,
+        bool functionSwitch
+    ) external {
         // user2 deposits into the stability pool
         spDepositAmount = uint96(bound(spDepositAmount, 1, type(uint96).max));
         _provideToSP(users.user2, spDepositAmount, 1);
 
         // bound fuzz inputs - reduce max debt to prevent over-collateralization
         // so that liquidation will occur
-        collateralAmount = bound(collateralAmount, minCollateral, maxCollateral/COLL_REDUCTION_FACTOR);
+        collateralAmount = bound(collateralAmount, minCollateral, maxCollateral / COLL_REDUCTION_FACTOR);
 
         // get max debt
         uint256 debtAmountMax = _getMaxDebtAmount(collateralAmount);
@@ -383,11 +391,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         // with ICR <= _100pct which triggers non-standard liquidation code
         uint256 newPrice = ((LM_100pct * debtAmountMax) / collateralAmount) - 1;
 
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                               int256(newPrice /  10 ** 12),
-                               block.timestamp + 1,
-                               block.timestamp + 1,
-                               mockOracle.answeredInRound() + 1);
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(newPrice / 10 ** 12),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
         // warp time to prevent cached price being used
         vm.warp(block.timestamp + 1);
 
@@ -402,10 +412,9 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePre.stabPoolTotalDebtTokenDeposits, spDepositAmount);
 
         // function switch uses different liquidate functions
-        if(functionSwitch) {
+        if (functionSwitch) {
             liquidationMgr.liquidateTroves(stakedBTCTroveMgr, 1, type(uint256).max);
-        }
-        else {
+        } else {
             liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
         }
 
@@ -416,8 +425,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                 uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         // user after state all zeros
         assertEq(statePost.userDebt, 0);
@@ -459,7 +467,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         (uint256 collateralAmount, uint256 debtAmountMax) = _openTroveThenRecoveryMode();
 
         // user2 deposits enough debt into the stability pool to cover user1's debt
-        uint96 spDepositAmount = SafeCast.toUint96(debtAmountMax+1e18);
+        uint96 spDepositAmount = SafeCast.toUint96(debtAmountMax + 1e18);
         _provideToSP(users.user2, spDepositAmount, 1);
 
         uint256 userICR = stakedBTCTroveMgr.getCurrentICR(users.user1, stakedBTCTroveMgr.fetchPrice());
@@ -467,7 +475,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertTrue(userICR >= stakedBTCTroveMgr.MCR());
 
         (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOps.getGlobalSystemBalances();
-        uint256 TCR = BabelMath._computeCR(entireSystemColl, entireSystemDebt);
+        uint256 TCR = BimaMath._computeCR(entireSystemColl, entireSystemDebt);
         assertEq(TCR, 2096131448287994470);
 
         // sanity checks to ensure specific liquidation code called using `_tryLiquidateWithCap`
@@ -482,10 +490,9 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePre.stabPoolTotalDebtTokenDeposits, spDepositAmount);
 
         // function switch uses different liquidate functions
-        if(functionSwitch) {
+        if (functionSwitch) {
             liquidationMgr.liquidateTroves(stakedBTCTroveMgr, 1, type(uint256).max);
-        }
-        else {
+        } else {
             liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
         }
 
@@ -496,8 +503,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                 uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         // user after state all zeros
         assertEq(statePost.userDebt, 0);
@@ -511,26 +517,27 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // verify stability pool debt token deposits reduced by amount used to offset liquidation
         uint256 userDebtPlusPendingRewards = statePre.userDebt + statePre.userPendingDebtReward;
-        uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
-                                                                statePre.stabPoolTotalDebtTokenDeposits);
+        uint256 debtToOffsetUsingStabilityPool = BimaMath._min(
+            userDebtPlusPendingRewards,
+            statePre.stabPoolTotalDebtTokenDeposits
+        );
 
         // verify defaulted debt calculated correctly
-        assertEq(statePost.stabPoolTotalDebtTokenDeposits,
-                 statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
-        assertEq(stakedBTCTroveMgr.defaultedDebt(),
-                 userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+        assertEq(
+            statePost.stabPoolTotalDebtTokenDeposits,
+            statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool
+        );
+        assertEq(stakedBTCTroveMgr.defaultedDebt(), userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
 
         // calculate expected collateral to liquidate
         uint256 collToLiquidate = statePre.userColl - _getCollGasCompensation(statePre.userColl);
 
         // calculate expected collateral to send to stability pool
-        uint256 collToSendToStabilityPool = collToLiquidate *
-                                            debtToOffsetUsingStabilityPool /
-                                            userDebtPlusPendingRewards;
+        uint256 collToSendToStabilityPool = (collToLiquidate * debtToOffsetUsingStabilityPool) /
+            userDebtPlusPendingRewards;
 
         // verify defaulted collateral calculated correctly
-        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
-                 collToLiquidate - collToSendToStabilityPool);
+        assertEq(stakedBTCTroveMgr.defaultedCollateral(), collToLiquidate - collToSendToStabilityPool);
 
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
@@ -538,10 +545,10 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         // verify stability pool received collateral tokens
         // `_tryLiquidateWithCap` used in the special circumstances of this
         // scenario calculates this slightly differenlty than normal liquidations
-        uint256 collToOffset = statePre.userDebt * stakedBTCTroveMgr.MCR() / stakedBTCTroveMgr.fetchPrice();
+        uint256 collToOffset = (statePre.userDebt * stakedBTCTroveMgr.MCR()) / stakedBTCTroveMgr.fetchPrice();
         collToSendToStabilityPool = collToOffset - _getCollGasCompensation(collToOffset);
         assertEq(statePost.stabPoolStakedBTCBal, statePre.stabPoolStakedBTCBal + collToSendToStabilityPool);
-        
+
         // verify stability pool lost debt tokens
         assertEq(statePost.stabPoolDebtTokenBal, statePre.stabPoolDebtTokenBal - debtToOffsetUsingStabilityPool);
 
@@ -563,11 +570,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         _openTrove(users.user1, collateralAmount, debtAmountMax);
 
         // set new value of btc to $50,000 to make trove liquidatable
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                            int256(50000 * 10 ** 8),
-                            block.timestamp + 1,
-                            block.timestamp + 1,
-                            mockOracle.answeredInRound() + 1);
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(50000 * 10 ** 8),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
         // warp time to prevent cached price being used
         vm.warp(block.timestamp + 1);
 
@@ -587,8 +596,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         assertEq(statePost.troveOwnersCount, statePre.troveOwnersCount - 1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         // user1 after state all zeros
         assertEq(statePost.userDebt, 0);
@@ -602,26 +610,27 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // verify stability pool debt token deposits reduced by amount used to offset liquidation
         uint256 userDebtPlusPendingRewards = statePre.userDebt + statePre.userPendingDebtReward;
-        uint256 debtToOffsetUsingStabilityPool = BabelMath._min(userDebtPlusPendingRewards,
-                                                                statePre.stabPoolTotalDebtTokenDeposits);
-        
-        // verify default debt calculated correctly
-        assertEq(statePost.stabPoolTotalDebtTokenDeposits,
-                statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool);
-        assertEq(stakedBTCTroveMgr.defaultedDebt(),
-                userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+        uint256 debtToOffsetUsingStabilityPool = BimaMath._min(
+            userDebtPlusPendingRewards,
+            statePre.stabPoolTotalDebtTokenDeposits
+        );
 
-        // calculate expected collateral to liquidate        
+        // verify default debt calculated correctly
+        assertEq(
+            statePost.stabPoolTotalDebtTokenDeposits,
+            statePre.stabPoolTotalDebtTokenDeposits - debtToOffsetUsingStabilityPool
+        );
+        assertEq(stakedBTCTroveMgr.defaultedDebt(), userDebtPlusPendingRewards - debtToOffsetUsingStabilityPool);
+
+        // calculate expected collateral to liquidate
         uint256 collToLiquidate = statePre.userColl - _getCollGasCompensation(statePre.userColl);
-        
+
         // calculate expected collateral to send to stability pool
-        uint256 collToSendToStabilityPool = collToLiquidate *
-                                            debtToOffsetUsingStabilityPool /
-                                            userDebtPlusPendingRewards;
+        uint256 collToSendToStabilityPool = (collToLiquidate * debtToOffsetUsingStabilityPool) /
+            userDebtPlusPendingRewards;
 
         // verify defaulted collateral calculated correctly
-        assertEq(stakedBTCTroveMgr.defaultedCollateral(),
-                collToLiquidate - collToSendToStabilityPool);
+        assertEq(stakedBTCTroveMgr.defaultedCollateral(), collToLiquidate - collToSendToStabilityPool);
 
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
@@ -692,9 +701,8 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         // set a positive interest rate
         _setInterestRate(stakedBTCTroveMgr.MAX_INTEREST_RATE_IN_BPS());
 
-        // save owner trove coll & debt        
-        (uint256 ownerTroveCollPre, uint256 ownerTroveDebtPre)
-            = stakedBTCTroveMgr.getTroveCollAndDebt(users.owner);
+        // save owner trove coll & debt
+        (uint256 ownerTroveCollPre, uint256 ownerTroveDebtPre) = stakedBTCTroveMgr.getTroveCollAndDebt(users.owner);
         assertEq(ownerTroveCollPre, 1000000000000000000);
         assertEq(ownerTroveDebtPre, 1001000000000000000000);
 
@@ -706,11 +714,13 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // set new value of btc to $50,000 to make trove liquidatable
         uint256 elapsedTime = 1 weeks;
-        mockOracle.setResponse(mockOracle.roundId() + 1,
-                               int256(50000 * 10 ** 8),
-                               block.timestamp + elapsedTime,
-                               block.timestamp + elapsedTime,
-                               mockOracle.answeredInRound() + 1);
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(50000 * 10 ** 8),
+            block.timestamp + elapsedTime,
+            block.timestamp + elapsedTime,
+            mockOracle.answeredInRound() + 1
+        );
         // warp time to prevent cached price being used and allow
         // interest to build up
         vm.warp(block.timestamp + elapsedTime);
@@ -719,15 +729,14 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
         liquidationMgr.liquidate(stakedBTCTroveMgr, users.user1);
 
         // verify correct trove status
-        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)),
-                 uint8(ITroveManager.Status.closedByLiquidation));
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.closedByLiquidation));
 
         assertEq(stakedBTCTroveMgr.L_collateral(), stakedBTCTroveMgr.defaultedCollateral());
         assertEq(stakedBTCTroveMgr.L_debt(), stakedBTCTroveMgr.defaultedDebt());
 
         // get pending collateral & debt rewards for owner trove
-        (uint256 pendingOwnerTroveCollReward,
-         uint256 pendingOwnerTroveDebtReward) = stakedBTCTroveMgr.getPendingCollAndDebtRewards(users.owner);
+        (uint256 pendingOwnerTroveCollReward, uint256 pendingOwnerTroveDebtReward) = stakedBTCTroveMgr
+            .getPendingCollAndDebtRewards(users.owner);
 
         // save TroveManager pre state
         TroveManagerState memory troveMgrStatePre = _getTroveManagerState();
@@ -742,8 +751,7 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // trigger TroveManager::_applyPendingRewards for owner trove
         vm.prank(address(borrowerOps));
-        (uint256 ownerTroveCollPost, uint256 ownerTroveDebtPost)
-            = stakedBTCTroveMgr.applyPendingRewards(users.owner);
+        (uint256 ownerTroveCollPost, uint256 ownerTroveDebtPost) = stakedBTCTroveMgr.applyPendingRewards(users.owner);
 
         // save TroveManager pre state
         TroveManagerState memory troveMgrStatePost = _getTroveManagerState();
@@ -760,8 +768,14 @@ contract LiquidationManagerTest is BorrowerOperationsTest {
 
         // verify pending rewards moved to active balances
         assertEq(troveMgrStatePost.defaultedDebt, troveMgrStatePre.defaultedDebt - pendingOwnerTroveDebtReward);
-        assertEq(troveMgrStatePost.defaultedCollateral, troveMgrStatePre.defaultedCollateral - pendingOwnerTroveCollReward);
+        assertEq(
+            troveMgrStatePost.defaultedCollateral,
+            troveMgrStatePre.defaultedCollateral - pendingOwnerTroveCollReward
+        );
         assertEq(troveMgrStatePost.totalActiveDebt, troveMgrStatePre.totalActiveDebt + pendingOwnerTroveDebtReward);
-        assertEq(troveMgrStatePost.totalActiveCollateral, troveMgrStatePre.totalActiveCollateral + pendingOwnerTroveCollReward);
+        assertEq(
+            troveMgrStatePost.totalActiveCollateral,
+            troveMgrStatePre.totalActiveCollateral + pendingOwnerTroveCollReward
+        );
     }
 }

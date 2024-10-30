@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelCore} from "../../../contracts/interfaces/IBabelCore.sol";
+import {IBimaCore} from "../../../contracts/interfaces/IBimaCore.sol";
 import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 
 // test setup
-import {TestSetup, InterimAdmin, IBabelVault} from "../TestSetup.sol";
+import {TestSetup, InterimAdmin, IBimaVault} from "../TestSetup.sol";
 
 contract InterimAdminTest is TestSetup {
-
     function setUp() public virtual override {
         super.setUp();
 
@@ -17,17 +16,18 @@ contract InterimAdminTest is TestSetup {
     }
 
     // helper function to verify proposal data after creation
-    function _verifyCreatedProposal(uint256 proposalId, 
-                                    InterimAdmin.Action[] memory payload) internal view {
+    function _verifyCreatedProposal(uint256 proposalId, InterimAdmin.Action[] memory payload) internal view {
         assertEq(interimAdmin.getProposalCreatedAt(proposalId), block.timestamp);
-        assertEq(interimAdmin.getProposalCanExecuteAfter(proposalId),
-                 block.timestamp + interimAdmin.MIN_TIME_TO_EXECUTION());
+        assertEq(
+            interimAdmin.getProposalCanExecuteAfter(proposalId),
+            block.timestamp + interimAdmin.MIN_TIME_TO_EXECUTION()
+        );
         assertFalse(interimAdmin.getProposalExecuted(proposalId));
         assertFalse(interimAdmin.getProposalCanExecute(proposalId));
 
         InterimAdmin.Action[] memory savedPayload = interimAdmin.getProposalPayload(proposalId);
         assertEq(payload.length, savedPayload.length);
-        for(uint256 i; i<payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             assertEq(payload[i].target, savedPayload[i].target);
             assertEq(payload[i].data, savedPayload[i].data);
         }
@@ -47,7 +47,7 @@ contract InterimAdminTest is TestSetup {
         assertEq(canExecute, false);
 
         assertEq(payload.length, savedPayload2.length);
-        for(uint256 i; i<payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             assertEq(payload[i].target, savedPayload2[i].target);
             assertEq(payload[i].data, savedPayload2[i].data);
         }
@@ -66,9 +66,9 @@ contract InterimAdminTest is TestSetup {
 
     function test_setAdminVoting() public {
         vm.prank(users.owner);
-        interimAdmin.setAdminVoting(address(babelVault));
+        interimAdmin.setAdminVoting(address(bimaVault));
 
-        assertEq(interimAdmin.adminVoting(), address(babelVault));
+        assertEq(interimAdmin.adminVoting(), address(bimaVault));
     }
 
     function test_setAdminVoting_failAlreadySet() external {
@@ -76,7 +76,7 @@ contract InterimAdminTest is TestSetup {
 
         vm.expectRevert("Already set");
         vm.prank(users.owner);
-        interimAdmin.setAdminVoting(address(babelCore));
+        interimAdmin.setAdminVoting(address(bimaCore));
     }
 
     function test_createNewProposal_failNotOwner() external {
@@ -96,18 +96,18 @@ contract InterimAdminTest is TestSetup {
 
     function test_createNewProposal_failSetGuardian() external {
         InterimAdmin.Action[] memory payload = new InterimAdmin.Action[](1);
-        payload[0].target = address(babelCore);
-        payload[0].data   = abi.encodeWithSelector(IBabelCore.setGuardian.selector, users.user1);
+        payload[0].target = address(bimaCore);
+        payload[0].data = abi.encodeWithSelector(IBimaCore.setGuardian.selector, users.user1);
 
         vm.expectRevert("Cannot change guardian");
         vm.prank(users.owner);
         interimAdmin.createNewProposal(payload);
     }
 
-    function test_createNewProposal() public returns(uint256 proposalId) {
+    function test_createNewProposal() public returns (uint256 proposalId) {
         InterimAdmin.Action[] memory payload = new InterimAdmin.Action[](1);
-        payload[0].target = address(babelVault);
-        payload[0].data   = abi.encodeWithSelector(IBabelVault.unallocatedTotal.selector);
+        payload[0].target = address(bimaVault);
+        payload[0].data = abi.encodeWithSelector(IBimaVault.unallocatedTotal.selector);
 
         vm.prank(users.owner);
         proposalId = interimAdmin.createNewProposal(payload);
@@ -116,13 +116,13 @@ contract InterimAdminTest is TestSetup {
     }
 
     function test_createNewProposal_failMaxDailyProposals() public {
-        for(uint256 i; i<interimAdmin.MAX_DAILY_PROPOSALS(); i++) {
+        for (uint256 i; i < interimAdmin.MAX_DAILY_PROPOSALS(); i++) {
             test_createNewProposal();
         }
 
         InterimAdmin.Action[] memory payload = new InterimAdmin.Action[](1);
-        payload[0].target = address(babelCore);
-        payload[0].data   = abi.encodeWithSelector(IBabelVault.unallocatedTotal.selector);
+        payload[0].target = address(bimaCore);
+        payload[0].data = abi.encodeWithSelector(IBimaVault.unallocatedTotal.selector);
 
         vm.expectRevert("MAX_DAILY_PROPOSALS");
         vm.prank(users.owner);
@@ -148,7 +148,7 @@ contract InterimAdminTest is TestSetup {
         interimAdmin.cancelProposal(proposalId + 1);
     }
 
-    function test_cancelProposal() public returns(uint256 cancelledProposalId) {
+    function test_cancelProposal() public returns (uint256 cancelledProposalId) {
         cancelledProposalId = test_createNewProposal();
         vm.prank(users.owner);
         interimAdmin.cancelProposal(cancelledProposalId);
@@ -208,15 +208,14 @@ contract InterimAdminTest is TestSetup {
     function test_executeProposal_failMaxTimeElapsed() external {
         uint256 proposalId = test_createNewProposal();
 
-        vm.warp(interimAdmin.getProposalCanExecuteAfter(proposalId) +
-                interimAdmin.MAX_TIME_TO_EXECUTION() + 1);
+        vm.warp(interimAdmin.getProposalCanExecuteAfter(proposalId) + interimAdmin.MAX_TIME_TO_EXECUTION() + 1);
 
         vm.expectRevert("MAX_TIME_TO_EXECUTION");
         vm.prank(users.owner);
         interimAdmin.executeProposal(proposalId);
     }
 
-    function test_executeProposal() public returns(uint256 executedProposalId) {
+    function test_executeProposal() public returns (uint256 executedProposalId) {
         executedProposalId = test_createNewProposal();
 
         vm.warp(interimAdmin.getProposalCanExecuteAfter(executedProposalId) + 1);
@@ -242,14 +241,14 @@ contract InterimAdminTest is TestSetup {
 
     function test_acceptTransferOwnership() public {
         vm.prank(users.owner);
-        babelCore.commitTransferOwnership(address(interimAdmin));
+        bimaCore.commitTransferOwnership(address(interimAdmin));
 
-        vm.warp(babelCore.ownershipTransferDeadline());
+        vm.warp(bimaCore.ownershipTransferDeadline());
 
         vm.prank(users.owner);
         interimAdmin.acceptTransferOwnership();
 
-        assertEq(babelCore.owner(), address(interimAdmin));
+        assertEq(bimaCore.owner(), address(interimAdmin));
     }
 
     function test_transferOwnershipToAdminVoting_failNormalUser() external {
@@ -259,26 +258,24 @@ contract InterimAdminTest is TestSetup {
 
     function test_transferOwnershipToAdminVoting() external {
         vm.prank(users.owner);
-        interimAdmin.setAdminVoting(address(babelVault));
-        assertEq(interimAdmin.adminVoting(), address(babelVault));
+        interimAdmin.setAdminVoting(address(bimaVault));
+        assertEq(interimAdmin.adminVoting(), address(bimaVault));
 
         test_acceptTransferOwnership();
 
         vm.prank(users.owner);
         interimAdmin.transferOwnershipToAdminVoting();
-        assertEq(babelCore.pendingOwner(), address(babelVault));
-        assertEq(babelCore.ownershipTransferDeadline(),
-                 block.timestamp + babelCore.OWNERSHIP_TRANSFER_DELAY());
+        assertEq(bimaCore.pendingOwner(), address(bimaVault));
+        assertEq(bimaCore.ownershipTransferDeadline(), block.timestamp + bimaCore.OWNERSHIP_TRANSFER_DELAY());
 
         vm.prank(address(interimAdmin));
-        babelCore.revokeTransferOwnership();
-        assertEq(babelCore.pendingOwner(), address(0));
-        assertEq(babelCore.ownershipTransferDeadline(), 0);
+        bimaCore.revokeTransferOwnership();
+        assertEq(bimaCore.pendingOwner(), address(0));
+        assertEq(bimaCore.ownershipTransferDeadline(), 0);
 
         vm.prank(users.guardian);
         interimAdmin.transferOwnershipToAdminVoting();
-        assertEq(babelCore.pendingOwner(), address(babelVault));
-        assertEq(babelCore.ownershipTransferDeadline(),
-                 block.timestamp + babelCore.OWNERSHIP_TRANSFER_DELAY());
+        assertEq(bimaCore.pendingOwner(), address(bimaVault));
+        assertEq(bimaCore.ownershipTransferDeadline(), block.timestamp + bimaCore.OWNERSHIP_TRANSFER_DELAY());
     }
 }

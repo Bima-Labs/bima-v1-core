@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {IDebtToken} from "./IDebtToken.sol";
 import {ILiquidationManager} from "./ILiquidationManager.sol";
 import {IBorrowerOperations} from "./IBorrowerOperations.sol";
 import {IStabilityPool} from "./IStabilityPool.sol";
 
-interface IFactory is IBabelOwnable {
+interface IFactory is IBimaOwnable {
     // commented values are suggested default parameters
     struct DeploymentParams {
         uint256 minuteDecayFactor; // 999037758833783000  (half life of 12 hours)

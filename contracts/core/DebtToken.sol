@@ -4,11 +4,11 @@ pragma solidity 0.8.19;
 import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {IBimaCore} from "../interfaces/IBimaCore.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 /**
-    @title Babel Debt Token "acUSD"
+    @title Bima Debt Token "acUSD"
     @notice CDP minted against collateral deposits within `TroveManager`.
             This contract has a 1:n relationship with multiple deployments of `TroveManager`,
             each of which hold one collateral type which may be used to mint this token.
@@ -38,7 +38,7 @@ contract DebtToken is OFT {
     mapping(address => uint256) private _nonces;
 
     // --- Addresses ---
-    IBabelCore private immutable _babelCore;
+    IBimaCore private immutable _bimaCore;
     address public immutable stabilityPoolAddress;
     address public immutable borrowerOperationsAddress;
     address public immutable factory;
@@ -54,14 +54,14 @@ contract DebtToken is OFT {
         string memory _symbol,
         address _stabilityPoolAddress,
         address _borrowerOperationsAddress,
-        IBabelCore babelCore_,
+        IBimaCore bimaCore_,
         address _layerZeroEndpoint,
         address _factory,
         address _gasPool,
         uint256 _gasCompensation
     ) OFT(_name, _symbol, _layerZeroEndpoint) {
         stabilityPoolAddress = _stabilityPoolAddress;
-        _babelCore = babelCore_;
+        _bimaCore = bimaCore_;
         borrowerOperationsAddress = _borrowerOperationsAddress;
         factory = _factory;
         gasPool = _gasPool;
@@ -82,7 +82,7 @@ contract DebtToken is OFT {
         troveManager[_troveManager] = true;
     }
 
-    // --- Functions for intra-Babel calls ---
+    // --- Functions for intra-Bima calls ---
 
     function mintWithGasCompensation(address _account, uint256 _amount) external returns (bool success) {
         require(msg.sender == borrowerOperationsAddress);
@@ -198,7 +198,7 @@ contract DebtToken is OFT {
         );
         _spendAllowance(address(receiver), address(this), amount + fee);
         _burn(address(receiver), amount);
-        _transfer(address(receiver), _babelCore.feeReceiver(), fee);
+        _transfer(address(receiver), _bimaCore.feeReceiver(), fee);
         success = true;
     }
 
@@ -241,7 +241,11 @@ contract DebtToken is OFT {
 
     // --- Internal operations ---
 
-    function _buildDomainSeparator(bytes32 typeHash, bytes32 name_, bytes32 version_) private view returns (bytes32 result) {
+    function _buildDomainSeparator(
+        bytes32 typeHash,
+        bytes32 name_,
+        bytes32 version_
+    ) private view returns (bytes32 result) {
         result = keccak256(abi.encode(typeHash, name_, version_, block.chainid, address(this)));
     }
 

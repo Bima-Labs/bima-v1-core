@@ -1,30 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IEmissionSchedule, IIncentiveVoting, IBabelVault} from "../interfaces/IEmissionSchedule.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {IEmissionSchedule, IIncentiveVoting, IBimaVault} from "../interfaces/IEmissionSchedule.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 /**
-    @title Babel Emission Schedule
-    @notice Calculates weekly BABEL emissions. The weekly amount is determined
+    @title Bima Emission Schedule
+    @notice Calculates weekly BIMA emissions. The weekly amount is determined
             as a percentage of the remaining unallocated supply. Over time the
             reward rate will decay to dust as it approaches the maximum supply,
             but should not reach zero for a Very Long Time.
  */
-contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
+contract EmissionSchedule is IEmissionSchedule, BimaOwnable, SystemStart {
     uint256 public constant MAX_LOCK_WEEKS = 52;
 
     IIncentiveVoting public immutable voter;
-    IBabelVault public immutable vault;
+    IBimaVault public immutable vault;
 
     // current number of weeks that emissions are locked for when they are claimed
     uint64 public lockWeeks;
     // every `lockDecayWeeks`, the number of lock weeks is decreased by one
     uint64 public lockDecayWeeks;
 
-    // percentage of the unallocated BABEL supply given as emissions in a week
+    // percentage of the unallocated BIMA supply given as emissions in a week
     uint64 public weeklyPct;
 
     // [(week, weeklyPct)... ] ordered by week descending
@@ -32,14 +32,14 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
     uint64[2][] private scheduledWeeklyPct;
 
     constructor(
-        address _babelCore,
+        address _bimaCore,
         IIncentiveVoting _voter,
-        IBabelVault _vault,
+        IBimaVault _vault,
         uint64 _initialLockWeeks,
         uint64 _lockDecayWeeks,
         uint64 _weeklyPct,
         uint64[2][] memory _scheduledWeeklyPct
-    ) BabelOwnable(_babelCore) SystemStart(_babelCore) {
+    ) BimaOwnable(_bimaCore) SystemStart(_bimaCore) {
         voter = _voter;
         vault = _vault;
 
@@ -89,13 +89,12 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
         uint256 totalWeeklyEmissions
     ) external returns (uint256 amount) {
         // get vote calculation inputs from IncentiveVoting
-        (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight)
-            = voter.getReceiverVoteInputs(id, week);
+        (uint256 totalWeeklyWeight, uint256 receiverWeeklyWeight) = voter.getReceiverVoteInputs(id, week);
 
         // if there was weekly weight, calculate the amount
         // otherwise default returns 0
-        if(totalWeeklyWeight != 0) {
-            amount = totalWeeklyEmissions * receiverWeeklyWeight / totalWeeklyWeight;
+        if (totalWeeklyWeight != 0) {
+            amount = (totalWeeklyEmissions * receiverWeeklyWeight) / totalWeeklyWeight;
         }
     }
 
@@ -108,7 +107,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
 
         // apply the lock week decay
         //
-        // output curret weeks to lock for        
+        // output curret weeks to lock for
         lock = lockWeeks;
 
         // if current weeks to lock for > 0 AND
@@ -118,7 +117,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
             lock -= 1;
             lockWeeks = lock;
 
-            // note: checks inside `BabelVault::_allocateTotalWeekly`
+            // note: checks inside `BimaVault::_allocateTotalWeekly`
             // prevent this function being called multiple times
             // for the same week
         }
@@ -154,7 +153,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
     function _setWeeklyPctSchedule(uint64[2][] memory _scheduledWeeklyPct) internal {
         // _scheduledWeeklyPct
         // first parameter  : number of weeks from now, must be descending and unique
-        // second parameter : % of unallocated BABEL supply to be emitted in that week
+        // second parameter : % of unallocated BIMA supply to be emitted in that week
 
         // cache length
         uint256 length = _scheduledWeeklyPct.length;
@@ -177,7 +176,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
                 // number when emissions will occur
                 _scheduledWeeklyPct[i][0] = uint64(week + currentWeek);
 
-                // enforce maximum 100% distribution of remaining supply 
+                // enforce maximum 100% distribution of remaining supply
                 require(_scheduledWeeklyPct[i][1] <= BIMA_100_PCT, "Cannot exceed MAX_PCT");
             }
 
@@ -187,7 +186,7 @@ contract EmissionSchedule is IEmissionSchedule, BabelOwnable, SystemStart {
 
         // update storage
         scheduledWeeklyPct = _scheduledWeeklyPct;
-        
+
         emit WeeklyPctScheduleSet(_scheduledWeeklyPct);
     }
 }

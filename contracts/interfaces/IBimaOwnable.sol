@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelCore} from "./IBabelCore.sol";
+import {IBimaCore} from "./IBimaCore.sol";
 
-interface IBabelOwnable {
-    function BABEL_CORE() external view returns (IBabelCore);
+interface IBimaOwnable {
+    function BIMA_CORE() external view returns (IBimaCore);
 
     function owner() external view returns (address);
 

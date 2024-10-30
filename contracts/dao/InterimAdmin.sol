@@ -3,11 +3,11 @@ pragma solidity 0.8.19;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {IBimaCore} from "../interfaces/IBimaCore.sol";
 
 /**
-    @title Babel DAO Interim Admin
-    @notice Temporary ownership contract for all Babel contracts during bootstrap phase. Allows executing
+    @title Bima DAO Interim Admin
+    @notice Temporary ownership contract for all Bima contracts during bootstrap phase. Allows executing
             arbitrary function calls by the deployer following a minimum time before execution.
             The protocol guardian can cancel any proposals and cannot be replaced.
             To avoid a malicious flood attack the number of daily proposals is capped.
@@ -35,7 +35,7 @@ contract InterimAdmin is Ownable {
     uint256 public constant MAX_TIME_TO_EXECUTION = 3 weeks;
     uint256 public constant MAX_DAILY_PROPOSALS = 3;
 
-    IBabelCore public immutable babelCore;
+    IBimaCore public immutable bimaCore;
     address public adminVoting;
 
     Proposal[] proposalData;
@@ -44,8 +44,8 @@ contract InterimAdmin is Ownable {
     // store number of proposals created per day
     mapping(uint256 dayNumber => uint256 proposalCount) dailyProposalsCount;
 
-    constructor(address _babelCore) {
-        babelCore = IBabelCore(_babelCore);
+    constructor(address _bimaCore) {
+        bimaCore = IBimaCore(_bimaCore);
     }
 
     function setAdminVoting(address _adminVoting) external onlyOwner {
@@ -88,22 +88,27 @@ contract InterimAdmin is Ownable {
         canExecuteAfter = proposal.canExecuteAfter;
         executed = proposal.processed;
     }
-    function getProposalCreatedAt(uint256 id) external view returns(uint256 createdAt) {
+
+    function getProposalCreatedAt(uint256 id) external view returns (uint256 createdAt) {
         createdAt = proposalData[id].createdAt;
     }
-    function getProposalCanExecuteAfter(uint256 id) external view returns(uint256 canExecuteAfter) {
+
+    function getProposalCanExecuteAfter(uint256 id) external view returns (uint256 canExecuteAfter) {
         canExecuteAfter = proposalData[id].canExecuteAfter;
     }
-    function getProposalExecuted(uint256 id) external view returns(bool executed) {
+
+    function getProposalExecuted(uint256 id) external view returns (bool executed) {
         executed = proposalData[id].processed;
     }
-    function getProposalCanExecute(uint256 id) external view returns(bool canExecute) {
+
+    function getProposalCanExecute(uint256 id) external view returns (bool canExecute) {
         Proposal memory proposal = proposalData[id];
         canExecute = (!proposal.processed &&
             proposal.canExecuteAfter < block.timestamp &&
             proposal.canExecuteAfter + MAX_TIME_TO_EXECUTION > block.timestamp);
     }
-    function getProposalPayload(uint256 id) external view returns(Action[] memory payload) {
+
+    function getProposalPayload(uint256 id) external view returns (Action[] memory payload) {
         payload = proposalPayloads[id];
     }
 
@@ -112,10 +117,10 @@ contract InterimAdmin is Ownable {
         @param payload Tuple of [(target address, calldata), ... ] to be
                        executed if the proposal is passed.
      */
-    function createNewProposal(Action[] calldata payload) external onlyOwner returns(uint256 proposalId) {
+    function createNewProposal(Action[] calldata payload) external onlyOwner returns (uint256 proposalId) {
         // enforce >=1 payload
         require(payload.length > 0, "Empty payload");
-        
+
         // get current day number
         uint256 day = block.timestamp / 1 days;
 
@@ -127,7 +132,7 @@ contract InterimAdmin is Ownable {
         require(currentDailyCount < MAX_DAILY_PROPOSALS, "MAX_DAILY_PROPOSALS");
 
         // more efficient to not cache length for calldata
-        // search every payload and prevent calls to `IBabelCore::setGuardian`
+        // search every payload and prevent calls to `IBimaCore::setGuardian`
         for (uint256 i; i < payload.length; i++) {
             require(!_isSetGuardianPayload(payload[i]), "Cannot change guardian");
         }
@@ -160,7 +165,7 @@ contract InterimAdmin is Ownable {
      */
     function cancelProposal(uint256 id) external {
         // only owner or guardian can cancel proposals
-        require(msg.sender == owner() || msg.sender == babelCore.guardian(), "Unauthorized");
+        require(msg.sender == owner() || msg.sender == bimaCore.guardian(), "Unauthorized");
 
         // enforce valid proposal id
         require(id < proposalData.length, "Invalid ID");
@@ -210,24 +215,24 @@ contract InterimAdmin is Ownable {
         for (uint256 i; i < payloadLength; i++) {
             payload[i].target.functionCall(payload[i].data);
         }
-        
+
         emit ProposalExecuted(id);
     }
 
     /**
-        @dev Allow accepting ownership transfer of `BabelCore`
+        @dev Allow accepting ownership transfer of `BimaCore`
      */
     function acceptTransferOwnership() external onlyOwner {
-        babelCore.acceptTransferOwnership();
+        bimaCore.acceptTransferOwnership();
     }
 
     /**
-        @dev Restricted method to transfer ownership of `BabelCore`
+        @dev Restricted method to transfer ownership of `BimaCore`
              to the actual Admin voting contract
      */
     function transferOwnershipToAdminVoting() external {
-        require(msg.sender == owner() || msg.sender == babelCore.guardian(), "Unauthorized");
-        babelCore.commitTransferOwnership(adminVoting);
+        require(msg.sender == owner() || msg.sender == bimaCore.guardian(), "Unauthorized");
+        bimaCore.commitTransferOwnership(adminVoting);
     }
 
     function _isSetGuardianPayload(Action calldata action) internal pure returns (bool output) {
@@ -237,6 +242,6 @@ contract InterimAdmin is Ownable {
         assembly {
             sig := mload(add(data, 0x20))
         }
-        output = sig == IBabelCore.setGuardian.selector;
+        output = sig == IBimaCore.setGuardian.selector;
     }
 }

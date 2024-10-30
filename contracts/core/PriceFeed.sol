@@ -3,18 +3,18 @@ pragma solidity 0.8.19;
 
 import {IPriceFeed, IAggregatorV3Interface} from "../interfaces/IPriceFeed.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {BabelMath} from "../dependencies/BabelMath.sol";
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaMath} from "../dependencies/BimaMath.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {BIMA_DECIMAL_PRECISION} from "../dependencies/Constants.sol";
 
 /**
-    @title Babel Multi Token Price Feed
+    @title Bima Multi Token Price Feed
     @notice Based on Gravita's PriceFeed:
             https://github.com/Gravita-Protocol/Gravita-SmartContracts/blob/9b69d555f3567622b0f84df8c7f1bb5cd9323573/contracts/PriceFeed.sol
 
-            Babel's implementation additionally caches price values within a block and incorporates exchange rate settings for derivative tokens (e.g. stETH -> wstETH).
+            Bima's implementation additionally caches price values within a block and incorporates exchange rate settings for derivative tokens (e.g. stETH -> wstETH).
  */
-contract PriceFeed is IPriceFeed, BabelOwnable {
+contract PriceFeed is IPriceFeed, BimaOwnable {
     struct OracleRecord {
         IAggregatorV3Interface chainLinkOracle;
         uint8 decimals;
@@ -68,7 +68,7 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
     mapping(address => OracleRecord) public oracleRecords;
     mapping(address => PriceRecord) public priceRecords;
 
-    constructor(address _babelCore, address ethFeed) BabelOwnable(_babelCore) {
+    constructor(address _bimaCore, address ethFeed) BimaOwnable(_bimaCore) {
         setOracle(address(0), ethFeed, 3600, 0, 0, false);
     }
 
@@ -134,8 +134,7 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         if (priceRecord.lastUpdated == block.timestamp) {
             // We short-circuit only if the price was already correct in the current block
             price = priceRecord.scaledPrice;
-        }
-        else {
+        } else {
             if (priceRecord.lastUpdated == 0) {
                 revert PriceFeed__UnknownFeedError(_token);
             }
@@ -152,8 +151,7 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
                     revert PriceFeed__FeedFrozenError(_token);
                 }
                 price = priceRecord.scaledPrice;
-            }
-            else {
+            } else {
                 price = _processFeedResponses(_token, oracle, currResponse, prevResponse, priceRecord);
             }
         }
@@ -189,8 +187,7 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
                 _updateFeedStatus(_token, oracle, true);
             }
             _storePrice(_token, scaledPrice, _currResponse.timestamp, _currResponse.roundId);
-        } 
-        else {
+        } else {
             if (oracle.isFeedWorking) {
                 _updateFeedStatus(_token, oracle, false);
             }
@@ -245,8 +242,8 @@ contract PriceFeed is IPriceFeed, BabelOwnable {
         uint256 currentScaledPrice = _scalePriceByDigits(uint256(_currResponse.answer), decimals);
         uint256 prevScaledPrice = _scalePriceByDigits(uint256(_prevResponse.answer), decimals);
 
-        uint256 minPrice = BabelMath._min(currentScaledPrice, prevScaledPrice);
-        uint256 maxPrice = BabelMath._max(currentScaledPrice, prevScaledPrice);
+        uint256 minPrice = BimaMath._min(currentScaledPrice, prevScaledPrice);
+        uint256 maxPrice = BimaMath._max(currentScaledPrice, prevScaledPrice);
 
         /*
          * Use the larger price as the denominator:

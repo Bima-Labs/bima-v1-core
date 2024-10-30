@@ -12,7 +12,7 @@ contract AllocationVestingTest is TestSetup {
 
     uint256 internal constant totalAllocation = 100_000_000e18;
     uint256 internal constant maxTotalPreclaimPct = 10;
-    uint24  internal constant INIT_USER_POINTS = 50_000;
+    uint24 internal constant INIT_USER_POINTS = 50_000;
 
     function setUp() public virtual override {
         super.setUp();
@@ -21,20 +21,21 @@ contract AllocationVestingTest is TestSetup {
         _vaultSetDefaultInitialParameters();
 
         // then create the AllocationVesting contract
-        allocationVesting = new AllocationVesting(IERC20(address(babelToken)),
-                                                  tokenLocker,
-                                                  totalAllocation,
-                                                  address(babelVault),
-                                                  maxTotalPreclaimPct);
+        allocationVesting = new AllocationVesting(
+            IERC20(address(bimaToken)),
+            tokenLocker,
+            totalAllocation,
+            address(bimaVault),
+            maxTotalPreclaimPct
+        );
 
-        // BabelVault needs to give max approval to AllocationVesting contract
-        vm.prank(address(babelVault));
-        babelToken.approve(address(allocationVesting), type(uint256).max);
+        // BimaVault needs to give max approval to AllocationVesting contract
+        vm.prank(address(bimaVault));
+        bimaToken.approve(address(allocationVesting), type(uint256).max);
     }
 
     function test_transferPoints_failSelfTransfer() external {
-        AllocationVesting.AllocationSplit[] memory allocationSplits
-            = new AllocationVesting.AllocationSplit[](2);
+        AllocationVesting.AllocationSplit[] memory allocationSplits = new AllocationVesting.AllocationSplit[](2);
 
         // allocate to 2 users 50% 50%
         allocationSplits[0].recipient = users.user1;
@@ -59,8 +60,7 @@ contract AllocationVestingTest is TestSetup {
     }
 
     function test_transferPoints_failBypassVestingViaPreclaim() external {
-        AllocationVesting.AllocationSplit[] memory allocationSplits
-            = new AllocationVesting.AllocationSplit[](2);
+        AllocationVesting.AllocationSplit[] memory allocationSplits = new AllocationVesting.AllocationSplit[](2);
 
         // allocate to 2 users 50% 50%
         allocationSplits[0].recipient = users.user1;
@@ -93,7 +93,7 @@ contract AllocationVestingTest is TestSetup {
         // user1 does this once, passing 0 to preclaim max possible
         vm.prank(users.user1);
         allocationVesting.lockFutureClaims(users.user1, 0);
-    
+
         // user1 has now preclaimed the max allowed
         (uint24 points, , , uint96 preclaimed) = allocationVesting.allocations(users.user1);
         assertEq(preclaimed, MAX_PRECLAIM);
@@ -132,8 +132,7 @@ contract AllocationVestingTest is TestSetup {
     }
 
     function test_transferPoints_failIncompatibleVestingPeriod() external {
-        AllocationVesting.AllocationSplit[] memory allocationSplits
-            = new AllocationVesting.AllocationSplit[](2);
+        AllocationVesting.AllocationSplit[] memory allocationSplits = new AllocationVesting.AllocationSplit[](2);
 
         // allocate to 2 users 50% 50%
         allocationSplits[0].recipient = users.user1;
@@ -156,7 +155,9 @@ contract AllocationVestingTest is TestSetup {
             abi.encodeWithSelector(
                 AllocationVesting.IncompatibleVestingPeriod.selector,
                 allocationSplits[0].numberOfWeeks,
-                allocationSplits[1].numberOfWeeks));
+                allocationSplits[1].numberOfWeeks
+            )
+        );
         vm.prank(users.user1);
         allocationVesting.transferPoints(users.user1, users.user2, INIT_USER_POINTS);
     }
@@ -167,8 +168,7 @@ contract AllocationVestingTest is TestSetup {
     }
 
     function test_claim() public {
-        AllocationVesting.AllocationSplit[] memory allocationSplits
-            = new AllocationVesting.AllocationSplit[](2);
+        AllocationVesting.AllocationSplit[] memory allocationSplits = new AllocationVesting.AllocationSplit[](2);
 
         // allocate to 2 users 50% 50%
         allocationSplits[0].recipient = users.user1;
@@ -202,8 +202,8 @@ contract AllocationVestingTest is TestSetup {
         allocationVesting.claim(users.user2);
 
         // verify end state
-        assertEq(babelToken.balanceOf(users.user1), expectedClaimPerUser);
-        assertEq(babelToken.balanceOf(users.user2), expectedClaimPerUser);
+        assertEq(bimaToken.balanceOf(users.user1), expectedClaimPerUser);
+        assertEq(bimaToken.balanceOf(users.user2), expectedClaimPerUser);
         assertEq(allocationVesting.getClaimed(users.user1), expectedClaimPerUser);
         assertEq(allocationVesting.getClaimed(users.user2), expectedClaimPerUser);
 

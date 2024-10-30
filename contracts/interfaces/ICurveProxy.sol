@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {IGaugeController} from "./IGaugeController.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -76,12 +76,7 @@ interface ICurveProxy {
 
     function voteInCurveDao(IAragon aragon, uint256 id, bool support) external returns (bool);
 
-    function withdrawFromGauge(
-        address gauge,
-        IERC20 lpToken,
-        uint256 amount,
-        address receiver
-    ) external returns (bool);
+    function withdrawFromGauge(address gauge, IERC20 lpToken, uint256 amount, address receiver) external returns (bool);
 
     function CRV() external view returns (IERC20);
 

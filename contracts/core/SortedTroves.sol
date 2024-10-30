@@ -5,7 +5,7 @@ import {ITroveManager} from "../interfaces/ITroveManager.sol";
 import {ISortedTroves} from "../interfaces/ISortedTroves.sol";
 
 /**
-    @title Babel Sorted Troves
+    @title Bima Sorted Troves
     @notice Based on Liquity's `SortedTroves`:
             https://github.com/liquity/dev/blob/main/packages/contracts/contracts/SortedTroves.sol
 

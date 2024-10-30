@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {IAggregatorV3Interface} from "./IAggregatorV3Interface.sol";
 
-interface IPriceFeed is IBabelOwnable {
+interface IPriceFeed is IBimaOwnable {
     function fetchPrice(address _token) external returns (uint256);
 
     function setOracle(

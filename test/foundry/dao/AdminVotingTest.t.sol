@@ -2,36 +2,32 @@
 pragma solidity 0.8.19;
 
 import {AdminVoting} from "../../../contracts/dao/AdminVoting.sol";
-import {IBabelCore} from "../../../contracts/interfaces/IBabelCore.sol";
+import {IBimaCore} from "../../../contracts/interfaces/IBimaCore.sol";
 import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 
 // test setup
-import {TestSetup, IBabelVault} from "../TestSetup.sol";
+import {TestSetup, IBimaVault} from "../TestSetup.sol";
 
 contract AdminVotingTest is TestSetup {
     AdminVoting adminVoting;
 
-    uint256 constant internal INIT_MIN_CREATE_PROP_PCT = 10;   // 0.01%
-    uint256 constant internal UPDT_MIN_CREATE_PROP_PCT = 50;   // 0.05%
-    uint256 constant internal INIT_PROP_PASSING_PCT    = 2000; // 20%
-    uint256 constant internal UPDT_PROP_PASSING_PCT    = 3000; // 30%
+    uint256 internal constant INIT_MIN_CREATE_PROP_PCT = 10; // 0.01%
+    uint256 internal constant UPDT_MIN_CREATE_PROP_PCT = 50; // 0.05%
+    uint256 internal constant INIT_PROP_PASSING_PCT = 2000; // 20%
+    uint256 internal constant UPDT_PROP_PASSING_PCT = 3000; // 30%
 
-    uint256 constant internal USER1_TOKEN_ALLOCATION = INIT_BAB_TKN_TOTAL_SUPPLY * 8000/10000;
-    uint256 constant internal USER2_TOKEN_ALLOCATION = INIT_BAB_TKN_TOTAL_SUPPLY * 2000/10000;
+    uint256 internal constant USER1_TOKEN_ALLOCATION = (INIT_BAB_TKN_TOTAL_SUPPLY * 8000) / 10000;
+    uint256 internal constant USER2_TOKEN_ALLOCATION = (INIT_BAB_TKN_TOTAL_SUPPLY * 2000) / 10000;
 
     function setUp() public virtual override {
         super.setUp();
 
-        adminVoting = new AdminVoting(address(babelCore),
-                                      tokenLocker,
-                                      INIT_MIN_CREATE_PROP_PCT,
-                                      INIT_PROP_PASSING_PCT);
+        adminVoting = new AdminVoting(address(bimaCore), tokenLocker, INIT_MIN_CREATE_PROP_PCT, INIT_PROP_PASSING_PCT);
 
-        // setup the vault to get BabelTokens which are used for voting
+        // setup the vault to get BimaTokens which are used for voting
         uint128[] memory _fixedInitialAmounts;
-        IBabelVault.InitialAllowance[] memory initialAllowances 
-            = new IBabelVault.InitialAllowance[](2);
-        
+        IBimaVault.InitialAllowance[] memory initialAllowances = new IBimaVault.InitialAllowance[](2);
+
         // give user1 80% and user2 20% of token allocation
         initialAllowances[0].receiver = users.user1;
         initialAllowances[0].amount = USER1_TOKEN_ALLOCATION;
@@ -39,22 +35,24 @@ contract AdminVotingTest is TestSetup {
         initialAllowances[1].amount = USER2_TOKEN_ALLOCATION;
 
         vm.prank(users.owner);
-        babelVault.setInitialParameters(emissionSchedule,
-                                        boostCalc,
-                                        INIT_BAB_TKN_TOTAL_SUPPLY,
-                                        INIT_VLT_LOCK_WEEKS,
-                                        _fixedInitialAmounts,
-                                        initialAllowances);
+        bimaVault.setInitialParameters(
+            emissionSchedule,
+            boostCalc,
+            INIT_BAB_TKN_TOTAL_SUPPLY,
+            INIT_VLT_LOCK_WEEKS,
+            _fixedInitialAmounts,
+            initialAllowances
+        );
 
         // transfer voting tokens to recipients
         vm.prank(users.user1);
-        babelToken.transferFrom(address(babelVault), users.user1, USER1_TOKEN_ALLOCATION);
+        bimaToken.transferFrom(address(bimaVault), users.user1, USER1_TOKEN_ALLOCATION);
         vm.prank(users.user2);
-        babelToken.transferFrom(address(babelVault), users.user2, USER2_TOKEN_ALLOCATION);
+        bimaToken.transferFrom(address(bimaVault), users.user2, USER2_TOKEN_ALLOCATION);
 
         // verify recipients have received voting tokens
-        assertEq(babelToken.balanceOf(users.user1), USER1_TOKEN_ALLOCATION);
-        assertEq(babelToken.balanceOf(users.user2), USER2_TOKEN_ALLOCATION);
+        assertEq(bimaToken.balanceOf(users.user1), USER1_TOKEN_ALLOCATION);
+        assertEq(bimaToken.balanceOf(users.user2), USER2_TOKEN_ALLOCATION);
     }
 
     function test_constructor() external view {
@@ -75,7 +73,7 @@ contract AdminVotingTest is TestSetup {
         // create dummy proposal
         AdminVoting.Action[] memory payload = new AdminVoting.Action[](1);
         payload[0].target = address(0x0);
-        payload[0].data   = abi.encode("");
+        payload[0].data = abi.encode("");
 
         uint256 lastProposalTimestamp = adminVoting.latestProposalTimestamp(users.user1);
         assertEq(lastProposalTimestamp, 0);
@@ -101,13 +99,15 @@ contract AdminVotingTest is TestSetup {
     }
 
     // helper function to verify proposal data after creation
-    function _verifyCreatedProposal(uint256 proposalId, 
-                                    uint256 proposalWeek,
-                                    uint256 proposalPassingPct,
-                                    AdminVoting.Action[] memory payload) internal view {
+    function _verifyCreatedProposal(
+        uint256 proposalId,
+        uint256 proposalWeek,
+        uint256 proposalPassingPct,
+        AdminVoting.Action[] memory payload
+    ) internal view {
         // verify requiredWeight calculated using correct passing percent
-        uint256 expectedRequiredWeight
-            = (tokenLocker.getTotalWeightAt(proposalWeek) * proposalPassingPct) / BIMA_100_PCT;
+        uint256 expectedRequiredWeight = (tokenLocker.getTotalWeightAt(proposalWeek) * proposalPassingPct) /
+            BIMA_100_PCT;
         assertEq(adminVoting.getProposalRequiredWeight(proposalId), expectedRequiredWeight);
 
         // verify proposal details stored correctly
@@ -122,7 +122,7 @@ contract AdminVotingTest is TestSetup {
         AdminVoting.Action[] memory savedPayload = adminVoting.getProposalPayload(proposalId);
         assertEq(payload.length, savedPayload.length);
 
-        for(uint256 i; i<payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             assertEq(payload[i].target, savedPayload[i].target);
             assertEq(payload[i].data, savedPayload[i].data);
         }
@@ -148,27 +148,30 @@ contract AdminVotingTest is TestSetup {
         assertEq(canExecute, false);
 
         assertEq(payload.length, savedPayload2.length);
-        for(uint256 i; i<payload.length; i++) {
+        for (uint256 i; i < payload.length; i++) {
             assertEq(payload[i].target, savedPayload2[i].target);
             assertEq(payload[i].data, savedPayload2[i].data);
         }
     }
 
-    function test_createNewProposal_setGuardian() public returns(uint256 proposalId) {
+    function test_createNewProposal_setGuardian() public returns (uint256 proposalId) {
         // create a setGuardian proposal that also contains other payloads
         AdminVoting.Action[] memory payload = new AdminVoting.Action[](3);
         payload[0].target = address(adminVoting);
-        payload[0].data   = abi.encodeWithSelector(AdminVoting.setMinCreateProposalPct.selector, UPDT_MIN_CREATE_PROP_PCT);
+        payload[0].data = abi.encodeWithSelector(
+            AdminVoting.setMinCreateProposalPct.selector,
+            UPDT_MIN_CREATE_PROP_PCT
+        );
         payload[1].target = address(adminVoting);
-        payload[1].data   = abi.encodeWithSelector(AdminVoting.setPassingPct.selector, UPDT_PROP_PASSING_PCT);
-        payload[2].target = address(babelCore);
-        payload[2].data   = abi.encodeWithSelector(IBabelCore.setGuardian.selector, users.user1);
+        payload[1].data = abi.encodeWithSelector(AdminVoting.setPassingPct.selector, UPDT_PROP_PASSING_PCT);
+        payload[2].target = address(bimaCore);
+        payload[2].data = abi.encodeWithSelector(IBimaCore.setGuardian.selector, users.user1);
 
         // lock up user tokens to receive voting power
         // need to divide by lockToTokenRatio when calling the
         // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user1);
-        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION / INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // warp forward BOOTSTRAP_PERIOD so voting power becomes active
         // and setGuardian proposals are allowed
@@ -178,10 +181,7 @@ contract AdminVotingTest is TestSetup {
         vm.prank(users.user1);
         proposalId = adminVoting.createNewProposal(users.user1, payload);
 
-        _verifyCreatedProposal(proposalId,
-                               adminVoting.getWeek()-1,
-                               adminVoting.SET_GUARDIAN_PASSING_PCT(),
-                               payload);
+        _verifyCreatedProposal(proposalId, adminVoting.getWeek() - 1, adminVoting.SET_GUARDIAN_PASSING_PCT(), payload);
 
         // change default passing percent to be higher than hard-coded
         // setGuardian passing percent
@@ -196,25 +196,25 @@ contract AdminVotingTest is TestSetup {
 
         // verify it received higher default passing percent instead
         // of lower hard-coded setGuardian passing percent
-        _verifyCreatedProposal(proposalId,
-                               adminVoting.getWeek()-1,
-                               higherPassingPct,
-                               payload);
+        _verifyCreatedProposal(proposalId, adminVoting.getWeek() - 1, higherPassingPct, payload);
     }
 
-    function test_createNewProposal_withVotingWeight() public returns(uint256 proposalId) {
+    function test_createNewProposal_withVotingWeight() public returns (uint256 proposalId) {
         // create proposal that updates 2 internal AdminVoting parameters
         AdminVoting.Action[] memory payload = new AdminVoting.Action[](2);
         payload[0].target = address(adminVoting);
-        payload[0].data   = abi.encodeWithSelector(AdminVoting.setMinCreateProposalPct.selector, UPDT_MIN_CREATE_PROP_PCT);
+        payload[0].data = abi.encodeWithSelector(
+            AdminVoting.setMinCreateProposalPct.selector,
+            UPDT_MIN_CREATE_PROP_PCT
+        );
         payload[1].target = address(adminVoting);
-        payload[1].data   = abi.encodeWithSelector(AdminVoting.setPassingPct.selector, UPDT_PROP_PASSING_PCT);
+        payload[1].data = abi.encodeWithSelector(AdminVoting.setPassingPct.selector, UPDT_PROP_PASSING_PCT);
 
         // lock up user tokens to receive voting power
         // need to divide by lockToTokenRatio when calling the
         // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user1);
-        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION / INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // advance time by 1 week
         vm.warp(block.timestamp + 1 weeks);
@@ -222,8 +222,8 @@ contract AdminVotingTest is TestSetup {
         assertEq(adminVoting.getWeek(), weekNum);
 
         // verify minimum required voting weight
-        uint256 expectedMinCreateProposalWeight
-            = tokenLocker.getTotalWeightAt(weekNum-1) * adminVoting.minCreateProposalPct() / BIMA_100_PCT;
+        uint256 expectedMinCreateProposalWeight = (tokenLocker.getTotalWeightAt(weekNum - 1) *
+            adminVoting.minCreateProposalPct()) / BIMA_100_PCT;
 
         assertEq(adminVoting.minCreateProposalWeight(), expectedMinCreateProposalWeight);
 
@@ -231,10 +231,7 @@ contract AdminVotingTest is TestSetup {
         vm.prank(users.user1);
         proposalId = adminVoting.createNewProposal(users.user1, payload);
 
-        _verifyCreatedProposal(proposalId,
-                               weekNum-1,
-                               adminVoting.passingPct(),
-                               payload);
+        _verifyCreatedProposal(proposalId, weekNum - 1, adminVoting.passingPct(), payload);
     }
 
     function test_createNewProposal_minTimeBetweenProposals() external {
@@ -244,7 +241,7 @@ contract AdminVotingTest is TestSetup {
         // verify attempting to quickly create another fails
         AdminVoting.Action[] memory payload = new AdminVoting.Action[](1);
         payload[0].target = address(0x0);
-        payload[0].data   = abi.encode("");
+        payload[0].data = abi.encode("");
 
         vm.expectRevert("MIN_TIME_BETWEEN_PROPOSALS");
         vm.prank(users.user1);
@@ -258,9 +255,10 @@ contract AdminVotingTest is TestSetup {
         adminVoting.createNewProposal(users.user1, payload);
 
         // verify requiredWeight calculated using standard passing percent
-        assertEq(adminVoting.getProposalRequiredWeight(1), 
-                 (tokenLocker.getTotalWeightAt(adminVoting.getWeek()-1) * adminVoting.passingPct()) /
-                 BIMA_100_PCT);
+        assertEq(
+            adminVoting.getProposalRequiredWeight(1),
+            (tokenLocker.getTotalWeightAt(adminVoting.getWeek() - 1) * adminVoting.passingPct()) / BIMA_100_PCT
+        );
     }
 
     // helper function to successfully cancel a proposal
@@ -276,7 +274,7 @@ contract AdminVotingTest is TestSetup {
         assertEq(adminVoting.getProposalCanExecute(proposalId), false);
     }
 
-    function test_cancelProposal_onlyGuardianCanCancel() public returns(uint256 proposalId) {
+    function test_cancelProposal_onlyGuardianCanCancel() public returns (uint256 proposalId) {
         // create first proposal
         proposalId = test_createNewProposal_withVotingWeight();
 
@@ -315,18 +313,17 @@ contract AdminVotingTest is TestSetup {
     // helper function used to make a successful vote
     function _voteForProposal(address voter, uint256 proposalId, uint256 votingWeight) internal {
         uint256 previousWeight = adminVoting.getProposalCurrentWeight(proposalId);
-        uint256 maxUserWeight = tokenLocker.getAccountWeightAt(voter,
-                                                               adminVoting.getProposalWeek(proposalId));
+        uint256 maxUserWeight = tokenLocker.getAccountWeightAt(voter, adminVoting.getProposalWeek(proposalId));
 
         // vote on it
         vm.prank(voter);
         adminVoting.voteForProposal(voter, proposalId, votingWeight);
 
         // verify current voting weight correctly updated
-        if(votingWeight == 0) {
+        if (votingWeight == 0) {
             votingWeight = maxUserWeight;
         }
-        assertEq(adminVoting.getProposalCurrentWeight(proposalId)-previousWeight, votingWeight);
+        assertEq(adminVoting.getProposalCurrentWeight(proposalId) - previousWeight, votingWeight);
 
         // verify proposal still not processed
         assertEq(adminVoting.getProposalProcessed(proposalId), false);
@@ -334,9 +331,11 @@ contract AdminVotingTest is TestSetup {
         assertEq(adminVoting.getProposalCanExecute(proposalId), false);
 
         // if proposal has passed, verify executeAfter correctly set
-        if(adminVoting.getProposalPassed(proposalId)) {
-            assertEq(adminVoting.getProposalCanExecuteAfter(proposalId),
-                     block.timestamp + adminVoting.MIN_TIME_TO_EXECUTION());
+        if (adminVoting.getProposalPassed(proposalId)) {
+            assertEq(
+                adminVoting.getProposalCanExecuteAfter(proposalId),
+                block.timestamp + adminVoting.MIN_TIME_TO_EXECUTION()
+            );
         }
         // otherwise verify proposal has not passed
         else {
@@ -349,10 +348,11 @@ contract AdminVotingTest is TestSetup {
         uint256 proposalId = test_createNewProposal_withVotingWeight();
 
         // bind fuzz inputs
-        votingWeight = bound(votingWeight,
-                              0,
-                              tokenLocker.getAccountWeightAt(users.user1,
-                                                             adminVoting.getProposalWeek(proposalId)));
+        votingWeight = bound(
+            votingWeight,
+            0,
+            tokenLocker.getAccountWeightAt(users.user1, adminVoting.getProposalWeek(proposalId))
+        );
 
         _voteForProposal(users.user1, proposalId, votingWeight);
     }
@@ -362,7 +362,7 @@ contract AdminVotingTest is TestSetup {
         // need to divide by lockToTokenRatio when calling the
         // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user2);
-        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
+        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION / INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // create first proposal
         uint256 proposalId = test_createNewProposal_withVotingWeight();
@@ -374,7 +374,7 @@ contract AdminVotingTest is TestSetup {
         _voteForProposal(users.user2, proposalId, votingWeight);
 
         // verify proposal's voting weight has accumulated from both votes
-        assertEq(adminVoting.getProposalCurrentWeight(proposalId), votingWeight*2);
+        assertEq(adminVoting.getProposalCurrentWeight(proposalId), votingWeight * 2);
     }
 
     function test_voteForProposal_canVoteOnPassedProposal() external {
@@ -382,20 +382,18 @@ contract AdminVotingTest is TestSetup {
         // need to divide by lockToTokenRatio when calling the
         // lock function since the token transfer multiplies by lockToTokenRatio
         vm.prank(users.user2);
-        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION/INIT_LOCK_TO_TOKEN_RATIO, 52);
+        tokenLocker.lock(users.user2, USER2_TOKEN_ALLOCATION / INIT_LOCK_TO_TOKEN_RATIO, 52);
 
         // create first proposal
         uint256 proposalId = test_createNewProposal_withVotingWeight();
 
         // save voting weights
-        uint256 user1Weight = tokenLocker.getAccountWeightAt(users.user1,
-                                                             adminVoting.getProposalWeek(proposalId));
-        uint256 user2Weight = tokenLocker.getAccountWeightAt(users.user2,
-                                                             adminVoting.getProposalWeek(proposalId));
+        uint256 user1Weight = tokenLocker.getAccountWeightAt(users.user1, adminVoting.getProposalWeek(proposalId));
+        uint256 user2Weight = tokenLocker.getAccountWeightAt(users.user2, adminVoting.getProposalWeek(proposalId));
 
         // first user votes with enough weight to pass proposal
         _voteForProposal(users.user1, proposalId, user1Weight);
-                                                    
+
         // verify proposal has passed
         assertEq(adminVoting.getProposalPassed(proposalId), true);
 
@@ -414,10 +412,11 @@ contract AdminVotingTest is TestSetup {
         uint256 proposalId = test_createNewProposal_withVotingWeight();
 
         // bind fuzz inputs
-        votingWeight = bound(votingWeight,
-                              tokenLocker.getAccountWeightAt(users.user1,
-                                                             adminVoting.getProposalWeek(proposalId)) + 1,
-                              type(uint256).max);
+        votingWeight = bound(
+            votingWeight,
+            tokenLocker.getAccountWeightAt(users.user1, adminVoting.getProposalWeek(proposalId)) + 1,
+            type(uint256).max
+        );
 
         // verify voting with more weight than an account has fails
         vm.expectRevert("Weight exceeds account weight");
@@ -429,9 +428,10 @@ contract AdminVotingTest is TestSetup {
         // create first proposal
         uint256 proposalId = test_createNewProposal_withVotingWeight();
 
-        uint256 halfVotingWeight
-            = tokenLocker.getAccountWeightAt(users.user1,
-                                             adminVoting.getProposalWeek(proposalId)) / 2;
+        uint256 halfVotingWeight = tokenLocker.getAccountWeightAt(
+            users.user1,
+            adminVoting.getProposalWeek(proposalId)
+        ) / 2;
 
         // vote once works
         _voteForProposal(users.user1, proposalId, halfVotingWeight);
@@ -465,10 +465,11 @@ contract AdminVotingTest is TestSetup {
     // helper function to successfully execute a proposal
     function _executeProposal(address voter, uint256 proposalId) internal {
         // vote with full weight so proposal passes
-        _voteForProposal(voter,
-                         proposalId,
-                         tokenLocker.getAccountWeightAt(voter,
-                                                        adminVoting.getProposalWeek(proposalId)));
+        _voteForProposal(
+            voter,
+            proposalId,
+            tokenLocker.getAccountWeightAt(voter, adminVoting.getProposalWeek(proposalId))
+        );
 
         // warp to after proposal execution time
         vm.warp(adminVoting.getProposalCanExecuteAfter(proposalId) + 1);
@@ -486,13 +487,13 @@ contract AdminVotingTest is TestSetup {
         assertEq(adminVoting.passingPct(), UPDT_PROP_PASSING_PCT);
     }
 
-    function test_executeProposal_setGuardian() public returns(uint256 proposalId) {
-        // transfer ownership of BabelCore to the DAO
+    function test_executeProposal_setGuardian() public returns (uint256 proposalId) {
+        // transfer ownership of BimaCore to the DAO
         vm.prank(users.owner);
-        babelCore.commitTransferOwnership(address(adminVoting));
-        vm.warp(block.timestamp + babelCore.OWNERSHIP_TRANSFER_DELAY() + 1);
+        bimaCore.commitTransferOwnership(address(adminVoting));
+        vm.warp(block.timestamp + bimaCore.OWNERSHIP_TRANSFER_DELAY() + 1);
         adminVoting.acceptTransferOwnership();
-        assertEq(babelCore.owner(), address(adminVoting));
+        assertEq(bimaCore.owner(), address(adminVoting));
 
         // create the `setGuardian` proposal which also calls
         // `setPassingPct` and `setMinCreateProposalPct`
@@ -501,7 +502,7 @@ contract AdminVotingTest is TestSetup {
         _executeProposal(users.user1, proposalId);
 
         // verify the guardian was updated
-        assertEq(babelCore.guardian(), address(users.user1));
+        assertEq(bimaCore.guardian(), address(users.user1));
     }
 
     function test_executeProposal_cantExecuteTwice() external {
@@ -518,10 +519,11 @@ contract AdminVotingTest is TestSetup {
         uint256 proposalId = test_createNewProposal_withVotingWeight();
 
         // vote with full weight so proposal passes
-        _voteForProposal(users.user1,
-                         proposalId,
-                         tokenLocker.getAccountWeightAt(users.user1,
-                                                        adminVoting.getProposalWeek(proposalId)));
+        _voteForProposal(
+            users.user1,
+            proposalId,
+            tokenLocker.getAccountWeightAt(users.user1, adminVoting.getProposalWeek(proposalId))
+        );
 
         // warp to after proposal execution time
         vm.warp(adminVoting.getProposalCanExecuteAfter(proposalId) + 1);
@@ -537,7 +539,7 @@ contract AdminVotingTest is TestSetup {
         adminVoting.executeProposal(proposalId);
     }
 
-    function test_executeProposal_withoutSetGuardian() public returns(uint256 proposalId) {
+    function test_executeProposal_withoutSetGuardian() public returns (uint256 proposalId) {
         // create the proposal
         proposalId = test_createNewProposal_withVotingWeight();
 

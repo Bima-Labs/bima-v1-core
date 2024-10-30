@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 import {ICurveProxy} from "../../interfaces/ICurveProxy.sol";
-import {IBabelVault} from "../../interfaces/IVault.sol";
+import {IBimaVault} from "../../interfaces/IVault.sol";
 import {IEmissionReceiver} from "../../interfaces/IEmissionReceiver.sol";
-import {BabelOwnable} from "../../dependencies/BabelOwnable.sol";
+import {BimaOwnable} from "../../dependencies/BimaOwnable.sol";
 import {BIMA_100_PCT, BIMA_REWARD_DURATION} from "../../dependencies/Constants.sol";
 
 import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -34,19 +34,19 @@ interface IConvexStash {
 }
 
 /**
-    @title Babel Convex Deposit Wrapper
+    @title Bima Convex Deposit Wrapper
     @notice Standard ERC20 interface around a deposit of a Curve LP token into Convex.
             Tokens are minted by depositing Curve LP tokens, and burned to receive the LP
-            tokens back. Holders may claim BABEL emissions on top of the earned CRV and CVX.
+            tokens back. Holders may claim BIMA emissions on top of the earned CRV and CVX.
  */
 contract ConvexDepositToken is IEmissionReceiver {
-    IERC20 public immutable BABEL;
+    IERC20 public immutable BIMA;
     IERC20 public immutable CRV;
     IERC20 public immutable CVX;
 
     IBooster public immutable booster;
     ICurveProxy public immutable curveProxy;
-    IBabelVault public immutable vault;
+    IBimaVault public immutable vault;
 
     IERC20 public lpToken;
     uint256 public depositPid;
@@ -63,7 +63,7 @@ contract ConvexDepositToken is IEmissionReceiver {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    // each array relates to [BABEL, CRV, CVX]
+    // each array relates to [BIMA, CRV, CVX]
     uint256[3] public rewardIntegral;
     uint128[3] public rewardRate;
 
@@ -82,10 +82,10 @@ contract ConvexDepositToken is IEmissionReceiver {
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event LPTokenDeposited(address indexed lpToken, address indexed receiver, uint256 amount);
     event LPTokenWithdrawn(address indexed lpToken, address indexed receiver, uint256 amount);
-    event RewardClaimed(address indexed receiver, uint256 babelAmount, uint256 crvAmount, uint256 cvxAmount);
+    event RewardClaimed(address indexed receiver, uint256 bimaAmount, uint256 crvAmount, uint256 cvxAmount);
 
-    constructor(IERC20 _babel, IERC20 _CRV, IERC20 _CVX, IBooster _booster, ICurveProxy _proxy, IBabelVault _vault) {
-        BABEL = _babel;
+    constructor(IERC20 _bima, IERC20 _CRV, IERC20 _CVX, IBooster _booster, ICurveProxy _proxy, IBimaVault _vault) {
+        BIMA = _bima;
         CRV = _CRV;
         CVX = _CVX;
         booster = _booster;
@@ -108,8 +108,8 @@ contract ConvexDepositToken is IEmissionReceiver {
         IERC20(_lpToken).approve(address(booster), type(uint256).max);
 
         string memory _symbol = IERC20Metadata(_lpToken).symbol();
-        name = string.concat("Babel ", _symbol, " Convex Deposit");
-        symbol = string.concat("babel-", _symbol);
+        name = string.concat("Bima ", _symbol, " Convex Deposit");
+        symbol = string.concat("bima-", _symbol);
 
         periodFinish = uint32(block.timestamp - 1);
     }
@@ -171,15 +171,13 @@ contract ConvexDepositToken is IEmissionReceiver {
         CVX.transfer(receiver, amounts[2]);
     }
 
-    function claimReward(
-        address receiver
-    ) external returns (uint256 babelAmount, uint256 crvAmount, uint256 cvxAmount) {
+    function claimReward(address receiver) external returns (uint256 bimaAmount, uint256 crvAmount, uint256 cvxAmount) {
         uint128[3] memory amounts = _claimReward(msg.sender, receiver);
         vault.transferAllocatedTokens(msg.sender, receiver, amounts[0]);
 
         emit RewardClaimed(receiver, amounts[0], amounts[1], amounts[2]);
-        
-        babelAmount = amounts[0];
+
+        bimaAmount = amounts[0];
         crvAmount = amounts[1];
         cvxAmount = amounts[2];
     }
@@ -194,7 +192,7 @@ contract ConvexDepositToken is IEmissionReceiver {
 
     function claimableReward(
         address account
-    ) external view returns (uint256 babelAmount, uint256 crvAmount, uint256 cvxAmount) {
+    ) external view returns (uint256 bimaAmount, uint256 crvAmount, uint256 cvxAmount) {
         uint256 updated = periodFinish;
         if (updated > block.timestamp) updated = block.timestamp;
         uint256 duration = updated - lastUpdate;
@@ -211,7 +209,7 @@ contract ConvexDepositToken is IEmissionReceiver {
             amounts[i] = storedPendingReward[account][i] + ((balance * (integral - integralFor)) / 1e18);
         }
 
-        babelAmount = amounts[0];
+        bimaAmount = amounts[0];
         crvAmount = amounts[1];
         cvxAmount = amounts[2];
     }
@@ -280,9 +278,9 @@ contract ConvexDepositToken is IEmissionReceiver {
     }
 
     function _fetchRewards() internal {
-        uint256 babelAmount;
+        uint256 bimaAmount;
         uint256 id = emissionId;
-        if (id > 0) babelAmount = vault.allocateNewEmissions(id);
+        if (id > 0) bimaAmount = vault.allocateNewEmissions(id);
         crvRewards.getReward(address(this), false);
         cvxRewards.getReward();
 
@@ -303,12 +301,12 @@ contract ConvexDepositToken is IEmissionReceiver {
         uint256 _periodFinish = periodFinish;
         if (block.timestamp < _periodFinish) {
             uint256 remaining = _periodFinish - block.timestamp;
-            babelAmount += remaining * rewardRate[0];
+            bimaAmount += remaining * rewardRate[0];
             crvAmount += remaining * rewardRate[1];
             cvxAmount += remaining * rewardRate[2];
         }
 
-        rewardRate[0] = SafeCast.toUint128(babelAmount / BIMA_REWARD_DURATION);
+        rewardRate[0] = SafeCast.toUint128(bimaAmount / BIMA_REWARD_DURATION);
         rewardRate[1] = SafeCast.toUint128(crvAmount / BIMA_REWARD_DURATION);
         rewardRate[2] = SafeCast.toUint128(cvxAmount / BIMA_REWARD_DURATION);
 

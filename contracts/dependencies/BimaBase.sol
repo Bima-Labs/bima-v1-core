@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelBase} from "../interfaces/IBabelBase.sol";
+import {IBimaBase} from "../interfaces/IBimaBase.sol";
 import {BIMA_DECIMAL_PRECISION} from "./Constants.sol";
 
 /*
  * Base contract for TroveManager, BorrowerOperations and StabilityPool. Contains global system constants and
  * common functions.
  */
-contract BabelBase is IBabelBase {
+contract BimaBase is IBimaBase {
     // Critical Collateral Ratio
     // If the system's total collateral ratio (TCR) falls
     // below the CCR, Recovery Mode is triggered

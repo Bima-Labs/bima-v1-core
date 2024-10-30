@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelCore} from "../interfaces/IBabelCore.sol";
+import {IBimaCore} from "../interfaces/IBimaCore.sol";
 
 /**
-    @title Babel Core
+    @title Bima Core
     @notice Single source of truth for system-wide values and contract ownership.
 
-            Ownership of this contract should be the Babel DAO via `AdminVoting`.
-            Other ownable Babel contracts inherit their ownership from this contract
-            using `BabelOwnable`.
+            Ownership of this contract should be the Bima DAO via `AdminVoting`.
+            Other ownable Bima contracts inherit their ownership from this contract
+            using `BimaOwnable`.
  */
-contract BabelCore is IBabelCore {
+contract BimaCore is IBimaCore {
     address public feeReceiver;
     address public priceFeed;
 

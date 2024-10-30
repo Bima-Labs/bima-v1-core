@@ -9,7 +9,6 @@ import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract StabilityPoolTest is TestSetup {
-
     function setUp() public virtual override {
         super.setUp();
 
@@ -17,7 +16,7 @@ contract StabilityPoolTest is TestSetup {
         assertEq(stabilityPool.getNumCollateralTokens(), 1);
     }
 
-    function test_enableCollateral() public returns(IERC20 newCollateral) {
+    function test_enableCollateral() public returns (IERC20 newCollateral) {
         // add 1 new collateral
         newCollateral = IERC20(address(0x1234));
 
@@ -31,7 +30,7 @@ contract StabilityPoolTest is TestSetup {
     }
 
     function test_enableCollateral_failToAddMoreThanMaxCollaterals() external {
-        for(uint160 i=1; i<=255; i++) {
+        for (uint160 i = 1; i <= 255; i++) {
             address newCollateral = address(i);
 
             vm.prank(address(factory));
@@ -44,7 +43,7 @@ contract StabilityPoolTest is TestSetup {
         stabilityPool.enableCollateral(IERC20(address(uint160(256))));
     }
 
-    function test_startCollateralSunset() public returns(IERC20 sunsetCollateral) {
+    function test_startCollateralSunset() public returns (IERC20 sunsetCollateral) {
         // first add new collateral
         sunsetCollateral = test_enableCollateral();
 
@@ -59,7 +58,7 @@ contract StabilityPoolTest is TestSetup {
         assertEq(stabilityPool.getNumCollateralTokens(), 2);
         assertEq(stabilityPool.indexByCollateral(sunsetCollateral), 0);
         assertEq(address(stabilityPool.collateralTokens(1)), address(sunsetCollateral));
-        
+
         (uint128 idx, uint128 expiry) = stabilityPool.getSunsetIndexes(nextSunsetIndexKeyPre);
         assertEq(idx, 1);
         assertEq(expiry, block.timestamp + stabilityPool.SUNSET_DURATION());
@@ -120,6 +119,7 @@ contract StabilityPoolTest is TestSetup {
         uint256 userDebtTokenBalance;
         uint256 poolDebtTokenBalance;
     }
+
     function _getDepositWithdrawState(address user) internal view returns (DepositWithdrawState memory state) {
         (state.accountTotalDep, state.accountLastDepositTime) = stabilityPool.accountDeposits(user);
         state.totalDebtTokenDeposits = stabilityPool.getTotalDebtTokenDeposits();
@@ -134,7 +134,7 @@ contract StabilityPoolTest is TestSetup {
         // cache state before call
         DepositWithdrawState memory statePre = _getDepositWithdrawState(user);
 
-        for(uint256 i=1; i<=numDeposits; i++) {
+        for (uint256 i = 1; i <= numDeposits; i++) {
             // mint user1 some tokens
             vm.prank(address(borrowerOps));
             debtToken.mint(user, depositAmount);
@@ -149,15 +149,13 @@ contract StabilityPoolTest is TestSetup {
             assertEq(debtToken.balanceOf(user), statePre.userDebtTokenBalance);
 
             // verify stability pool received tokens
-            assertEq(debtToken.balanceOf(address(stabilityPool)),
-                     statePre.poolDebtTokenBalance + depositAmount*i);
+            assertEq(debtToken.balanceOf(address(stabilityPool)), statePre.poolDebtTokenBalance + depositAmount * i);
 
             // verify storage updates
-            assertEq(stabilityPool.getTotalDebtTokenDeposits(),
-                     statePre.totalDebtTokenDeposits + depositAmount*i);
+            assertEq(stabilityPool.getTotalDebtTokenDeposits(), statePre.totalDebtTokenDeposits + depositAmount * i);
 
             (uint128 accountTotalDepPost, uint128 accountLastDepositTimePost) = stabilityPool.accountDeposits(user);
-            assertEq(accountTotalDepPost, statePre.accountTotalDep + depositAmount*i);
+            assertEq(accountTotalDepPost, statePre.accountTotalDep + depositAmount * i);
             assertEq(accountLastDepositTimePost, block.timestamp);
 
             assertEq(stabilityPool.getStoredPendingReward(user), 0);
@@ -165,9 +163,9 @@ contract StabilityPoolTest is TestSetup {
             assertEq(stabilityPool.currentScale(), statePre.scale);
             assertEq(stabilityPool.currentEpoch(), statePre.epoch);
 
-            (uint256 depositorP, uint256 depositorG, uint128 depositorScale, uint128 depositorEpoch)
-                = stabilityPool.depositSnapshots(user);
-            
+            (uint256 depositorP, uint256 depositorG, uint128 depositorScale, uint128 depositorEpoch) = stabilityPool
+                .depositSnapshots(user);
+
             assertEq(depositorP, stabilityPool.P());
             assertEq(depositorG, stabilityPool.epochToScaleToG(statePre.epoch, statePre.scale));
             assertEq(depositorScale, statePre.scale);
@@ -178,7 +176,7 @@ contract StabilityPoolTest is TestSetup {
     function test_provideToSP(uint96 depositAmount, uint256 numDeposits) external {
         // bound fuzz inputs
         depositAmount = uint96(bound(depositAmount, 1, type(uint96).max));
-        numDeposits   = bound(numDeposits, 1, 10);
+        numDeposits = bound(numDeposits, 1, 10);
 
         _provideToSP(users.user1, depositAmount, numDeposits);
     }
@@ -196,12 +194,10 @@ contract StabilityPoolTest is TestSetup {
         assertEq(debtToken.balanceOf(user), statePre.userDebtTokenBalance + withdrawAmount);
 
         // verify stability pool sent tokens
-        assertEq(debtToken.balanceOf(address(stabilityPool)),
-                 statePre.poolDebtTokenBalance - withdrawAmount);
+        assertEq(debtToken.balanceOf(address(stabilityPool)), statePre.poolDebtTokenBalance - withdrawAmount);
 
         // verify storage updates
-        assertEq(stabilityPool.getTotalDebtTokenDeposits(),
-                 statePre.totalDebtTokenDeposits - withdrawAmount);
+        assertEq(stabilityPool.getTotalDebtTokenDeposits(), statePre.totalDebtTokenDeposits - withdrawAmount);
 
         (uint128 accountTotalDepPost, uint128 accountLastDepositTimePost) = stabilityPool.accountDeposits(user);
         assertEq(accountTotalDepPost, statePre.accountTotalDep - withdrawAmount);
@@ -212,16 +208,15 @@ contract StabilityPoolTest is TestSetup {
         assertEq(stabilityPool.currentScale(), statePre.scale);
         assertEq(stabilityPool.currentEpoch(), statePre.epoch);
 
-        (uint256 depositorP, uint256 depositorG, uint128 depositorScale, uint128 depositorEpoch)
-            = stabilityPool.depositSnapshots(user);
-        
-        if(accountTotalDepPost == 0) {
+        (uint256 depositorP, uint256 depositorG, uint128 depositorScale, uint128 depositorEpoch) = stabilityPool
+            .depositSnapshots(user);
+
+        if (accountTotalDepPost == 0) {
             assertEq(depositorP, 0);
             assertEq(depositorG, 0);
             assertEq(depositorScale, 0);
             assertEq(depositorEpoch, 0);
-        }
-        else {
+        } else {
             assertEq(depositorP, stabilityPool.P());
             assertEq(depositorG, stabilityPool.epochToScaleToG(statePre.epoch, statePre.scale));
             assertEq(depositorScale, statePre.scale);
@@ -231,7 +226,7 @@ contract StabilityPoolTest is TestSetup {
 
     function test_withdrawFromSP(uint96 depositAmount, uint96 withdrawAmount) external {
         // bound fuzz inputs
-        depositAmount  = uint96(bound(depositAmount, 1, type(uint96).max));
+        depositAmount = uint96(bound(depositAmount, 1, type(uint96).max));
         withdrawAmount = uint96(bound(withdrawAmount, 1, depositAmount));
 
         // first perform a deposit
@@ -245,13 +240,13 @@ contract StabilityPoolTest is TestSetup {
 
     function test_claimReward_smallAmountOfStabilityPoolRewardsLost() external {
         // setup vault giving user1 half supply to lock for voting power
-        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY/2, true);
+        uint256 initialUnallocated = _vaultSetupAndLockTokens(INIT_BAB_TKN_TOTAL_SUPPLY / 2, true);
 
         // user votes for stability pool to get emissions
         IIncentiveVoting.Vote[] memory votes = new IIncentiveVoting.Vote[](1);
         votes[0].id = stabilityPool.SP_EMISSION_ID();
         votes[0].points = incentiveVoting.MAX_POINTS();
-        
+
         vm.prank(users.user1);
         incentiveVoting.registerAccountWeightAndVote(users.user1, 52, votes);
 
@@ -264,11 +259,11 @@ contract StabilityPoolTest is TestSetup {
         vm.warp(block.timestamp + 1 weeks);
 
         // calculate expected first week emissions
-        uint256 firstWeekEmissions = initialUnallocated*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        uint256 firstWeekEmissions = (initialUnallocated * INIT_ES_WEEKLY_PCT) / BIMA_100_PCT;
         assertEq(firstWeekEmissions, 536870911875000000000000000);
-        assertEq(babelVault.unallocatedTotal(), initialUnallocated);
+        assertEq(bimaVault.unallocatedTotal(), initialUnallocated);
 
-        uint16 systemWeek = SafeCast.toUint16(babelVault.getWeek());
+        uint16 systemWeek = SafeCast.toUint16(bimaVault.getWeek());
 
         // no rewards in the same week as emissions
         assertEq(stabilityPool.claimableReward(users.user1), 0);
@@ -281,16 +276,16 @@ contract StabilityPoolTest is TestSetup {
         userReward = stabilityPool.claimReward(users.user2);
         assertEq(userReward, 0);
 
-        // verify emissions correctly set in BabelVault for first week
-        assertEq(babelVault.weeklyEmissions(systemWeek), firstWeekEmissions);
+        // verify emissions correctly set in BimaVault for first week
+        assertEq(bimaVault.weeklyEmissions(systemWeek), firstWeekEmissions);
 
         // warp time by 1 week
         vm.warp(block.timestamp + 1 weeks);
 
         // rewards for the first week can be claimed now
         // users receive slightly less due to precision loss
-        assertEq(firstWeekEmissions/2, 268435455937500000000000000);
-        uint256 actualUserReward =     268435455937499999999890000;
+        assertEq(firstWeekEmissions / 2, 268435455937500000000000000);
+        uint256 actualUserReward = 268435455937499999999890000;
 
         assertEq(stabilityPool.claimableReward(users.user1), actualUserReward);
         assertEq(stabilityPool.claimableReward(users.user2), actualUserReward);
@@ -321,7 +316,7 @@ contract StabilityPoolTest is TestSetup {
         // user2 withdraws from the stability pool
         _withdrawFromToSP(users.user2, spDepositAmount);
 
-        uint256 secondWeekEmissions = (initialUnallocated - firstWeekEmissions)*INIT_ES_WEEKLY_PCT/BIMA_100_PCT;
+        uint256 secondWeekEmissions = ((initialUnallocated - firstWeekEmissions) * INIT_ES_WEEKLY_PCT) / BIMA_100_PCT;
         assertEq(secondWeekEmissions, 402653183906250000000000000);
 
         // warp time by 1 week

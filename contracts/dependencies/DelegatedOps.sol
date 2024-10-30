@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {IDelegatedOps} from "../interfaces/IDelegatedOps.sol";
 
 /**
-    @title Babel Delegated Operations
+    @title Bima Delegated Operations
     @notice Allows delegation to specific contract functionality. Useful for creating
             wrapper contracts to bundle multiple interactions into a single call.
 

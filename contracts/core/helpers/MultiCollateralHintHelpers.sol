@@ -5,14 +5,14 @@ import {IBorrowerOperations} from "../../interfaces/IBorrowerOperations.sol";
 import {ITroveManager} from "../../interfaces/ITroveManager.sol";
 import {ISortedTroves} from "../../interfaces/ISortedTroves.sol";
 import {IFactory} from "../../interfaces/IFactory.sol";
-import {BabelBase} from "../../dependencies/BabelBase.sol";
-import {BabelMath} from "../../dependencies/BabelMath.sol";
+import {BimaBase} from "../../dependencies/BimaBase.sol";
+import {BimaMath} from "../../dependencies/BimaMath.sol";
 import {BIMA_DECIMAL_PRECISION} from "../../dependencies/Constants.sol";
 
-contract MultiCollateralHintHelpers is BabelBase {
+contract MultiCollateralHintHelpers is BimaBase {
     IBorrowerOperations public immutable borrowerOperations;
 
-    constructor(address _borrowerOperationsAddress, uint256 _gasCompensation) BabelBase(_gasCompensation) {
+    constructor(address _borrowerOperationsAddress, uint256 _gasCompensation) BimaBase(_gasCompensation) {
         borrowerOperations = IBorrowerOperations(_borrowerOperationsAddress);
     }
 
@@ -68,13 +68,13 @@ contract MultiCollateralHintHelpers is BabelBase {
 
             if (netDebt > remainingDebt) {
                 if (netDebt > minNetDebt) {
-                    uint256 maxRedeemableDebt = BabelMath._min(remainingDebt, netDebt - minNetDebt);
+                    uint256 maxRedeemableDebt = BimaMath._min(remainingDebt, netDebt - minNetDebt);
 
                     uint256 newColl = coll - ((maxRedeemableDebt * BIMA_DECIMAL_PRECISION) / _price);
                     uint256 newDebt = netDebt - maxRedeemableDebt;
 
                     uint256 compositeDebt = _getCompositeDebt(newDebt);
-                    partialRedemptionHintNICR = BabelMath._computeNominalCR(newColl, compositeDebt);
+                    partialRedemptionHintNICR = BimaMath._computeNominalCR(newColl, compositeDebt);
 
                     remainingDebt = remainingDebt - maxRedeemableDebt;
                 }
@@ -111,7 +111,7 @@ contract MultiCollateralHintHelpers is BabelBase {
 
         if (arrayLength != 0) {
             hintAddress = sortedTroves.getLast();
-            diff = BabelMath._getAbsoluteDifference(_CR, troveManager.getNominalICR(hintAddress));
+            diff = BimaMath._getAbsoluteDifference(_CR, troveManager.getNominalICR(hintAddress));
 
             uint256 i = 1;
 
@@ -123,7 +123,7 @@ contract MultiCollateralHintHelpers is BabelBase {
                 uint256 currentNICR = troveManager.getNominalICR(currentAddress);
 
                 // check if abs(current - CR) > abs(closest - CR), and update closest if current is closer
-                uint256 currentDiff = BabelMath._getAbsoluteDifference(currentNICR, _CR);
+                uint256 currentDiff = BimaMath._getAbsoluteDifference(currentNICR, _CR);
 
                 if (currentDiff < diff) {
                     diff = currentDiff;
@@ -135,10 +135,10 @@ contract MultiCollateralHintHelpers is BabelBase {
     }
 
     function computeNominalCR(uint256 _coll, uint256 _debt) external pure returns (uint256 result) {
-        result = BabelMath._computeNominalCR(_coll, _debt);
+        result = BimaMath._computeNominalCR(_coll, _debt);
     }
 
     function computeCR(uint256 _coll, uint256 _debt, uint256 _price) external pure returns (uint256 result) {
-        result = BabelMath._computeCR(_coll, _debt, _price);
+        result = BimaMath._computeCR(_coll, _debt, _price);
     }
 }

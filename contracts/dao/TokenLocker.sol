@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {BabelOwnable} from "../dependencies/BabelOwnable.sol";
+import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 import {SystemStart} from "../dependencies/SystemStart.sol";
-import {ITokenLocker, IBabelToken, IBabelCore, IIncentiveVoting} from "../interfaces/ITokenLocker.sol";
+import {ITokenLocker, IBimaToken, IBimaCore, IIncentiveVoting} from "../interfaces/ITokenLocker.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
-    @title Babel Token Locker
-    @notice BABEL tokens can be locked in this contract to receive "lock weight",
+    @title Bima Token Locker
+    @notice BIMA tokens can be locked in this contract to receive "lock weight",
             which is used within `AdminVoting` and `IncentiveVoting` to vote on
             core protocol operations.
  */
-contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
+contract TokenLocker is ITokenLocker, BimaOwnable, SystemStart {
     // The maximum number of weeks that tokens may be locked for. Also determines the maximum
     // number of active locks that a single account may open. Weight is calculated as:
     // `[balance] * [weeks to unlock]`. Weights are stored as `uint40` and balances as `uint32`,
@@ -29,9 +29,9 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     // cannot be violated or the system could break due to overflow.
     uint256 public immutable lockToTokenRatio;
 
-    IBabelToken public immutable lockToken;
+    IBimaToken public immutable lockToken;
     IIncentiveVoting public immutable incentiveVoter;
-    IBabelCore public immutable babelCore;
+    IBimaCore public immutable bimaCore;
     address public immutable deploymentManager;
 
     struct AccountData {
@@ -77,15 +77,15 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     mapping(address account => AccountData accountData) accountLockData;
 
     constructor(
-        address _babelCore,
-        IBabelToken _token,
+        address _bimaCore,
+        IBimaToken _token,
         IIncentiveVoting _voter,
         address _manager,
         uint256 _lockToTokenRatio
-    ) SystemStart(_babelCore) BabelOwnable(_babelCore) {
+    ) SystemStart(_bimaCore) BimaOwnable(_bimaCore) {
         lockToken = _token;
         incentiveVoter = _voter;
-        babelCore = IBabelCore(_babelCore);
+        bimaCore = IBimaCore(_bimaCore);
         deploymentManager = _manager;
 
         lockToTokenRatio = _lockToTokenRatio;
@@ -189,23 +189,27 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     /**
         @notice Get account balances without any processing
      */
-    function getAccountBalancesRaw(address account) external view returns(uint32 locked, uint32 unlocked, uint32 frozen) {
-        (locked, unlocked, frozen) = (accountLockData[account].locked,
-                                      accountLockData[account].unlocked,
-                                      accountLockData[account].frozen);
+    function getAccountBalancesRaw(
+        address account
+    ) external view returns (uint32 locked, uint32 unlocked, uint32 frozen) {
+        (locked, unlocked, frozen) = (
+            accountLockData[account].locked,
+            accountLockData[account].unlocked,
+            accountLockData[account].frozen
+        );
     }
 
     /**
         @notice Get total unlocks for given week
      */
-    function getTotalWeeklyUnlocks(uint256 week) public view returns(uint256 unlocks) {
+    function getTotalWeeklyUnlocks(uint256 week) public view returns (uint256 unlocks) {
         unlocks = totalWeeklyUnlocks[week];
     }
 
     /**
         @notice Get account unlocks for given week
      */
-    function getAccountWeeklyUnlocks(address account, uint256 week) public view returns(uint256 unlocks) {
+    function getAccountWeeklyUnlocks(address account, uint256 week) public view returns (uint256 unlocks) {
         unlocks = accountWeeklyUnlocks[account][week];
     }
 
@@ -222,7 +226,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     function getAccountWeightAt(address account, uint256 week) public view returns (uint256 weight) {
         // no weight for future weeks
         if (week > getWeek()) return 0;
-        
+
         // get storage references
         uint32[65535] storage weeklyUnlocks = accountWeeklyUnlocks[account];
         uint40[65535] storage weeklyWeights = accountWeeklyWeights[account];
@@ -239,7 +243,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         // done a weekly write for
         uint256 locked = accountData.locked;
         weight = weeklyWeights[accountWeek];
-        
+
         // if account has nothing locked or is frozen, return the weight
         // from the account's last weekly write
         if (locked == 0 || accountData.frozen > 0) {
@@ -282,7 +286,6 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // if nothing frozen then account has active locks to get data for
         if (frozenAmount == 0) {
-
             // minimum lock time is 1 week
             if (minWeeks == 0) minWeeks = 1;
 
@@ -325,7 +328,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             for (uint256 i; x != 0; i++) {
                 x--;
                 uint256 idx = unlockWeeks[x];
-                lockData[i] = LockData({ weeksToUnlock: idx - systemWeek, amount: unlocks[idx] });
+                lockData[i] = LockData({weeksToUnlock: idx - systemWeek, amount: unlocks[idx]});
             }
         }
     }
@@ -484,7 +487,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
     function getTotalWeightWrite() public returns (uint256 weightOut) {
         // get current system week
         uint256 week = getWeek();
-        
+
         // cache important values from storage
         uint32 rate = totalDecayRate;
         uint32 updatedWeek = totalUpdatedWeek;
@@ -550,7 +553,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
     function _lock(address _account, uint256 _amount, uint256 _weeks) internal {
         // enforce maximum lock time; important to do this here as
-        // this function can also be called during withdrawals when re-locking 
+        // this function can also be called during withdrawals when re-locking
         require(_weeks <= MAX_LOCK_WEEKS, "Exceeds MAX_LOCK_WEEKS");
 
         // get storage reference to account's lock data
@@ -606,7 +609,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // update and modify total weight
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(totalWeight + _amount * _weeks);
-        
+
         emit LockCreated(_account, _amount, _weeks);
     }
 
@@ -662,7 +665,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         unlocks[changedWeek] = SafeCast.toUint32(previous - _amount);
         totalWeeklyUnlocks[changedWeek] -= SafeCast.toUint32(_amount);
-        
+
         // if extend the total locked amount for the changed week modify bitfield
         if (previous == _amount) {
             uint256 idx = changedWeek / 256;
@@ -699,7 +702,10 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                         tokens to lock, and weeks is the number of weeks for the lock.
                         All tokens to be locked are transferred from the caller.
      */
-    function lockMany(address _account, LockData[] calldata newLocks) external notFrozen(_account) returns (bool success) {
+    function lockMany(
+        address _account,
+        LockData[] calldata newLocks
+    ) external notFrozen(_account) returns (bool success) {
         // get storage references to account lock & unlock data
         AccountData storage accountData = accountLockData[_account];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[_account];
@@ -782,7 +788,9 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                               for the lock that is being extended, and newWeeks is the number of weeks
                               to extend the lock until.
      */
-    function extendMany(ExtendLockData[] calldata newExtendLocks) external notFrozen(msg.sender) returns (bool success) {
+    function extendMany(
+        ExtendLockData[] calldata newExtendLocks
+    ) external notFrozen(msg.sender) returns (bool success) {
         // get storage references for account lock & unlock data
         AccountData storage accountData = accountLockData[msg.sender];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
@@ -822,7 +830,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
             unlocks[oldWeeks] = SafeCast.toUint32(previous - newExtendLocks[i].amount);
             totalWeeklyUnlocks[oldWeeks] -= SafeCast.toUint32(newExtendLocks[i].amount);
-            
+
             if (previous == newExtendLocks[i].amount) {
                 uint256 idx = (oldWeeks / 256) - (systemWeek / 256);
                 bitfield[idx] = bitfield[idx] & ~(uint256(1) << (oldWeeks % 256));
@@ -834,7 +842,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
             unlocks[newWeeks] = SafeCast.toUint32(previous + newExtendLocks[i].amount);
             totalWeeklyUnlocks[newWeeks] += SafeCast.toUint32(newExtendLocks[i].amount);
-            
+
             if (previous == 0) {
                 uint256 idx = (newWeeks / 256) - (systemWeek / 256);
                 bitfield[idx] = bitfield[idx] | (uint256(1) << (newWeeks % 256));
@@ -929,7 +937,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         // get storage references for account lock & unlock data
         AccountData storage accountData = accountLockData[msg.sender];
         uint32[65535] storage unlocks = accountWeeklyUnlocks[msg.sender];
-        
+
         // revert if nothing to unfreeze
         uint32 frozen = accountData.frozen;
         require(frozen > 0, "Locks already unfrozen");
@@ -985,7 +993,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // get storage references for account lock data
         AccountData storage accountData = accountLockData[msg.sender];
-    
+
         // revert if account has no unlocked balance
         uint256 unlocked = accountData.unlocked;
         require(unlocked > 0, "No unlocked tokens");
@@ -998,7 +1006,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
             _lock(msg.sender, unlocked, _weeks);
         } else {
             lockToken.transfer(msg.sender, unlocked * lockToTokenRatio);
-            
+
             emit LocksWithdrawn(msg.sender, unlocked, 0);
         }
         success = true;
@@ -1175,7 +1183,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
         // locked tokens withdrawn including penalties paid
         accountData.locked -= lockedPlusPenalties;
         totalDecayRate -= lockedPlusPenalties;
-        
+
         // update account and global weights subtracting decreased weights
         systemWeek = getWeek();
         accountWeeklyWeights[msg.sender][systemWeek] = SafeCast.toUint40(weight - decreasedWeight);
@@ -1183,7 +1191,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // send the withdraw tokens and pay penalty fees
         lockToken.transfer(msg.sender, amountToWithdraw);
-        lockToken.transfer(babelCore.feeReceiver(), penaltyTotal);
+        lockToken.transfer(bimaCore.feeReceiver(), penaltyTotal);
         emit LocksWithdrawn(msg.sender, amountToWithdraw, penaltyTotal);
 
         output = amountToWithdraw;
@@ -1206,7 +1214,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
         // output account weight from last processed account week
         weight = weeklyWeights[accountWeek];
-        
+
         // if the last processed account week is this week
         // then return as nothing else to do
         if (accountWeek != systemWeek) {
@@ -1251,7 +1259,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
 
                 // update storage for account's weekly weight
                 weeklyWeights[accountWeek] = SafeCast.toUint40(weight);
-                
+
                 if (accountWeek % 256 == 0) {
                     bitfield = accountData.updateWeeks[accountWeek / 256];
                 } else {
@@ -1261,7 +1269,7 @@ contract TokenLocker is ITokenLocker, BabelOwnable, SystemStart {
                     // as unlocks happen, modify the locked/unlocked
                     // memory variables for each week
                     uint32 amount = weeklyUnlocks[accountWeek];
-                    
+
                     locked -= amount;
                     unlocked += amount;
 

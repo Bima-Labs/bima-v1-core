@@ -2,13 +2,13 @@
 pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IBabelOwnable} from "./IBabelOwnable.sol";
+import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {ITroveManager} from "./ITroveManager.sol";
 import {IDebtToken} from "./IDebtToken.sol";
-import {IBabelBase} from "./IBabelBase.sol";
+import {IBimaBase} from "./IBimaBase.sol";
 import {IDelegatedOps} from "./IDelegatedOps.sol";
 
-interface IBorrowerOperations is IBabelOwnable, IBabelBase, IDelegatedOps {
+interface IBorrowerOperations is IBimaOwnable, IBimaBase, IDelegatedOps {
     enum BorrowerOperation {
         openTrove,
         closeTrove,
@@ -25,7 +25,13 @@ interface IBorrowerOperations is IBabelOwnable, IBabelBase, IDelegatedOps {
     event CollateralConfigured(ITroveManager, IERC20 collateralToken);
     event TroveCreated(address indexed _borrower, uint256 arrayIndex);
     event TroveManagerRemoved(ITroveManager);
-    event TroveUpdated(address indexed _borrower, uint256 _debt, uint256 _coll, uint256 stake, BorrowerOperation operation);
+    event TroveUpdated(
+        address indexed _borrower,
+        uint256 _debt,
+        uint256 _coll,
+        uint256 stake,
+        BorrowerOperation operation
+    );
     event SetMinDetDebt(uint256 newMinNetDebt);
 
     function addColl(

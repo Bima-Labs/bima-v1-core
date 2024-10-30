@@ -2,46 +2,47 @@
 pragma solidity 0.8.19;
 
 // test setup
-import {TestSetup, IBabelVault, ITokenLocker} from "../TestSetup.sol";
+import {TestSetup, IBimaVault, ITokenLocker} from "../TestSetup.sol";
 
 import {stdError} from "forge-std/Test.sol";
 
 contract TokenLockerTest is TestSetup {
-
     function setUp() public virtual override {
         super.setUp();
 
-        // setup the vault to get BabelTokens which are used for voting
+        // setup the vault to get BimaTokens which are used for voting
         uint128[] memory _fixedInitialAmounts;
-        IBabelVault.InitialAllowance[] memory initialAllowances 
-            = new IBabelVault.InitialAllowance[](1);
-        
+        IBimaVault.InitialAllowance[] memory initialAllowances = new IBimaVault.InitialAllowance[](1);
+
         // give user1 allowance over the entire supply of voting tokens
         initialAllowances[0].receiver = users.user1;
         initialAllowances[0].amount = INIT_BAB_TKN_TOTAL_SUPPLY;
 
         vm.prank(users.owner);
-        babelVault.setInitialParameters(emissionSchedule,
-                                        boostCalc,
-                                        INIT_BAB_TKN_TOTAL_SUPPLY,
-                                        INIT_VLT_LOCK_WEEKS,
-                                        _fixedInitialAmounts,
-                                        initialAllowances);
+        bimaVault.setInitialParameters(
+            emissionSchedule,
+            boostCalc,
+            INIT_BAB_TKN_TOTAL_SUPPLY,
+            INIT_VLT_LOCK_WEEKS,
+            _fixedInitialAmounts,
+            initialAllowances
+        );
 
         // transfer voting tokens to recipients
         vm.prank(users.user1);
-        babelToken.transferFrom(address(babelVault), users.user1, INIT_BAB_TKN_TOTAL_SUPPLY);
+        bimaToken.transferFrom(address(bimaVault), users.user1, INIT_BAB_TKN_TOTAL_SUPPLY);
 
         // verify recipients have received voting tokens
-        assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY);
+        assertEq(bimaToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY);
     }
 
     // helper function
-    function _lock(uint256 amountToLock, uint256 weeksToLockFor) internal
-        returns(uint256 lockedAmount, uint256 weeksLockedFor) 
-    {
+    function _lock(
+        uint256 amountToLock,
+        uint256 weeksToLockFor
+    ) internal returns (uint256 lockedAmount, uint256 weeksLockedFor) {
         // save user initial balance
-        uint256 userPreLockTokenBalance = babelToken.balanceOf(users.user1);
+        uint256 userPreLockTokenBalance = bimaToken.balanceOf(users.user1);
 
         (uint256 userPreLockLockedBalance, ) = tokenLocker.getAccountBalances(users.user1);
 
@@ -56,24 +57,26 @@ contract TokenLockerTest is TestSetup {
         assertEq(lockedAmount, amountToLock);
         // when checking actual token balances, need to multipy lockedAmount by
         // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
-        assertEq(babelToken.balanceOf(users.user1), userPreLockTokenBalance - lockedAmount*INIT_LOCK_TO_TOKEN_RATIO);
+        assertEq(bimaToken.balanceOf(users.user1), userPreLockTokenBalance - lockedAmount * INIT_LOCK_TO_TOKEN_RATIO);
 
         // verify user has positive voting weight in the current week
         uint256 userWeight = tokenLocker.getAccountWeight(users.user1);
         assertTrue(userWeight > 0);
 
         // verify user has no voting weight for future weeks
-        assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek()+1), 0);
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek() + 1), 0);
 
         // verify total weight for current week all belongs to user
         assertEq(tokenLocker.getTotalWeight(), userWeight);
 
         // verify no total weight for future weeks
-        assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+        assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek() + 1), 0);
 
         // verify user active locks are correct
-        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount) = tokenLocker.getAccountActiveLocks(
+            users.user1,
+            0
+        );
 
         assertEq(activeLockData.length, 1);
         assertEq(frozenAmount, 0);
@@ -87,19 +90,23 @@ contract TokenLockerTest is TestSetup {
         weeksLockedFor = activeLockData[0].weeksToUnlock;
 
         // verify future total weekly unlocks updated for locked amount
-        assertEq(tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+weeksLockedFor), lockedAmount);
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + weeksLockedFor), lockedAmount);
 
         // verify future account weekly unlocks updated for locked amount
-        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+weeksLockedFor), lockedAmount);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + weeksLockedFor),
+            lockedAmount
+        );
     }
 
-    function test_lock(uint256 amountToLock, uint256 weeksToLockFor) public
-        returns(uint256 lockedAmount, uint256 weeksLockedFor)
-    {
+    function test_lock(
+        uint256 amountToLock,
+        uint256 weeksToLockFor
+    ) public returns (uint256 lockedAmount, uint256 weeksLockedFor) {
         // bound fuzz inputs
         // need to divide by lockToTokenRatio when calling the
         // lock function since the token transfer multiplies by lockToTokenRatio
-        amountToLock = bound(amountToLock, 1, babelToken.balanceOf(users.user1)/INIT_LOCK_TO_TOKEN_RATIO);
+        amountToLock = bound(amountToLock, 1, bimaToken.balanceOf(users.user1) / INIT_LOCK_TO_TOKEN_RATIO);
 
         // using -2 week since withdrawing early penalties doesn't reach to tokens
         // locked in the last week and this makes some tests easier to write for checking
@@ -142,8 +149,8 @@ contract TokenLockerTest is TestSetup {
         tokenLocker.withdrawExpiredLocks(relockFor);
 
         // if no relocking, verify user received their tokens
-        if(relockFor == 0) {
-            assertEq(babelToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY);
+        if (relockFor == 0) {
+            assertEq(bimaToken.balanceOf(users.user1), INIT_BAB_TKN_TOTAL_SUPPLY);
 
             // verify no locked amount
             (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
@@ -155,48 +162,54 @@ contract TokenLockerTest is TestSetup {
             assertEq(userWeight, 0);
 
             // verify user has no voting weight for future weeks
-            assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek()+1), 0);
+            assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek() + 1), 0);
 
             // verify no total weight for current week
             assertEq(tokenLocker.getTotalWeight(), 0);
 
             // verify no total weight for future weeks
-            assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+            assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek() + 1), 0);
 
             // verify no user active locks
-            (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-                = tokenLocker.getAccountActiveLocks(users.user1, 0);
+            (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount) = tokenLocker.getAccountActiveLocks(
+                users.user1,
+                0
+            );
 
             assertEq(activeLockData.length, 0);
             assertEq(frozenAmount, 0);
         }
         // otherwise verify that relocking has occured correctly
-        else{
+        else {
             // verify locked amount is correct
             (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
             assertEq(locked, lockedAmount);
             assertEq(unlocked, 0);
             // when checking actual token balances, need to multipy lockedAmount by
             // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
-            assertEq(babelToken.balanceOf(users.user1), 
-                     INIT_BAB_TKN_TOTAL_SUPPLY - lockedAmount*INIT_LOCK_TO_TOKEN_RATIO);
+            assertEq(
+                bimaToken.balanceOf(users.user1),
+                INIT_BAB_TKN_TOTAL_SUPPLY - lockedAmount * INIT_LOCK_TO_TOKEN_RATIO
+            );
 
             // verify user has positive voting weight in the current week
             uint256 userWeight = tokenLocker.getAccountWeight(users.user1);
             assertTrue(userWeight > 0);
 
             // verify user has no voting weight for future weeks
-            assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek()+1), 0);
+            assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek() + 1), 0);
 
             // verify total weight for current week all belongs to user
             assertEq(tokenLocker.getTotalWeight(), userWeight);
 
             // verify no total weight for future weeks
-            assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+            assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek() + 1), 0);
 
             // verify user active locks are correct
-            (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-                = tokenLocker.getAccountActiveLocks(users.user1, 0);
+            (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount) = tokenLocker.getAccountActiveLocks(
+                users.user1,
+                0
+            );
 
             assertEq(activeLockData.length, 1);
             assertEq(frozenAmount, 0);
@@ -214,48 +227,60 @@ contract TokenLockerTest is TestSetup {
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
         // bound fuzz input
-        extendFor = bound(extendFor, weeksLockedFor+1, tokenLocker.MAX_LOCK_WEEKS());
+        extendFor = bound(extendFor, weeksLockedFor + 1, tokenLocker.MAX_LOCK_WEEKS());
 
         // save previous state
         uint256 systemWeek = tokenLocker.getWeek();
         uint256 accountWeightPre = tokenLocker.getAccountWeightAt(users.user1, systemWeek);
         uint256 totalWeightPre = tokenLocker.getTotalWeightAt(systemWeek);
 
-        uint256 accountWeeklyUnlocksOrigWeekPre = tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor);
-        uint256 accountWeeklyUnlocksExtendWeekPre = tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + extendFor);
+        uint256 accountWeeklyUnlocksOrigWeekPre = tokenLocker.getAccountWeeklyUnlocks(
+            users.user1,
+            systemWeek + weeksLockedFor
+        );
+        uint256 accountWeeklyUnlocksExtendWeekPre = tokenLocker.getAccountWeeklyUnlocks(
+            users.user1,
+            systemWeek + extendFor
+        );
         uint256 totalWeeklyUnlocksOrigWeekPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor);
         uint256 totalWeeklyUnlocksExtendWeekPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek + extendFor);
 
         // extend the lock
         vm.prank(users.user1);
         assertTrue(tokenLocker.extendLock(lockedAmount, weeksLockedFor, extendFor));
-        
+
         // compare to previous state
         uint256 expectedIncrease = (extendFor - weeksLockedFor) * lockedAmount;
 
         // verify account weight increased in current system week
-        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek),
-                 accountWeightPre + expectedIncrease);
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek), accountWeightPre + expectedIncrease);
 
         // verify total weight increased in current system week
-        assertEq(tokenLocker.getTotalWeightAt(systemWeek),
-                 totalWeightPre + expectedIncrease);
+        assertEq(tokenLocker.getTotalWeightAt(systemWeek), totalWeightPre + expectedIncrease);
 
         // verify account weekly unlocks decreased in future original lock week
-        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor),
-                 accountWeeklyUnlocksOrigWeekPre - lockedAmount);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor),
+            accountWeeklyUnlocksOrigWeekPre - lockedAmount
+        );
 
         // verify account weekly unlocks increased in future extended lock week
-        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + extendFor),
-                 accountWeeklyUnlocksExtendWeekPre + lockedAmount);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + extendFor),
+            accountWeeklyUnlocksExtendWeekPre + lockedAmount
+        );
 
         // verify total weekly unlocks decreased in future original lock week
-        assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor),
-                 totalWeeklyUnlocksOrigWeekPre - lockedAmount);
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor),
+            totalWeeklyUnlocksOrigWeekPre - lockedAmount
+        );
 
         // verify total weekly unlocks increased in future extended lock week
-        assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + extendFor),
-                 totalWeeklyUnlocksExtendWeekPre + lockedAmount);
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(systemWeek + extendFor),
+            totalWeeklyUnlocksExtendWeekPre + lockedAmount
+        );
     }
 
     function test_extendLock_failMin1Week(uint256 amountToLock, uint256 weeksToLockFor) external {
@@ -272,7 +297,7 @@ contract TokenLockerTest is TestSetup {
         // perform the lock
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
-        uint256 extendTooBig = tokenLocker.MAX_LOCK_WEEKS()+1;
+        uint256 extendTooBig = tokenLocker.MAX_LOCK_WEEKS() + 1;
 
         // extend the lock
         vm.expectRevert("Exceeds MAX_LOCK_WEEKS");
@@ -293,12 +318,16 @@ contract TokenLockerTest is TestSetup {
         tokenLocker.extendLock(lockedAmount, weeksLockedFor, extendFor);
     }
 
-    function test_extendLock_failZeroExtendAmount(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+    function test_extendLock_failZeroExtendAmount(
+        uint256 amountToLock,
+        uint256 weeksToLockFor,
+        uint256 extendFor
+    ) external {
         // perform the lock
         (, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
         // bound fuzz input
-        extendFor = bound(extendFor, weeksLockedFor+1, tokenLocker.MAX_LOCK_WEEKS());
+        extendFor = bound(extendFor, weeksLockedFor + 1, tokenLocker.MAX_LOCK_WEEKS());
 
         // extend the lock
         vm.expectRevert("Amount must be nonzero");
@@ -306,33 +335,41 @@ contract TokenLockerTest is TestSetup {
         tokenLocker.extendLock(0, weeksLockedFor, extendFor);
     }
 
-    function test_extendLock_failInputWeekNoTokensLocked(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+    function test_extendLock_failInputWeekNoTokensLocked(
+        uint256 amountToLock,
+        uint256 weeksToLockFor,
+        uint256 extendFor
+    ) external {
         // perform the lock
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
         // bound fuzz input
-        extendFor = bound(extendFor, weeksLockedFor+2, tokenLocker.MAX_LOCK_WEEKS());
+        extendFor = bound(extendFor, weeksLockedFor + 2, tokenLocker.MAX_LOCK_WEEKS());
 
         // extend the lock
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(users.user1);
-        tokenLocker.extendLock(lockedAmount, weeksLockedFor+1, extendFor);
+        tokenLocker.extendLock(lockedAmount, weeksLockedFor + 1, extendFor);
     }
 
-    function test_extendLock_failGreaterAmountThanLocked(uint256 amountToLock, uint256 weeksToLockFor, uint256 extendFor) external {
+    function test_extendLock_failGreaterAmountThanLocked(
+        uint256 amountToLock,
+        uint256 weeksToLockFor,
+        uint256 extendFor
+    ) external {
         // perform the lock
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
         // bound fuzz input
-        extendFor = bound(extendFor, weeksLockedFor+1, tokenLocker.MAX_LOCK_WEEKS());
+        extendFor = bound(extendFor, weeksLockedFor + 1, tokenLocker.MAX_LOCK_WEEKS());
 
         // extend the lock
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(users.user1);
-        tokenLocker.extendLock(lockedAmount+1, weeksLockedFor, extendFor);
+        tokenLocker.extendLock(lockedAmount + 1, weeksLockedFor, extendFor);
     }
 
-    function test_freeze(uint256 amountToLock, uint256 weeksToLockFor) public returns(uint256 frozenAmount) {
+    function test_freeze(uint256 amountToLock, uint256 weeksToLockFor) public returns (uint256 frozenAmount) {
         // perform the lock
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
 
@@ -341,7 +378,10 @@ contract TokenLockerTest is TestSetup {
         uint256 systemWeek = tokenLocker.getWeek();
         uint256 accountWeightPre = tokenLocker.getAccountWeightAt(users.user1, systemWeek);
         uint256 totalWeightPre = tokenLocker.getTotalWeightAt(systemWeek);
-        uint256 accountWeeklyUnlocksOrigWeekPre = tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor);
+        uint256 accountWeeklyUnlocksOrigWeekPre = tokenLocker.getAccountWeeklyUnlocks(
+            users.user1,
+            systemWeek + weeksLockedFor
+        );
         uint256 totalWeeklyUnlocksOrigWeekPre = tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor);
 
         // freeze the account
@@ -359,21 +399,29 @@ contract TokenLockerTest is TestSetup {
         frozenAmount = accountFrozenPost;
 
         // verify account weekly unlocks decreased in original lock week
-        assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor),
-                 accountWeeklyUnlocksOrigWeekPre - lockedAmount);
+        assertEq(
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, systemWeek + weeksLockedFor),
+            accountWeeklyUnlocksOrigWeekPre - lockedAmount
+        );
 
         // verify total weekly unlocks decreased in original lock week
-        assertEq(tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor),
-                 totalWeeklyUnlocksOrigWeekPre - lockedAmount);
+        assertEq(
+            tokenLocker.getTotalWeeklyUnlocks(systemWeek + weeksLockedFor),
+            totalWeeklyUnlocksOrigWeekPre - lockedAmount
+        );
 
         // verify account weight in current week set to frozen weight
-        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek),
-                 accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
+        assertEq(
+            tokenLocker.getAccountWeightAt(users.user1, systemWeek),
+            accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS()
+        );
 
         // verify total weight in current week has subtracted previous
         // account weight and added frozen weight
-        assertEq(tokenLocker.getTotalWeightAt(systemWeek),
-                 totalWeightPre - accountWeightPre + accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
+        assertEq(
+            tokenLocker.getTotalWeightAt(systemWeek),
+            totalWeightPre - accountWeightPre + accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS()
+        );
 
         (uint256 locked, uint256 unlocked) = tokenLocker.getAccountBalances(users.user1);
         assertEq(locked, accountFrozenPost);
@@ -381,8 +429,10 @@ contract TokenLockerTest is TestSetup {
 
         // fast forward 1 week, verify frozen weight remains same
         vm.warp(block.timestamp + 1 weeks);
-        assertEq(tokenLocker.getAccountWeightAt(users.user1, systemWeek+1),
-                 accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS());
+        assertEq(
+            tokenLocker.getAccountWeightAt(users.user1, systemWeek + 1),
+            accountFrozenPost * tokenLocker.MAX_LOCK_WEEKS()
+        );
     }
 
     function test_unfreeze(uint256 amountToLock, uint256 weeksToLockFor) external {
@@ -409,13 +459,11 @@ contract TokenLockerTest is TestSetup {
         assertEq(tokenLocker.getAccountWeeklyUnlocks(users.user1, unlockWeek), frozenAmount);
 
         // verify total unlock week increased by unfrozen amount
-        assertEq(tokenLocker.getTotalWeeklyUnlocks(unlockWeek),
-                 totalWeeklyUnlockWeekPre + frozenAmount);
-        
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(unlockWeek), totalWeeklyUnlockWeekPre + frozenAmount);
     }
 
     // returns a valid penalty start time
-    function _getPenaltyStartTime(uint256 rand) internal view returns(uint256 startTime) {
+    function _getPenaltyStartTime(uint256 rand) internal view returns (uint256 startTime) {
         startTime = bound(rand, block.timestamp + 1, block.timestamp + 13 weeks - 1);
     }
 
@@ -476,7 +524,7 @@ contract TokenLockerTest is TestSetup {
 
         assertEq(tokenLocker.penaltyWithdrawalsEnabled(), status);
     }
-    
+
     function test_setPenaltyWithdrawalsEnabled_onlyOwner() external {
         vm.expectRevert("Only owner");
         tokenLocker.setPenaltyWithdrawalsEnabled(true);
@@ -517,7 +565,7 @@ contract TokenLockerTest is TestSetup {
         test_setPenaltyWithdrawalsEnabled(0, true);
 
         // save user initial balance
-        uint256 userPreTokenBalance = babelToken.balanceOf(users.user1);
+        uint256 userPreTokenBalance = bimaToken.balanceOf(users.user1);
 
         // perform the lock
         (uint256 lockedAmount, uint256 weeksLockedFor) = test_lock(amountToLock, weeksToLockFor);
@@ -535,21 +583,22 @@ contract TokenLockerTest is TestSetup {
         uint256 totalDecayRatePre = tokenLocker.totalDecayRate();
 
         // get expected amounts using TokenLocker::getWithdrawWithPenaltyAmounts
-        (uint256 expectedAmountWithdrawn, uint256 expectedPenaltyAmountPaid)
-            = tokenLocker.getWithdrawWithPenaltyAmounts(users.user1, type(uint256).max);
+        (uint256 expectedAmountWithdrawn, uint256 expectedPenaltyAmountPaid) = tokenLocker
+            .getWithdrawWithPenaltyAmounts(users.user1, type(uint256).max);
 
         // perform the withdraw with penalty
         vm.prank(users.user1);
         tokenLocker.withdrawWithPenalty(type(uint256).max);
 
         // calculate expected penalty
-        uint256 penaltyOnAmount = (lockedAmount * INIT_LOCK_TO_TOKEN_RATIO * weeksLockedFor) / tokenLocker.MAX_LOCK_WEEKS();
+        uint256 penaltyOnAmount = (lockedAmount * INIT_LOCK_TO_TOKEN_RATIO * weeksLockedFor) /
+            tokenLocker.MAX_LOCK_WEEKS();
 
         // verify feeReceiver receives expected penalty
-        assertEq(babelToken.balanceOf(address(babelCore.feeReceiver())), penaltyOnAmount);
+        assertEq(bimaToken.balanceOf(address(bimaCore.feeReceiver())), penaltyOnAmount);
 
         // verify user has received their tokens minus the penalty
-        assertEq(babelToken.balanceOf(users.user1), userPreTokenBalance - penaltyOnAmount);
+        assertEq(bimaToken.balanceOf(users.user1), userPreTokenBalance - penaltyOnAmount);
 
         // verify account's weight was reset
         assertEq(tokenLocker.getAccountWeightAt(users.user1, week), 0);
@@ -573,7 +622,7 @@ contract TokenLockerTest is TestSetup {
         test_setPenaltyWithdrawalsEnabled(0, true);
 
         // perform the lock
-        (uint256 lockedAmount, /*uint256 weeksLockedFor*/) = test_lock(amountToLock, weeksToLockFor);
+        (uint256 lockedAmount /*uint256 weeksLockedFor*/, ) = test_lock(amountToLock, weeksToLockFor);
 
         uint256 week = tokenLocker.getWeek();
 
@@ -585,20 +634,20 @@ contract TokenLockerTest is TestSetup {
         assertEq(tokenLocker.getTotalWeight(), accountWeightPreWithdraw);
 
         // get expected amounts using TokenLocker::getWithdrawWithPenaltyAmounts
-        uint256 amountToWithdraw = lockedAmount/2;
-        (uint256 expectedAmountWithdrawn, uint256 expectedPenaltyAmountPaid)
-            = tokenLocker.getWithdrawWithPenaltyAmounts(users.user1, amountToWithdraw);
+        uint256 amountToWithdraw = lockedAmount / 2;
+        (uint256 expectedAmountWithdrawn, uint256 expectedPenaltyAmountPaid) = tokenLocker
+            .getWithdrawWithPenaltyAmounts(users.user1, amountToWithdraw);
 
         // perform the withdraw with penalty
         vm.prank(users.user1);
         uint256 amountWithdrawn = tokenLocker.withdrawWithPenalty(amountToWithdraw);
 
-        assertEq(expectedAmountWithdrawn,   1735110425000000000000000000);
+        assertEq(expectedAmountWithdrawn, 1735110425000000000000000000);
         assertEq(expectedPenaltyAmountPaid, 69404417000000000000000000);
         assertEq(amountWithdrawn, expectedAmountWithdrawn);
 
         // verify feeReceiver receives expected penalty
-        assertEq(babelToken.balanceOf(address(babelCore.feeReceiver())), expectedPenaltyAmountPaid);
+        assertEq(bimaToken.balanceOf(address(bimaCore.feeReceiver())), expectedPenaltyAmountPaid);
 
         // verify weight not reset as not all tokens were withdrawn
         assertNotEq(tokenLocker.getAccountWeightAt(users.user1, week), 0);
@@ -619,7 +668,7 @@ contract TokenLockerTest is TestSetup {
         assertEq(weeksLockedFor, 20);
 
         // verify user has received weight in the current week
-        uint256 week = tokenLocker.getWeek();        
+        uint256 week = tokenLocker.getWeek();
         assertTrue(tokenLocker.getAccountWeightAt(users.user1, week) != 0);
 
         // perform the withdraw with penalty
@@ -638,8 +687,10 @@ contract TokenLockerTest is TestSetup {
         assertEq(tokenLocker.getTotalWeight(), 0);
 
         // verify getAccountActiveLocks shows user has no active locks
-        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-            = tokenLocker.getAccountActiveLocks(users.user1, weeksToLockFor);
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount) = tokenLocker.getAccountActiveLocks(
+            users.user1,
+            weeksToLockFor
+        );
 
         assertEq(activeLockData.length, 0);
         assertEq(frozenAmount, 0);
@@ -671,7 +722,7 @@ contract TokenLockerTest is TestSetup {
         assertEq(tokenLocker.getTotalWeightWrite(), 0);
     }
 
-    function test_lockMany() public returns(ITokenLocker.LockData[] memory locksData) {
+    function test_lockMany() public returns (ITokenLocker.LockData[] memory locksData) {
         locksData = new ITokenLocker.LockData[](2);
         locksData[0].amount = 10e18 / INIT_LOCK_TO_TOKEN_RATIO;
         locksData[0].weeksToUnlock = 2;
@@ -681,7 +732,7 @@ contract TokenLockerTest is TestSetup {
         uint256 totalToLock = locksData[0].amount + locksData[1].amount;
 
         // save user initial balance
-        uint256 userPreLockTokenBalance = babelToken.balanceOf(users.user1);
+        uint256 userPreLockTokenBalance = bimaToken.balanceOf(users.user1);
 
         (uint256 userPreLockLockedBalance, ) = tokenLocker.getAccountBalances(users.user1);
 
@@ -697,24 +748,26 @@ contract TokenLockerTest is TestSetup {
 
         // when checking actual token balances, need to multipy totalLocked by
         // lockToTokenRatio since the token transfer multiplies by lockToTokenRatio
-        assertEq(babelToken.balanceOf(users.user1), userPreLockTokenBalance - totalLocked*INIT_LOCK_TO_TOKEN_RATIO);
+        assertEq(bimaToken.balanceOf(users.user1), userPreLockTokenBalance - totalLocked * INIT_LOCK_TO_TOKEN_RATIO);
 
         // verify user has positive voting weight in the current week
         uint256 userWeight = tokenLocker.getAccountWeight(users.user1);
         assertTrue(userWeight > 0);
 
         // verify user has no voting weight for future weeks
-        assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek()+1), 0);
+        assertEq(tokenLocker.getAccountWeightAt(users.user1, tokenLocker.getWeek() + 1), 0);
 
         // verify total weight for current week all belongs to user
         assertEq(tokenLocker.getTotalWeight(), userWeight);
 
         // verify no total weight for future weeks
-        assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek()+1), 0);
+        assertEq(tokenLocker.getTotalWeightAt(tokenLocker.getWeek() + 1), 0);
 
         // verify user active locks are correct
-        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount) = tokenLocker.getAccountActiveLocks(
+            users.user1,
+            0
+        );
 
         assertEq(activeLockData.length, 2);
         assertEq(frozenAmount, 0);
@@ -725,19 +778,23 @@ contract TokenLockerTest is TestSetup {
 
         // verify future total weekly unlocks increased for locked amounts
         assertEq(
-            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
-            activeLockData[0].amount);
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount
+        );
         assertEq(
-            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
-            activeLockData[1].amount);
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount
+        );
 
         // verify future account weekly unlocks increased for locked amounts
         assertEq(
-            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
-            activeLockData[0].amount);
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount
+        );
         assertEq(
-            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
-            activeLockData[1].amount);
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount
+        );
     }
 
     function test_extendMany() external {
@@ -759,8 +816,10 @@ contract TokenLockerTest is TestSetup {
         assertEq(totalLocked, extendLocksData[0].amount + extendLocksData[1].amount);
 
         // verify user active locks are correct
-        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount)
-            = tokenLocker.getAccountActiveLocks(users.user1, 0);
+        (ITokenLocker.LockData[] memory activeLockData, uint256 frozenAmount) = tokenLocker.getAccountActiveLocks(
+            users.user1,
+            0
+        );
 
         assertEq(activeLockData.length, 2);
         assertEq(frozenAmount, 0);
@@ -771,30 +830,36 @@ contract TokenLockerTest is TestSetup {
 
         // verify future total weekly unlocks increased for locked amounts
         assertEq(
-            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
-            activeLockData[0].amount);
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount
+        );
         assertEq(
-            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
-            activeLockData[1].amount);
+            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount
+        );
 
         // verify future account weekly unlocks increased for locked amounts
         assertEq(
-            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[0].weeksToUnlock),
-            activeLockData[0].amount);
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + activeLockData[0].weeksToUnlock),
+            activeLockData[0].amount
+        );
         assertEq(
-            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+activeLockData[1].weeksToUnlock),
-            activeLockData[1].amount);
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + activeLockData[1].weeksToUnlock),
+            activeLockData[1].amount
+        );
 
         // verify future total weekly unlocks decreased for old locks
-        assertEq(
-            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+locksData[0].weeksToUnlock), 0);
-        assertEq(
-            tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek()+locksData[1].weeksToUnlock), 0);
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + locksData[0].weeksToUnlock), 0);
+        assertEq(tokenLocker.getTotalWeeklyUnlocks(tokenLocker.getWeek() + locksData[1].weeksToUnlock), 0);
 
         // verify future account weekly unlocks decreased for old locks
         assertEq(
-            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+locksData[0].weeksToUnlock), 0);
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + locksData[0].weeksToUnlock),
+            0
+        );
         assertEq(
-            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek()+locksData[1].weeksToUnlock), 0);
+            tokenLocker.getAccountWeeklyUnlocks(users.user1, tokenLocker.getWeek() + locksData[1].weeksToUnlock),
+            0
+        );
     }
 }

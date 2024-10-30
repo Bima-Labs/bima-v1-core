@@ -4,16 +4,17 @@ pragma solidity 0.8.19;
 import {IERC2612} from "../interfaces/IERC2612.sol";
 import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 /**
-    @title Babel Governance Token
+    @title Bima Governance Token
     @notice Given as an incentive for users of the protocol. Can be locked in `TokenLocker`
-            to receive lock weight, which gives governance power within the Babel DAO.
+            to receive lock weight, which gives governance power within the Bima DAO.
  */
-contract BabelToken is OFT, IERC2612 {
+contract BimaToken is OFT, IERC2612 {
     // --- ERC20 Data ---
 
-    string internal constant _NAME = "Babel Governance Token";
-    string internal constant _SYMBOL = "BABEL";
+    string internal constant _NAME = "Bima Governance Token";
+    string internal constant _SYMBOL = "BIMA";
     string public constant version = "1";
 
     // --- EIP 2612 Data ---
@@ -82,7 +83,7 @@ contract BabelToken is OFT, IERC2612 {
         bytes32 r,
         bytes32 s
     ) external override {
-        require(deadline >= block.timestamp, "BABEL: expired deadline");
+        require(deadline >= block.timestamp, "BIMA: expired deadline");
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -91,7 +92,7 @@ contract BabelToken is OFT, IERC2612 {
             )
         );
         address recoveredAddress = ECDSA.recover(digest, v, r, s);
-        require(recoveredAddress == owner, "BABEL: invalid signature");
+        require(recoveredAddress == owner, "BIMA: invalid signature");
         _approve(owner, spender, amount);
     }
 
@@ -108,7 +109,11 @@ contract BabelToken is OFT, IERC2612 {
 
     // --- Internal operations ---
 
-    function _buildDomainSeparator(bytes32 typeHash, bytes32 name_, bytes32 version_) private view returns (bytes32 output) {
+    function _buildDomainSeparator(
+        bytes32 typeHash,
+        bytes32 name_,
+        bytes32 version_
+    ) private view returns (bytes32 output) {
         output = keccak256(abi.encode(typeHash, name_, version_, block.chainid, address(this)));
     }
 

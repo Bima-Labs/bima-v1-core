@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBabelBase} from "./IBabelBase.sol";
+import {IBimaBase} from "./IBimaBase.sol";
 import {IStabilityPool} from "../interfaces/IStabilityPool.sol";
 import {IBorrowerOperations} from "../interfaces/IBorrowerOperations.sol";
 import {ITroveManager} from "../interfaces/ITroveManager.sol";
 
-interface ILiquidationManager is IBabelBase {
+interface ILiquidationManager is IBimaBase {
     function batchLiquidateTroves(ITroveManager troveManager, address[] calldata _troveArray) external;
 
     function enableTroveManager(ITroveManager _troveManager) external;
