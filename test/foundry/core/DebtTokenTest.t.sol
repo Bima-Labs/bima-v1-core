@@ -129,13 +129,13 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
         uint256 totalSupply = debtToken.totalSupply();
 
-        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), 0);
+        assertEq(debtToken.balanceOf(address(morphoAdapter)), 0);
 
-        vm.startPrank(MORPHO_ADAPTER);
+        vm.startPrank(address(morphoAdapter));
 
-        debtToken.mint(MORPHO_ADAPTER, amount);
+        debtToken.mint(address(morphoAdapter), amount);
 
-        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), amount);
+        assertEq(debtToken.balanceOf(address(morphoAdapter)), amount);
         assertEq(debtToken.totalSupply(), totalSupply + amount);
     }
 
@@ -145,14 +145,14 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
         uint256 totalSupply = debtToken.totalSupply();
 
-        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), 0);
+        assertEq(debtToken.balanceOf(address(morphoAdapter)), 0);
 
-        vm.startPrank(MORPHO_ADAPTER);
+        vm.startPrank(address(morphoAdapter));
 
-        debtToken.mint(MORPHO_ADAPTER, mintAmount);
-        debtToken.burn(MORPHO_ADAPTER, burnAmount);
+        debtToken.mint(address(morphoAdapter), mintAmount);
+        debtToken.burn(address(morphoAdapter), burnAmount);
 
-        assertEq(debtToken.balanceOf(MORPHO_ADAPTER), mintAmount - burnAmount);
+        assertEq(debtToken.balanceOf(address(morphoAdapter)), mintAmount - burnAmount);
         assertEq(debtToken.totalSupply(), totalSupply + mintAmount - burnAmount);
     }
 

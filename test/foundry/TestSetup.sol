@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 // mocks
 import {MockOracle} from "../../contracts/mock/MockOracle.sol";
 import {StakedBTC} from "../../contracts/mock/StakedBTC.sol";
+import {MockVault} from "../../contracts/mock/MockVault.sol";
 
 // interfaces
 import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
@@ -28,6 +29,9 @@ import {StabilityPool} from "../../contracts/core/StabilityPool.sol";
 import {TroveManager} from "../../contracts/core/TroveManager.sol";
 import {SortedTroves} from "../../contracts/core/SortedTroves.sol";
 
+// adapters
+import {MorphoAdapter} from "../../contracts/adapters/MorphoAdapter.sol";
+
 // dao
 import {FeeReceiver} from "../../contracts/dao/FeeReceiver.sol";
 import {InterimAdmin} from "../../contracts/dao/InterimAdmin.sol";
@@ -40,6 +44,7 @@ import {BoostCalculator} from "../../contracts/dao/BoostCalculator.sol";
 
 // external
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // foundry
 import {Test} from "forge-std/Test.sol";
@@ -68,6 +73,7 @@ struct DeployAddresses {
     address incentiveVoting;
     address bimaToken;
     address bimaVault;
+    address morphoAdapter;
 }
 
 contract TestSetup is Test {
@@ -75,6 +81,7 @@ contract TestSetup is Test {
     Users internal users;
     MockOracle mockOracle;
     StakedBTC stakedBTC;
+    MockVault mockVault;
 
     // core contracts
     BimaCore internal bimaCore;
@@ -87,6 +94,9 @@ contract TestSetup is Test {
     TroveManager internal troveMgr;
     SortedTroves internal sortedTroves;
 
+    // adapter contracts
+    MorphoAdapter internal morphoAdapter;
+
     // dao contracts
     FeeReceiver internal feeReceiver;
     InterimAdmin internal interimAdmin;
@@ -96,9 +106,6 @@ contract TestSetup is Test {
     BimaVault internal bimaVault;
     EmissionSchedule internal emissionSchedule;
     BoostCalculator internal boostCalc;
-
-    // adapters
-    address internal constant MORPHO_ADAPTER = address(0x1); // mock address
 
     // constants
     uint256 internal constant INIT_MCR = 2e18; // 200%
@@ -188,6 +195,7 @@ contract TestSetup is Test {
 
         addresses.factory = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.liquidationMgr = vm.computeCreateAddress(users.owner, ++addresses.nonce);
+        addresses.morphoAdapter = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.debtToken = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.borrowerOps = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.stabilityPool = vm.computeCreateAddress(users.owner, ++addresses.nonce);
@@ -218,6 +226,10 @@ contract TestSetup is Test {
         );
         assertEq(addresses.liquidationMgr, address(liquidationMgr));
 
+        // MorphoAdapter
+        morphoAdapter = new MorphoAdapter(addresses.core);
+        assertEq(addresses.morphoAdapter, address(morphoAdapter));
+
         // DebtToken
         debtToken = new DebtToken(
             "BUSD",
@@ -229,7 +241,7 @@ contract TestSetup is Test {
             addresses.factory,
             users.gasPool,
             INIT_GAS_COMPENSATION,
-            MORPHO_ADAPTER
+            addresses.morphoAdapter
         );
         assertEq(addresses.debtToken, address(debtToken));
 
@@ -341,6 +353,9 @@ contract TestSetup is Test {
 
         // create BoostCalculator
         boostCalc = new BoostCalculator(address(bimaCore), tokenLocker, INIT_BS_GRACE_WEEKS);
+
+        // set up mock vault
+        mockVault = new MockVault(IERC20(addresses.debtToken));
 
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later

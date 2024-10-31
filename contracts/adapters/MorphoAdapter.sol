@@ -9,10 +9,14 @@ import {IMorphoAdapter} from "../interfaces/IMorphoAdapter.sol";
 import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 
 contract MorphoAdapter is IMorphoAdapter, BimaOwnable {
-    IDebtToken public immutable underlying;
-    IERC4626 public immutable vault;
+    IDebtToken public underlying;
+    IERC4626 public vault;
 
-    constructor(address _bimaCore, address _vaultAddress, address _underlyingAddress) BimaOwnable(_bimaCore) {
+    constructor(address _bimaCore) BimaOwnable(_bimaCore) {}
+
+    function setAddresses(address _underlyingAddress, address _vaultAddress) external onlyOwner {
+        require(address(underlying) == address(0), "MorphoAdapter: addresses already set");
+
         underlying = IDebtToken(_underlyingAddress);
         vault = IERC4626(_vaultAddress);
     }
