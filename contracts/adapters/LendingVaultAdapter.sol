@@ -8,12 +8,23 @@ import {IDebtToken} from "../interfaces/IDebtToken.sol";
 import {ILendingVaultAdapter} from "../interfaces/ILendingVaultAdapter.sol";
 import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 
+/// @title LendingVaultAdapter
+/// @dev This contract will be used to move funds in and out from the forked Morpho Vault
+/// @dev Making the DebtToken available to be borrowed against assets other then Bitcoin LSTs, with custom parameters
 contract LendingVaultAdapter is ILendingVaultAdapter, BimaOwnable {
+    /// @inheritdoc ILendingVaultAdapter
     IDebtToken public underlying;
+
+    /// @inheritdoc ILendingVaultAdapter
     IERC4626 public vault;
 
+    /* CONSTRUCTOR */
+
+    /// @dev Initializes the contract.
+    /// @param _bimaCore BimaCore contract address
     constructor(address _bimaCore) BimaOwnable(_bimaCore) {}
 
+    /// @inheritdoc ILendingVaultAdapter
     function setAddresses(address _underlyingAddress, address _vaultAddress) external onlyOwner {
         require(address(underlying) == address(0), "LendingVaultAdapter: addresses already set");
 
@@ -21,6 +32,7 @@ contract LendingVaultAdapter is ILendingVaultAdapter, BimaOwnable {
         vault = IERC4626(_vaultAddress);
     }
 
+    /// @inheritdoc ILendingVaultAdapter
     function deposit(uint256 assets) public onlyOwner {
         underlying.mint(address(this), assets);
 
@@ -31,6 +43,7 @@ contract LendingVaultAdapter is ILendingVaultAdapter, BimaOwnable {
         emit Deposit(msg.sender, assets, block.timestamp);
     }
 
+    /// @inheritdoc ILendingVaultAdapter
     function redeem(uint256 shares) public onlyOwner {
         uint256 initialBalance = underlying.balanceOf(address(this));
 
@@ -43,6 +56,7 @@ contract LendingVaultAdapter is ILendingVaultAdapter, BimaOwnable {
         emit Redeem(msg.sender, shares, block.timestamp);
     }
 
+    /// @inheritdoc ILendingVaultAdapter
     function recover(address _token) external onlyOwner {
         IERC20 token = IERC20(_token);
 
