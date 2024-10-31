@@ -73,7 +73,6 @@ struct DeployAddresses {
     address incentiveVoting;
     address bimaToken;
     address bimaVault;
-    address morphoAdapter;
 }
 
 contract TestSetup is Test {
@@ -195,7 +194,6 @@ contract TestSetup is Test {
 
         addresses.factory = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.liquidationMgr = vm.computeCreateAddress(users.owner, ++addresses.nonce);
-        addresses.morphoAdapter = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.debtToken = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.borrowerOps = vm.computeCreateAddress(users.owner, ++addresses.nonce);
         addresses.stabilityPool = vm.computeCreateAddress(users.owner, ++addresses.nonce);
@@ -226,10 +224,6 @@ contract TestSetup is Test {
         );
         assertEq(addresses.liquidationMgr, address(liquidationMgr));
 
-        // MorphoAdapter
-        morphoAdapter = new MorphoAdapter(addresses.core);
-        assertEq(addresses.morphoAdapter, address(morphoAdapter));
-
         // DebtToken
         debtToken = new DebtToken(
             "BUSD",
@@ -240,8 +234,7 @@ contract TestSetup is Test {
             ZERO_ADDRESS, // LayerZero endpoint
             addresses.factory,
             users.gasPool,
-            INIT_GAS_COMPENSATION,
-            addresses.morphoAdapter
+            INIT_GAS_COMPENSATION
         );
         assertEq(addresses.debtToken, address(debtToken));
 
@@ -356,6 +349,7 @@ contract TestSetup is Test {
 
         // set up mock vault
         mockVault = new MockVault(IERC20(addresses.debtToken));
+        morphoAdapter = new MorphoAdapter(addresses.core);
 
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later

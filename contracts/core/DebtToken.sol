@@ -46,7 +46,7 @@ contract DebtToken is OFT {
     // Adapter that will mint USBD and deposit it in Morpho (forked) vault,
     // and vice verca, withdrawing from vault and burning USBD.
     // making it available for borrowing against other assets
-    address public immutable morphoAdapterAddress;
+    address public morphoAdapterAddress;
 
     mapping(address => bool) public troveManager;
 
@@ -62,15 +62,13 @@ contract DebtToken is OFT {
         address _layerZeroEndpoint,
         address _factory,
         address _gasPool,
-        uint256 _gasCompensation,
-        address _morphoAdapterAddress
+        uint256 _gasCompensation
     ) OFT(_name, _symbol, _layerZeroEndpoint) {
         stabilityPoolAddress = _stabilityPoolAddress;
         _bimaCore = bimaCore_;
         borrowerOperationsAddress = _borrowerOperationsAddress;
         factory = _factory;
         gasPool = _gasPool;
-        morphoAdapterAddress = _morphoAdapterAddress;
 
         DEBT_GAS_COMPENSATION = _gasCompensation;
 
@@ -86,6 +84,11 @@ contract DebtToken is OFT {
     function enableTroveManager(address _troveManager) external {
         require(msg.sender == factory, "!Factory");
         troveManager[_troveManager] = true;
+    }
+
+    function setMorphoAdapterAddress(address _morphoAdapterAddress) external {
+        require(msg.sender == _bimaCore.owner(), "Only owner");
+        morphoAdapterAddress = _morphoAdapterAddress;
     }
 
     // --- Functions for intra-Bima calls ---

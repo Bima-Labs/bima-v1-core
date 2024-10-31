@@ -14,6 +14,9 @@ contract AdapterTest is TestSetup {
 
     function setUp() public virtual override {
         super.setUp();
+
+        vm.prank(users.owner);
+        debtToken.setMorphoAdapterAddress(address(morphoAdapter));
     }
 
     function test_initial_setup() external view {

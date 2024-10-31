@@ -124,8 +124,30 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
         debtToken.transfer(users.user2, amount);
     }
 
+    function test_set_morpho_adapter_address() external {
+        assertEq(debtToken.morphoAdapterAddress(), address(0));
+
+        vm.startPrank(users.owner);
+
+        debtToken.setMorphoAdapterAddress(address(morphoAdapter));
+
+        assertEq(debtToken.morphoAdapterAddress(), address(morphoAdapter));
+    }
+
+    function test_set_morpho_adapter_address_unauthorized(address _user) external {
+        vm.assume(_user != bimaCore.owner());
+
+        vm.startPrank(_user);
+
+        vm.expectRevert();
+        debtToken.setMorphoAdapterAddress(address(morphoAdapter));
+    }
+
     function test_mint_from_morpho_adapter(uint256 amount) external {
         vm.assume(amount <= MAX_AMOUNT);
+
+        vm.prank(users.owner);
+        debtToken.setMorphoAdapterAddress(address(morphoAdapter));
 
         uint256 totalSupply = debtToken.totalSupply();
 
@@ -142,6 +164,9 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
     function test_burn_from_morpho_adapter(uint256 mintAmount, uint256 burnAmount) external {
         vm.assume(mintAmount <= MAX_AMOUNT);
         vm.assume(burnAmount <= mintAmount);
+
+        vm.prank(users.owner);
+        debtToken.setMorphoAdapterAddress(address(morphoAdapter));
 
         uint256 totalSupply = debtToken.totalSupply();
 
