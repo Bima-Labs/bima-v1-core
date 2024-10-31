@@ -16,29 +16,29 @@ contract AdapterTest is TestSetup {
         super.setUp();
 
         vm.prank(users.owner);
-        debtToken.setMorphoAdapterAddress(address(morphoAdapter));
+        debtToken.setLendingVaultAdapterAddress(address(lendingVaultAdapter));
     }
 
     function test_initial_setup() external view {
-        assertEq(morphoAdapter.owner(), users.owner);
-        assertEq(address(morphoAdapter.underlying()), address(0));
-        assertEq(address(morphoAdapter.vault()), address(0));
+        assertEq(lendingVaultAdapter.owner(), users.owner);
+        assertEq(address(lendingVaultAdapter.underlying()), address(0));
+        assertEq(address(lendingVaultAdapter.vault()), address(0));
     }
 
     function test_set_addresses() external {
         vm.prank(users.owner);
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
-        assertEq(address(morphoAdapter.underlying()), address(debtToken));
-        assertEq(address(morphoAdapter.vault()), address(mockVault));
+        assertEq(address(lendingVaultAdapter.underlying()), address(debtToken));
+        assertEq(address(lendingVaultAdapter.vault()), address(mockVault));
     }
 
     function test_set_addresses_again() external {
         vm.prank(users.owner);
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         vm.expectRevert();
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
     }
 
     function test_set_addresses_unauthorized(address user) external {
@@ -47,23 +47,23 @@ contract AdapterTest is TestSetup {
         vm.startPrank(user);
 
         vm.expectRevert();
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
     }
 
     function test_deposit(uint256 _amount) external {
         vm.startPrank(users.owner);
 
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         uint256 initialUnderlyingSupply = debtToken.totalSupply();
         uint256 initialVaultSupply = mockVault.totalSupply();
 
         vm.expectEmit(true, true, true, true);
         emit Deposit(users.owner, _amount, block.timestamp);
-        morphoAdapter.deposit(_amount);
+        lendingVaultAdapter.deposit(_amount);
 
         assertEq(debtToken.totalSupply(), initialUnderlyingSupply + _amount);
-        assertEq(debtToken.balanceOf(address(morphoAdapter)), 0);
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), 0);
         assertEq(debtToken.balanceOf(address(this)), 0);
 
         assertEq(mockVault.totalAssets(), initialVaultSupply + _amount);
@@ -75,19 +75,19 @@ contract AdapterTest is TestSetup {
 
         vm.startPrank(users.owner);
 
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         uint256 initialUnderlyingSupply = debtToken.totalSupply();
         uint256 initialVaultSupply = mockVault.totalSupply();
 
-        morphoAdapter.deposit(_depositAmount);
+        lendingVaultAdapter.deposit(_depositAmount);
 
         vm.expectEmit(true, true, true, true);
         emit Redeem(users.owner, _redeemAmount, block.timestamp);
-        morphoAdapter.redeem(mockVault.convertToShares(_redeemAmount));
+        lendingVaultAdapter.redeem(mockVault.convertToShares(_redeemAmount));
 
         assertEq(debtToken.totalSupply(), initialUnderlyingSupply + _depositAmount - _redeemAmount);
-        assertEq(debtToken.balanceOf(address(morphoAdapter)), 0);
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), 0);
         assertEq(debtToken.balanceOf(address(this)), 0);
 
         assertEq(mockVault.totalAssets(), initialVaultSupply + _depositAmount - _redeemAmount);
@@ -114,66 +114,66 @@ contract AdapterTest is TestSetup {
 
         vm.startPrank(users.owner);
 
-        morphoAdapter.setAddresses(address(debtToken), address(mockVault));
+        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         uint256 initialUnderlyingSupply = debtToken.totalSupply();
         uint256 initialVaultSupply = mockVault.totalSupply();
 
-        morphoAdapter.deposit(_depositAmount);
+        lendingVaultAdapter.deposit(_depositAmount);
 
         assertEq(debtToken.totalSupply(), initialUnderlyingSupply + _depositAmount);
         assertEq(mockVault.totalAssets(), initialVaultSupply + _depositAmount);
-        assertEq(debtToken.balanceOf(address(morphoAdapter)), 0);
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), 0);
         assertEq(debtToken.balanceOf(address(this)), 0);
 
-        morphoAdapter.redeem(mockVault.convertToShares(_redeemAmount));
+        lendingVaultAdapter.redeem(mockVault.convertToShares(_redeemAmount));
 
         assertEq(debtToken.totalSupply(), initialUnderlyingSupply + _depositAmount - _redeemAmount);
         assertEq(mockVault.totalAssets(), initialVaultSupply + _depositAmount - _redeemAmount);
-        assertEq(debtToken.balanceOf(address(morphoAdapter)), 0);
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), 0);
         assertEq(debtToken.balanceOf(address(this)), 0);
     }
 
     function test_deposit_unauthorized(address _user, uint256 _amount) external {
-        vm.assume(_user != morphoAdapter.owner());
+        vm.assume(_user != lendingVaultAdapter.owner());
 
         vm.startPrank(_user);
 
         vm.expectRevert();
-        morphoAdapter.deposit(_amount);
+        lendingVaultAdapter.deposit(_amount);
     }
 
     function test_redeem_unauthorized(address _user, uint256 _amount) external {
-        vm.assume(_user != morphoAdapter.owner());
+        vm.assume(_user != lendingVaultAdapter.owner());
 
         vm.startPrank(_user);
 
         vm.expectRevert();
-        morphoAdapter.redeem(_amount);
+        lendingVaultAdapter.redeem(_amount);
     }
 
     function test_recover(uint256 _amount) external {
         ERC20 testToken = new ERC20("Test Token", "TTT");
 
-        deal(address(testToken), address(morphoAdapter), _amount);
+        deal(address(testToken), address(lendingVaultAdapter), _amount);
 
         vm.startPrank(users.owner);
 
         assertEq(testToken.balanceOf(users.owner), 0);
-        assertEq(testToken.balanceOf(address(morphoAdapter)), _amount);
+        assertEq(testToken.balanceOf(address(lendingVaultAdapter)), _amount);
 
-        morphoAdapter.recover(address(testToken));
+        lendingVaultAdapter.recover(address(testToken));
 
         assertEq(testToken.balanceOf(users.owner), _amount);
-        assertEq(testToken.balanceOf(address(morphoAdapter)), 0);
+        assertEq(testToken.balanceOf(address(lendingVaultAdapter)), 0);
     }
 
     function test_recover_as_non_owner(address user) external {
-        vm.assume(user != morphoAdapter.owner());
+        vm.assume(user != lendingVaultAdapter.owner());
 
         vm.startPrank(user);
 
         vm.expectRevert();
-        morphoAdapter.recover(address(debtToken));
+        lendingVaultAdapter.recover(address(debtToken));
     }
 }

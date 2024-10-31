@@ -30,7 +30,7 @@ import {TroveManager} from "../../contracts/core/TroveManager.sol";
 import {SortedTroves} from "../../contracts/core/SortedTroves.sol";
 
 // adapters
-import {MorphoAdapter} from "../../contracts/adapters/MorphoAdapter.sol";
+import {LendingVaultAdapter} from "../../contracts/adapters/LendingVaultAdapter.sol";
 
 // dao
 import {FeeReceiver} from "../../contracts/dao/FeeReceiver.sol";
@@ -94,7 +94,7 @@ contract TestSetup is Test {
     SortedTroves internal sortedTroves;
 
     // adapter contracts
-    MorphoAdapter internal morphoAdapter;
+    LendingVaultAdapter internal lendingVaultAdapter;
 
     // dao contracts
     FeeReceiver internal feeReceiver;
@@ -349,7 +349,7 @@ contract TestSetup is Test {
 
         // set up mock vault
         mockVault = new MockVault(IERC20(addresses.debtToken));
-        morphoAdapter = new MorphoAdapter(addresses.core);
+        lendingVaultAdapter = new LendingVaultAdapter(addresses.core);
 
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later

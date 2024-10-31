@@ -43,10 +43,10 @@ contract DebtToken is OFT {
     address public immutable borrowerOperationsAddress;
     address public immutable factory;
     address public immutable gasPool;
-    // Adapter that will mint USBD and deposit it in Morpho (forked) vault,
+    // Adapter that will mint USBD and deposit it in the vault,
     // and vice verca, withdrawing from vault and burning USBD.
     // making it available for borrowing against other assets
-    address public morphoAdapterAddress;
+    address public lendingVaultAdapterAddress;
 
     mapping(address => bool) public troveManager;
 
@@ -86,9 +86,9 @@ contract DebtToken is OFT {
         troveManager[_troveManager] = true;
     }
 
-    function setMorphoAdapterAddress(address _morphoAdapterAddress) external {
+    function setLendingVaultAdapterAddress(address _lendingVaultAdapterAddress) external {
         require(msg.sender == _bimaCore.owner(), "Only owner");
-        morphoAdapterAddress = _morphoAdapterAddress;
+        lendingVaultAdapterAddress = _lendingVaultAdapterAddress;
     }
 
     // --- Functions for intra-Bima calls ---
@@ -111,14 +111,16 @@ contract DebtToken is OFT {
 
     function mint(address _account, uint256 _amount) external {
         require(
-            msg.sender == borrowerOperationsAddress || troveManager[msg.sender] || msg.sender == morphoAdapterAddress,
-            "Debt: Caller not BO/TM/MA"
+            msg.sender == borrowerOperationsAddress ||
+                troveManager[msg.sender] ||
+                msg.sender == lendingVaultAdapterAddress,
+            "Debt: Caller not BO/TM/LVA"
         );
         _mint(_account, _amount);
     }
 
     function burn(address _account, uint256 _amount) external {
-        require(troveManager[msg.sender] || msg.sender == morphoAdapterAddress, "Debt: Caller not TM/MA");
+        require(troveManager[msg.sender] || msg.sender == lendingVaultAdapterAddress, "Debt: Caller not TM/LVA");
         _burn(_account, _amount);
     }
 

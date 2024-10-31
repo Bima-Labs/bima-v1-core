@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IMorphoAdapter {
+interface ILendingVaultAdapter {
     event Deposit(address indexed signer, uint256 amount, uint256 timestamp);
     event Redeem(address indexed signer, uint256 amount, uint256 timestamp);
 

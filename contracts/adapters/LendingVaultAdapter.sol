@@ -5,17 +5,17 @@ import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IDebtToken} from "../interfaces/IDebtToken.sol";
-import {IMorphoAdapter} from "../interfaces/IMorphoAdapter.sol";
+import {ILendingVaultAdapter} from "../interfaces/ILendingVaultAdapter.sol";
 import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 
-contract MorphoAdapter is IMorphoAdapter, BimaOwnable {
+contract LendingVaultAdapter is ILendingVaultAdapter, BimaOwnable {
     IDebtToken public underlying;
     IERC4626 public vault;
 
     constructor(address _bimaCore) BimaOwnable(_bimaCore) {}
 
     function setAddresses(address _underlyingAddress, address _vaultAddress) external onlyOwner {
-        require(address(underlying) == address(0), "MorphoAdapter: addresses already set");
+        require(address(underlying) == address(0), "LendingVaultAdapter: addresses already set");
 
         underlying = IDebtToken(_underlyingAddress);
         vault = IERC4626(_vaultAddress);
