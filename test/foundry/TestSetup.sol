@@ -349,7 +349,7 @@ contract TestSetup is Test {
 
         // set up mock vault
         mockVault = new MockVault(IERC20(addresses.debtToken));
-        lendingVaultAdapter = new LendingVaultAdapter(addresses.core);
+        lendingVaultAdapter = new LendingVaultAdapter(addresses.core, addresses.debtToken, address(mockVault));
 
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later

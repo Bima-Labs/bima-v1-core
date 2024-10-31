@@ -14,10 +14,6 @@ interface ILendingVaultAdapter {
     /// @notice The address of the vault contract.
     function vault() external view returns (IERC4626);
 
-    /// @notice Sets `underlying` and `vault` addresses.
-    /// @dev Warning: Reverts if this function is already called once.
-    function setAddresses(address _underlyingAddress, address _vaultAddress) external;
-
     /// @notice Mints `assets` amount of `underlying` tokens and deposits them into the vault.
     function deposit(uint256 assets) external;
 

@@ -21,39 +21,12 @@ contract AdapterTest is TestSetup {
 
     function test_initial_setup() external view {
         assertEq(lendingVaultAdapter.owner(), users.owner);
-        assertEq(address(lendingVaultAdapter.underlying()), address(0));
-        assertEq(address(lendingVaultAdapter.vault()), address(0));
-    }
-
-    function test_set_addresses() external {
-        vm.prank(users.owner);
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
-
         assertEq(address(lendingVaultAdapter.underlying()), address(debtToken));
         assertEq(address(lendingVaultAdapter.vault()), address(mockVault));
     }
 
-    function test_set_addresses_again() external {
-        vm.prank(users.owner);
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
-
-        vm.expectRevert();
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
-    }
-
-    function test_set_addresses_unauthorized(address user) external {
-        vm.assume(user != users.owner);
-
-        vm.startPrank(user);
-
-        vm.expectRevert();
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
-    }
-
     function test_deposit(uint256 _amount) external {
         vm.startPrank(users.owner);
-
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         uint256 initialUnderlyingSupply = debtToken.totalSupply();
         uint256 initialVaultSupply = mockVault.totalSupply();
@@ -74,8 +47,6 @@ contract AdapterTest is TestSetup {
         vm.assume(_depositAmount >= _redeemAmount);
 
         vm.startPrank(users.owner);
-
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         uint256 initialUnderlyingSupply = debtToken.totalSupply();
         uint256 initialVaultSupply = mockVault.totalSupply();
@@ -113,8 +84,6 @@ contract AdapterTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(users.owner);
-
-        lendingVaultAdapter.setAddresses(address(debtToken), address(mockVault));
 
         uint256 initialUnderlyingSupply = debtToken.totalSupply();
         uint256 initialVaultSupply = mockVault.totalSupply();

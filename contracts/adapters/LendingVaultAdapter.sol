@@ -13,21 +13,18 @@ import {BimaOwnable} from "../dependencies/BimaOwnable.sol";
 /// @dev Making the DebtToken available to be borrowed against assets other then Bitcoin LSTs, with custom parameters
 contract LendingVaultAdapter is ILendingVaultAdapter, BimaOwnable {
     /// @inheritdoc ILendingVaultAdapter
-    IDebtToken public underlying;
+    IDebtToken public immutable underlying;
 
     /// @inheritdoc ILendingVaultAdapter
-    IERC4626 public vault;
+    IERC4626 public immutable vault;
 
     /* CONSTRUCTOR */
 
     /// @dev Initializes the contract.
     /// @param _bimaCore BimaCore contract address
-    constructor(address _bimaCore) BimaOwnable(_bimaCore) {}
-
-    /// @inheritdoc ILendingVaultAdapter
-    function setAddresses(address _underlyingAddress, address _vaultAddress) external onlyOwner {
-        require(address(underlying) == address(0), "LendingVaultAdapter: addresses already set");
-
+    /// @param _underlyingAddress underlying asset contract address
+    /// @param _vaultAddress LendingVault contract address
+    constructor(address _bimaCore, address _underlyingAddress, address _vaultAddress) BimaOwnable(_bimaCore) {
         underlying = IDebtToken(_underlyingAddress);
         vault = IERC4626(_vaultAddress);
     }
