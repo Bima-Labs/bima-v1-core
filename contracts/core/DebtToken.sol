@@ -43,8 +43,8 @@ contract DebtToken is OFT {
     address public immutable borrowerOperationsAddress;
     address public immutable factory;
     address public immutable gasPool;
-    // Adapter that will mint USBD and deposit it in the vault,
-    // and vice verca, withdrawing from vault and burning USBD.
+    // Adapter that will mint DebtToken and deposit it in the vault,
+    // and vice verca, withdrawing from vault and burning DebtToken.
     // making it available for borrowing against other assets
     address public lendingVaultAdapterAddress;
 
