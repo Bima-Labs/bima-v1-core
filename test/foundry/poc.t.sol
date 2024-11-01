@@ -8,7 +8,7 @@ import {StakedBTC} from "../../contracts/mock/StakedBTC.sol";
 import {BorrowerOperations} from "../../contracts/core/BorrowerOperations.sol";
 import {TroveManager} from "../../contracts/core/TroveManager.sol";
 import {MultiCollateralHintHelpers} from "../../contracts/core/helpers/MultiCollateralHintHelpers.sol";
-import {StorkOracleWrapper} from "../../contracts/core/StorkOracleWrapper.sol";
+import {StorkOracleWrapper} from "../../contracts/wrappers/StorkOracleWrapper.sol";
 import {IBimaVault} from "../../contracts/interfaces/IVault.sol";
 
 /**
