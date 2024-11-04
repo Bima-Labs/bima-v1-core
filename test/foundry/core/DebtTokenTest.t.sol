@@ -124,6 +124,63 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
         debtToken.transfer(users.user2, amount);
     }
 
+    function test_set_lending_vault_adapter_address() external {
+        assertEq(debtToken.lendingVaultAdapterAddress(), address(0));
+
+        vm.startPrank(users.owner);
+
+        debtToken.setLendingVaultAdapterAddress(address(lendingVaultAdapter));
+
+        assertEq(debtToken.lendingVaultAdapterAddress(), address(lendingVaultAdapter));
+    }
+
+    function test_set_lending_vault_adapter_address_unauthorized(address _user) external {
+        vm.assume(_user != bimaCore.owner());
+
+        vm.startPrank(_user);
+
+        vm.expectRevert();
+        debtToken.setLendingVaultAdapterAddress(address(lendingVaultAdapter));
+    }
+
+    function test_mint_from_lending_vault_adapter(uint256 amount) external {
+        vm.assume(amount <= MAX_AMOUNT);
+
+        vm.prank(users.owner);
+        debtToken.setLendingVaultAdapterAddress(address(lendingVaultAdapter));
+
+        uint256 totalSupply = debtToken.totalSupply();
+
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), 0);
+
+        vm.startPrank(address(lendingVaultAdapter));
+
+        debtToken.mint(address(lendingVaultAdapter), amount);
+
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), amount);
+        assertEq(debtToken.totalSupply(), totalSupply + amount);
+    }
+
+    function test_burn_from_lending_vault_adapter(uint256 mintAmount, uint256 burnAmount) external {
+        vm.assume(mintAmount <= MAX_AMOUNT);
+        vm.assume(burnAmount <= mintAmount);
+
+        vm.prank(users.owner);
+        debtToken.setLendingVaultAdapterAddress(address(lendingVaultAdapter));
+
+        uint256 totalSupply = debtToken.totalSupply();
+
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), 0);
+
+        vm.startPrank(address(lendingVaultAdapter));
+
+        debtToken.mint(address(lendingVaultAdapter), mintAmount);
+        debtToken.burn(address(lendingVaultAdapter), burnAmount);
+
+        assertEq(debtToken.balanceOf(address(lendingVaultAdapter)), mintAmount - burnAmount);
+        assertEq(debtToken.totalSupply(), totalSupply + mintAmount - burnAmount);
+    }
+
     function onFlashLoan(
         address /*initiator*/,
         address /*token*/,

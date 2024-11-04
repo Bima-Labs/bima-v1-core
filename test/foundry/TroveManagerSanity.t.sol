@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 
-import {StorkOracleWrapper, IStorkOracle} from "../../contracts/core/StorkOracleWrapper.sol";
+import {StorkOracleWrapper, IStorkOracle} from "../../contracts/wrappers/StorkOracleWrapper.sol";
 import {IAggregatorV3Interface} from "../../contracts/interfaces/IAggregatorV3Interface.sol";
 import {PriceFeed} from "../../contracts/core/PriceFeed.sol";
 import {IBorrowerOperations} from "../../contracts/interfaces/IBorrowerOperations.sol";

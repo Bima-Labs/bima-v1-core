@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 // mocks
 import {MockOracle} from "../../contracts/mock/MockOracle.sol";
 import {StakedBTC} from "../../contracts/mock/StakedBTC.sol";
+import {MockVault} from "../../contracts/mock/MockVault.sol";
 
 // interfaces
 import {IDebtToken} from "../../contracts/interfaces/IDebtToken.sol";
@@ -28,6 +29,9 @@ import {StabilityPool} from "../../contracts/core/StabilityPool.sol";
 import {TroveManager} from "../../contracts/core/TroveManager.sol";
 import {SortedTroves} from "../../contracts/core/SortedTroves.sol";
 
+// adapters
+import {LendingVaultAdapter} from "../../contracts/adapters/LendingVaultAdapter.sol";
+
 // dao
 import {FeeReceiver} from "../../contracts/dao/FeeReceiver.sol";
 import {InterimAdmin} from "../../contracts/dao/InterimAdmin.sol";
@@ -40,6 +44,7 @@ import {BoostCalculator} from "../../contracts/dao/BoostCalculator.sol";
 
 // external
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // foundry
 import {Test} from "forge-std/Test.sol";
@@ -75,6 +80,7 @@ contract TestSetup is Test {
     Users internal users;
     MockOracle mockOracle;
     StakedBTC stakedBTC;
+    MockVault mockVault;
 
     // core contracts
     BimaCore internal bimaCore;
@@ -86,6 +92,9 @@ contract TestSetup is Test {
     StabilityPool internal stabilityPool;
     TroveManager internal troveMgr;
     SortedTroves internal sortedTroves;
+
+    // adapter contracts
+    LendingVaultAdapter internal lendingVaultAdapter;
 
     // dao contracts
     FeeReceiver internal feeReceiver;
@@ -337,6 +346,10 @@ contract TestSetup is Test {
 
         // create BoostCalculator
         boostCalc = new BoostCalculator(address(bimaCore), tokenLocker, INIT_BS_GRACE_WEEKS);
+
+        // set up mock vault
+        mockVault = new MockVault(IERC20(addresses.debtToken));
+        lendingVaultAdapter = new LendingVaultAdapter(addresses.core, addresses.debtToken, address(mockVault));
 
         // note: the hardhat script had some post deloyment actions
         // leaving them commented out for now unless we need them later

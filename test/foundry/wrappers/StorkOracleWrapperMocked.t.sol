@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {TestSetup} from "./TestSetup.sol";
+import {TestSetup} from "../TestSetup.sol";
 
-import {StorkOracleWrapper, IStorkOracle} from "../../contracts/core/StorkOracleWrapper.sol";
+import {StorkOracleWrapper, IStorkOracle} from "../../../contracts/wrappers/StorkOracleWrapper.sol";
 import {MockERC20} from "forge-std/mocks/MockERC20.sol";
 
 import {console} from "forge-std/console.sol";

@@ -8,7 +8,7 @@ import {IBimaCore} from "../interfaces/IBimaCore.sol";
 import {BIMA_100_PCT} from "../dependencies/Constants.sol";
 
 /**
-    @title Bima Debt Token "acUSD"
+    @title Bima Debt Token "USBD"
     @notice CDP minted against collateral deposits within `TroveManager`.
             This contract has a 1:n relationship with multiple deployments of `TroveManager`,
             each of which hold one collateral type which may be used to mint this token.
@@ -43,6 +43,10 @@ contract DebtToken is OFT {
     address public immutable borrowerOperationsAddress;
     address public immutable factory;
     address public immutable gasPool;
+    // Adapter that will mint DebtToken and deposit it in the vault,
+    // and vice verca, withdrawing from vault and burning DebtToken.
+    // making it available for borrowing against other assets
+    address public lendingVaultAdapterAddress;
 
     mapping(address => bool) public troveManager;
 
@@ -82,6 +86,11 @@ contract DebtToken is OFT {
         troveManager[_troveManager] = true;
     }
 
+    function setLendingVaultAdapterAddress(address _lendingVaultAdapterAddress) external {
+        require(msg.sender == _bimaCore.owner(), "Only owner");
+        lendingVaultAdapterAddress = _lendingVaultAdapterAddress;
+    }
+
     // --- Functions for intra-Bima calls ---
 
     function mintWithGasCompensation(address _account, uint256 _amount) external returns (bool success) {
@@ -101,12 +110,17 @@ contract DebtToken is OFT {
     }
 
     function mint(address _account, uint256 _amount) external {
-        require(msg.sender == borrowerOperationsAddress || troveManager[msg.sender], "Debt: Caller not BO/TM");
+        require(
+            msg.sender == borrowerOperationsAddress ||
+                troveManager[msg.sender] ||
+                msg.sender == lendingVaultAdapterAddress,
+            "Debt: Caller not BO/TM/LVA"
+        );
         _mint(_account, _amount);
     }
 
     function burn(address _account, uint256 _amount) external {
-        require(troveManager[msg.sender], "Debt: Caller not TroveManager");
+        require(troveManager[msg.sender] || msg.sender == lendingVaultAdapterAddress, "Debt: Caller not TM/LVA");
         _burn(_account, _amount);
     }
 
