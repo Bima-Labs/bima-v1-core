@@ -1521,4 +1521,19 @@ contract BorrowerOperationsTest is StabilityPoolTest {
             assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0] + _finalDebt + INIT_GAS_COMPENSATION);
         }
     }
+
+    function test_adjustTrove_ICR_decrease_in_recovery_mode_fail() public {
+        _openTroveThenRecoveryMode();
+
+        (, int256 answer, , , ) = mockOracle.latestRoundData();
+
+        uint256 targetICR = (borrowerOps.CCR() * 1.05e18) / 1e18;
+
+        // open trove with ICR little bit higher then CCR, so that during debt decrease afterwards, the new ICR still stays above CCR.
+        _openTrove(users.user2, 1e18, (1e18 * uint256(answer) * 1e18) / 1e8 / targetICR - INIT_GAS_COMPENSATION);
+
+        vm.startPrank(users.user2);
+        vm.expectRevert("BorrowerOps: Cannot decrease your Trove's ICR in Recovery Mode");
+        borrowerOps.adjustTrove(stakedBTCTroveMgr, users.user2, 0, 0, 0, 1, true, address(0), address(0));
+    }
 }
