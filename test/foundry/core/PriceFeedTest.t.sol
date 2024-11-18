@@ -66,7 +66,7 @@ contract PriceFeedTest is TestSetup {
     }
 
     function testFuzz_fetchPrice_unknownFeed(address _token) external {
-        vm.assume(_token != address(stakedBTC));
+        vm.assume(_token != address(stakedBTC) && _token != address(0));
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__UnknownFeedError.selector, address(_token)));
         priceFeed.fetchPrice(_token);
