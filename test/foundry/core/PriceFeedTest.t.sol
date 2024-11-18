@@ -31,12 +31,17 @@ contract PriceFeedTest is TestSetup {
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
         priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
 
-        mockOracle2.setResponse(2, 0, block.timestamp, block.timestamp, 1);
+        mockOracle2.setResponse(2, 0, block.timestamp, block.timestamp, 2);
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
         priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
 
-        mockOracle2.setResponse(2, 60_000e8, block.timestamp, block.timestamp, 1);
+        mockOracle2.setResponse(2, 60_000e8, 0, 0, 2);
+
+        vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+
+        mockOracle2.setResponse(2, 60_000e8, block.timestamp + 1, block.timestamp + 1, 2);
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
         priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
