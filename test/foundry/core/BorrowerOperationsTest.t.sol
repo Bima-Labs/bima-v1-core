@@ -1536,4 +1536,24 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         vm.expectRevert("BorrowerOps: Cannot decrease your Trove's ICR in Recovery Mode");
         borrowerOps.adjustTrove(stakedBTCTroveMgr, users.user2, 0, 0, 0, 1, true, address(0), address(0));
     }
+
+    function test_fetchPrice_with_priceFeed_zero_address(uint256 btcPrice) external {
+        btcPrice = bound(btcPrice, MIN_BTC_PRICE_8DEC, MAX_BTC_PRICE_8DEC);
+
+        // set new btc price with mock oracle
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(btcPrice),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
+
+        skip(1);
+
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setPriceFeed(address(0));
+
+        assertEq(stakedBTCTroveMgr.fetchPrice(), btcPrice * 1e10);
+    }
 }
