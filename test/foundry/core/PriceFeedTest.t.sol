@@ -71,4 +71,16 @@ contract PriceFeedTest is TestSetup {
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__UnknownFeedError.selector, address(_token)));
         priceFeed.fetchPrice(_token);
     }
+
+    function test_fetchPrice_cached() external {
+        vm.startPrank(users.owner);
+
+        mockOracle2.setResponse(2, 60_000e8, block.timestamp, block.timestamp, 2);
+
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+
+        skip(1 minutes);
+
+        assertEq(priceFeed.fetchPrice(address(stakedBTC)), 60_000e18);
+    }
 }
