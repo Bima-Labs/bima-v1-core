@@ -4,7 +4,7 @@ async function main() {
 
 
   const DEBT_TOKEN_ADDRESS ='' // contract address of debtToken  
-  const ENCPOINT_CHAIN_ID = '' // Layer Zero Endpoint Id
+  const ENCPOINT_CHAIN_ID = 1 // Layer Zero Endpoint Id
   const ENDPOINT_PEER_ADDRESS = '' // byte32 of debtToken Address  
 
   const [owner] = await ethers.getSigners();
@@ -21,15 +21,28 @@ async function main() {
   }
 
   console.log("----Sending Tokens----");
-  
+  const adapterParams = ethers.solidityPacked(['uint16', 'uint256'], [1, 200000]);
+
+  const [nativeFee, zroFee] = await debtToken.estimateSendFee(
+    ENCPOINT_CHAIN_ID,
+    ENDPOINT_PEER_ADDRESS,
+    ethers.parseEther("1"),
+    false,
+    adapterParams,
+  ); // false indicates no ZRO payment will be made
+  console.log(`Estimated Fees: Native - ${nativeFee}, ZRO - ${zroFee}`);
+
   const tx = await debtToken.sendFrom(
     owner.address,
     ENCPOINT_CHAIN_ID,
     ENDPOINT_PEER_ADDRESS,
     ethers.parseEther("1"),
     owner.address,
-    owner.address,
-    "0x"
+    ethers.ZeroAddress,
+    adapterParams,
+    {
+        value : nativeFee
+    }
 )
 
 console.log("Tokens Transfered Successfully",tx.hash);
