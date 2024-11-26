@@ -12,6 +12,8 @@ import {ITroveManager, IERC20} from "../../../contracts/interfaces/ITroveManager
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
+import {console} from "forge-std/console.sol";
+
 // also tests TroveManager since BorrowerOps and TroveManager are very closely linked
 contract BorrowerOperationsTest is StabilityPoolTest {
     ITroveManager internal stakedBTCTroveMgr;
@@ -1374,5 +1376,184 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         uint256 feeReceiverDebtTokenBalPre = debtToken.balanceOf(address(feeReceiver));
         stakedBTCTroveMgr.collectInterests();
         assertEq(debtToken.balanceOf(address(feeReceiver)), feeReceiverDebtTokenBalPre + newInterest);
+    }
+
+    function test_adjustTrove(
+        uint256 _initialColl,
+        uint256 _initialDebt,
+        uint256 _finalColl,
+        uint256 _finalDebt,
+        uint256 _btcPrice
+    ) public {
+        // save pre state
+        BorrowerOpsState memory statePre = _getBorrowerOpsState(users.user1);
+
+        (uint256 actualInitialCollateralAmount, uint256 actualInitialDebtAmount) = test_openTrove(
+            _initialColl,
+            _initialDebt,
+            _btcPrice
+        );
+
+        _finalColl = bound(_finalColl, minCollateral, maxCollateral);
+        _finalDebt = bound(_finalDebt, minDebt, _getMaxDebtAmount(_finalColl));
+
+        vm.startPrank(users.user1);
+
+        if (_finalColl > actualInitialCollateralAmount) {
+            deal(address(stakedBTC), users.user1, _finalColl - actualInitialCollateralAmount, true);
+            stakedBTC.approve(address(borrowerOps), type(uint256).max);
+        }
+
+        borrowerOps.adjustTrove(
+            stakedBTCTroveMgr,
+            users.user1,
+            0,
+            _finalColl > actualInitialCollateralAmount ? _finalColl - actualInitialCollateralAmount : 0,
+            _finalColl > actualInitialCollateralAmount ? 0 : actualInitialCollateralAmount - _finalColl,
+            _finalDebt > actualInitialDebtAmount
+                ? _finalDebt - actualInitialDebtAmount
+                : actualInitialDebtAmount - _finalDebt,
+            _finalDebt > actualInitialDebtAmount,
+            address(0),
+            address(0)
+        );
+
+        // verify trove status unchanged
+        assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.active));
+
+        // verify borrower debt tokens
+        assertEq(debtToken.balanceOf(users.user1), _finalDebt);
+
+        // verify gas pool compensation tokens unchanged
+        assertEq(debtToken.balanceOf(users.gasPool), statePre.gasPoolDebtTokenBal + INIT_GAS_COMPENSATION);
+
+        // verify TroveManagers collateral tokens
+        assertEq(stakedBTC.balanceOf(address(stakedBTCTroveMgr)), statePre.troveMgrSBTCBal + _finalColl);
+
+        if (_finalColl < actualInitialCollateralAmount)
+            assertEq(stakedBTC.balanceOf(users.user1), actualInitialCollateralAmount - _finalColl);
+
+        // verify system balances
+        IBorrowerOperations.SystemBalances memory sysBalancesPost = borrowerOps.fetchBalances();
+        assertEq(sysBalancesPost.collaterals.length, 1);
+        assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.debts.length);
+        assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.prices.length);
+
+        assertEq(sysBalancesPost.collaterals[0], statePre.sysBalances.collaterals[0] + _finalColl);
+        assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0] + _finalDebt + INIT_GAS_COMPENSATION);
+    }
+
+    function test_adjustTrove_when_core_paused_fail(uint256 _collDeposit) public {
+        vm.assume(_collDeposit > 0);
+
+        vm.prank(users.guardian);
+        bimaCore.setPaused(true);
+
+        vm.prank(users.user1);
+        vm.expectRevert("Trove adjustments are paused");
+        borrowerOps.adjustTrove(stakedBTCTroveMgr, users.user1, 0, _collDeposit, 0, 0, true, address(0), address(0));
+    }
+
+    function test_adjustTrove_repayDebt_when_core_paused_pass(
+        uint256 _initialColl,
+        uint256 _initialDebt,
+        uint256 _finalDebt,
+        uint256 _btcPrice
+    ) public {
+        // save pre state
+        BorrowerOpsState memory statePre = _getBorrowerOpsState(users.user1);
+
+        (uint256 actualInitialCollateralAmount, uint256 actualInitialDebtAmount) = test_openTrove(
+            _initialColl,
+            _initialDebt,
+            _btcPrice
+        );
+
+        vm.prank(users.guardian);
+        bimaCore.setPaused(true);
+
+        _finalDebt = bound(_finalDebt, minDebt, actualInitialDebtAmount);
+
+        vm.startPrank(users.user1);
+
+        // avoid extra bound/assume
+        if (_finalDebt != actualInitialDebtAmount) {
+            borrowerOps.adjustTrove(
+                stakedBTCTroveMgr,
+                users.user1,
+                0,
+                0,
+                0,
+                actualInitialDebtAmount - _finalDebt,
+                false,
+                address(0),
+                address(0)
+            );
+
+            // verify trove status unchanged
+            assertEq(uint8(stakedBTCTroveMgr.getTroveStatus(users.user1)), uint8(ITroveManager.Status.active));
+
+            // verify borrower debt tokens
+            assertEq(debtToken.balanceOf(users.user1), _finalDebt);
+
+            // verify gas pool compensation tokens unchanged
+            assertEq(debtToken.balanceOf(users.gasPool), statePre.gasPoolDebtTokenBal + INIT_GAS_COMPENSATION);
+
+            // verify TroveManagers collateral tokens
+            assertEq(
+                stakedBTC.balanceOf(address(stakedBTCTroveMgr)),
+                statePre.troveMgrSBTCBal + actualInitialCollateralAmount
+            );
+
+            // verify user hasn't recived any surplus collateral
+            assertEq(stakedBTC.balanceOf(users.user1), 0);
+
+            // verify system balances
+            IBorrowerOperations.SystemBalances memory sysBalancesPost = borrowerOps.fetchBalances();
+            assertEq(sysBalancesPost.collaterals.length, 1);
+            assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.debts.length);
+            assertEq(sysBalancesPost.collaterals.length, sysBalancesPost.prices.length);
+
+            assertEq(
+                sysBalancesPost.collaterals[0],
+                statePre.sysBalances.collaterals[0] + actualInitialCollateralAmount
+            );
+            assertEq(sysBalancesPost.debts[0], statePre.sysBalances.debts[0] + _finalDebt + INIT_GAS_COMPENSATION);
+        }
+    }
+
+    function test_adjustTrove_ICR_decrease_in_recovery_mode_fail() public {
+        _openTroveThenRecoveryMode();
+
+        (, int256 answer, , , ) = mockOracle.latestRoundData();
+
+        uint256 targetICR = (borrowerOps.CCR() * 1.05e18) / 1e18;
+
+        // open trove with ICR little bit higher then CCR, so that during debt decrease afterwards, the new ICR still stays above CCR.
+        _openTrove(users.user2, 1e18, (1e18 * uint256(answer) * 1e18) / 1e8 / targetICR - INIT_GAS_COMPENSATION);
+
+        vm.startPrank(users.user2);
+        vm.expectRevert("BorrowerOps: Cannot decrease your Trove's ICR in Recovery Mode");
+        borrowerOps.adjustTrove(stakedBTCTroveMgr, users.user2, 0, 0, 0, 1, true, address(0), address(0));
+    }
+
+    function test_fetchPrice_with_priceFeed_zero_address(uint256 btcPrice) external {
+        btcPrice = bound(btcPrice, MIN_BTC_PRICE_8DEC, MAX_BTC_PRICE_8DEC);
+
+        // set new btc price with mock oracle
+        mockOracle.setResponse(
+            mockOracle.roundId() + 1,
+            int256(btcPrice),
+            block.timestamp + 1,
+            block.timestamp + 1,
+            mockOracle.answeredInRound() + 1
+        );
+
+        skip(1);
+
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setPriceFeed(address(0));
+
+        assertEq(stakedBTCTroveMgr.fetchPrice(), btcPrice * 1e10);
     }
 }
