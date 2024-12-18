@@ -328,6 +328,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     ) public {
         // checks without storage reads first - fail fast
         require(_MCR <= CCR && _MCR >= 1.1e18, "MCR cannot be > CCR or < 110%");
+        if (MCR != 0) require(_MCR <= MCR, "MCR should not be raised"); // MCR cannot be raised
 
         require(_interestRateInBPS <= MAX_INTEREST_RATE_IN_BPS, "Interest > Maximum");
 

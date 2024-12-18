@@ -260,6 +260,33 @@ contract PoCTest is TestSetup {
     }
 
     /**
+     * @dev Test case: Test MCR
+     */
+    // function test_MCR() public {
+    //     // victim
+    //     vm.startPrank(victim);
+    //     _openTrove(sbtcTroveManager, 100_000e18, 2e18);
+
+    //     // the user will not be liquidated at this time
+
+    //     vm.expectRevert("LiquidationManager: nothing to liquidate");
+    //     liquidationMgr.liquidate(sbtcTroveManager, victim);
+    //     vm.startPrank(users.owner);
+
+    //     // set MCR 2e18 -> 2.25e18
+    //     vm.expectRevert("MCR should not be raised");
+    //     sbtcTroveManager.setParameters(999037758833783000, 5e15, 1e18, 0, 0, 0, 1_000_000e18, 2.25e18);
+
+    //     // but if the MCR value is increased, the user will be liquidated
+    //     liquidationMgr.liquidate(sbtcTroveManager, victim);
+
+    //     // victim's trove is closed
+    //     (uint256 victimColl, uint256 victimDebt) = sbtcTroveManager.getTroveCollAndDebt(victim);
+    //     assertEq(victimColl, 0, "Victim's trove collateral should be zero");
+    //     assertEq(victimDebt, 0, "Victim's trove debt should be zero");
+    // }
+
+    /**
      * @dev Test case: Stork Oracle stale price
      */
     function test_poc_storkOracleStalePrice() public {

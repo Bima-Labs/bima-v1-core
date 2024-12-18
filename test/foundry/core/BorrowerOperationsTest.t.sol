@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 // test setup
 import {IBorrowerOperations, IIncentiveVoting, IFactory, SafeCast} from "../TestSetup.sol";
-
+import {TroveManager} from "../../../contracts/core/TroveManager.sol";
 import {StabilityPoolTest} from "./StabilityPoolTest.t.sol";
 
 import {BimaMath} from "../../../contracts/dependencies/BimaMath.sol";
@@ -20,7 +20,7 @@ contract BorrowerOperationsTest is StabilityPoolTest {
     uint256 internal minCollateral;
     uint256 internal maxCollateral;
     uint256 internal minDebt;
-
+    TroveManager sbtcTroveManager;
     uint256 internal constant OWNER_TROVE_COLLATERAL = 1e18; // 1BTC
 
     // non-public copied from TroveManager.sol
@@ -1306,6 +1306,102 @@ contract BorrowerOperationsTest is StabilityPoolTest {
 
         _setInterestRate(newRateInBps);
     }
+
+    //
+    function test_setParameters_MCR(uint256 newRateInBps) external {
+        newRateInBps = bound(newRateInBps, 1, stakedBTCTroveMgr.MAX_INTEREST_RATE_IN_BPS());
+        // Initialize valid deployment parameters
+        IFactory.DeploymentParams memory params = IFactory.DeploymentParams({
+            minuteDecayFactor: 999037758833783000, // valid value within range
+            redemptionFeeFloor: INIT_REDEMPTION_FEE_FLOOR,
+            maxRedemptionFee: INIT_MAX_REDEMPTION_FEE,
+            borrowingFeeFloor: INIT_BORROWING_FEE_FLOOR,
+            maxBorrowingFee: INIT_MAX_BORROWING_FEE,
+            interestRateInBps: newRateInBps, // valid interest rate in basis points
+            maxDebt: INIT_MAX_DEBT,
+            MCR: 1.2e18 // 120%, valid initial MCR
+        });
+
+        // Set initial parameters (MCR = 120%)
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setParameters(
+            params.minuteDecayFactor,
+            params.redemptionFeeFloor,
+            params.maxRedemptionFee,
+            params.borrowingFeeFloor,
+            params.maxBorrowingFee,
+            params.interestRateInBps,
+            params.maxDebt,
+            params.MCR
+        );
+
+        // Verify MCR is set to 120%
+        assertEq(stakedBTCTroveMgr.MCR(), params.MCR);
+
+        // Test case 1: MCR below the lower limit (should revert)
+        params.MCR = 1.09e18; // Less than 110%
+        vm.expectRevert("MCR cannot be > CCR or < 110%");
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setParameters(
+            params.minuteDecayFactor,
+            params.redemptionFeeFloor,
+            params.maxRedemptionFee,
+            params.borrowingFeeFloor,
+            params.maxBorrowingFee,
+            params.interestRateInBps,
+            params.maxDebt,
+            params.MCR
+        );
+
+        // Test case 2: MCR above the CCR (should revert)
+        params.MCR = stakedBTCTroveMgr.CCR() + 1; // Greater than CCR
+        vm.expectRevert("MCR cannot be > CCR or < 110%");
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setParameters(
+            params.minuteDecayFactor,
+            params.redemptionFeeFloor,
+            params.maxRedemptionFee,
+            params.borrowingFeeFloor,
+            params.maxBorrowingFee,
+            params.interestRateInBps,
+            params.maxDebt,
+            params.MCR
+        );
+
+        // Test case 3: Attempt to increase MCR after initialization (should revert)
+        params.MCR = 1.3e18; // Attempt to raise MCR
+        vm.expectRevert("MCR should not be raised");
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setParameters(
+            params.minuteDecayFactor,
+            params.redemptionFeeFloor,
+            params.maxRedemptionFee,
+            params.borrowingFeeFloor,
+            params.maxBorrowingFee,
+            params.interestRateInBps,
+            params.maxDebt,
+            params.MCR
+        );
+
+        // Test case 4: Valid MCR update within bounds (should succeed)
+        params.MCR = 1.15e18; // Lower MCR to 115%
+        vm.prank(users.owner);
+        stakedBTCTroveMgr.setParameters(
+            params.minuteDecayFactor,
+            params.redemptionFeeFloor,
+            params.maxRedemptionFee,
+            params.borrowingFeeFloor,
+            params.maxBorrowingFee,
+            params.interestRateInBps,
+            params.maxDebt,
+            params.MCR
+        );
+
+        // Verify MCR is updated to 115%
+        assertEq(stakedBTCTroveMgr.MCR(), params.MCR);
+    }
+
+    //
 
     // used to store relevant state before tests for verification afterwards
     struct TroveManagerState {
