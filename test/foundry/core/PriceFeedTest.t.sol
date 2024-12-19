@@ -13,9 +13,13 @@ import {console} from "forge-std/console.sol";
 error PriceFeed__FeedFrozenError(address token);
 error PriceFeed__InvalidFeedResponseError(address token);
 error PriceFeed__UnknownFeedError(address token);
+error PriceFeed__HeartbeatOutOfBoundsError();
 
 contract PriceFeedTest is TestSetup {
     MockOracle mockOracle2;
+
+     // Max heartbeat 
+    uint256 public constant MAX_HEARTBEAT = 86400;
 
     function setUp() public virtual override {
         super.setUp();
@@ -48,7 +52,8 @@ contract PriceFeedTest is TestSetup {
     }
 
     function testFuzz_setOracle_frozenFeed(uint32 _heartbeat, uint16 _delta) external {
-        vm.assume(_heartbeat <= 86400);
+        vm.assume(_heartbeat <= MAX_HEARTBEAT);
+        
         vm.assume(_delta > 0);
 
         vm.startPrank(users.owner);
@@ -56,14 +61,42 @@ contract PriceFeedTest is TestSetup {
         mockOracle2.setResponse(
             2,
             60_000e8,
-            block.timestamp - _heartbeat - priceFeed.RESPONSE_TIMEOUT_BUFFER() - _delta,
-            block.timestamp - _heartbeat - priceFeed.RESPONSE_TIMEOUT_BUFFER() - _delta,
+            block.timestamp - _heartbeat  - _delta,
+            block.timestamp - _heartbeat  - _delta,
             2
         );
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__FeedFrozenError.selector, address(stakedBTC)));
         priceFeed.setOracle(address(stakedBTC), address(mockOracle2), _heartbeat, bytes4(0x00000000), 18, false);
     }
+    
+     
+function testFuzz_setOracle_validHeartbeat(uint32 _heartbeat, uint16 _delta) external {
+    // Test for _heartbeat <= MAX_HEARTBEAT
+    vm.assume(_heartbeat <= MAX_HEARTBEAT);
+    
+    vm.assume(_delta > 0);
+
+    vm.startPrank(users.owner);
+
+    mockOracle2.setResponse(2, 60_000e8, block.timestamp, block.timestamp, 2);
+
+    priceFeed.setOracle(address(stakedBTC), address(mockOracle2), _heartbeat, bytes4(0x00000000), 18, false);
+}
+
+function testFuzz_setOracle_invalidHeartbeat(uint32 _heartbeat, uint16 _delta) external {
+    // Test for _heartbeat > MAX_HEARTBEAT
+    vm.assume(_heartbeat > MAX_HEARTBEAT);
+    
+    vm.assume(_delta > 0);
+
+    vm.startPrank(users.owner);
+
+    mockOracle2.setResponse(2, 60_000e8, block.timestamp, block.timestamp, 2);
+
+    vm.expectRevert(abi.encodeWithSelector(PriceFeed__HeartbeatOutOfBoundsError.selector));
+    priceFeed.setOracle(address(stakedBTC), address(mockOracle2), _heartbeat, bytes4(0x00000000), 18, false);
+}
 
     function testFuzz_fetchPrice_unknownFeed(address _token) external {
         vm.assume(_token != address(stakedBTC) && _token != address(0));
