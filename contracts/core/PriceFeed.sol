@@ -57,6 +57,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     // Used to convert a chainlink price answer to an 18-digit precision uint
     uint256 public constant TARGET_DIGITS = 18;
     
+    
     // Max heartbeat 
     uint256 private constant MAX_HEARTBEAT = 86400;
 
