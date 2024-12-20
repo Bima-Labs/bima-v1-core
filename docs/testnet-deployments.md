@@ -266,7 +266,7 @@
 | TokenLocker        | 0x6E7d642328668Da5fa91C0a89d582F096384032c |
 | IncentiveVoting    | 0x1EE4D39f49F546Cf878E504D67b7D7ee3198f36d |
 | BimaToken          | 0x25920221ff112bb8902Bc0A82a6A8744717A8323 |
-| BimaVault          | 0x25920221ff112bb8902Bc0A82a6A8744717A8323 |
+| BimaVault          | 0x6F92d73d79b67094598b993f56bb506E9c44F951 |
 | BimaFaucet         | 0x0E9B3208BBc81C18ED32a72e6Aa9505bfeB85eD9 |
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
