@@ -271,7 +271,7 @@
 
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Stork Wrapper)             |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| Bima Mocked BTC | 0x691F17519E79866b5f1f6963D7Ed860900f8508a | 0x5458BBB093Ee676d118da44b95124C687D8F574a | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
+| Bima Mocked BTC | 0x691F17519E79866b5f1f6963D7Ed860900f8508a | 0x55796b02a7650C9fEF78bC2E73De1EF6dA719283 | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
 
 ## BEVM Testnet
 
