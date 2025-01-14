@@ -94,7 +94,7 @@ contract DebtToken is OFT {
     // --- Functions for intra-Bima calls ---
 
     function mintWithGasCompensation(address _account, uint256 _amount) external returns (bool success) {
-        require(msg.sender == borrowerOperationsAddress);
+        require(msg.sender == borrowerOperationsAddress, "Debt: Caller not BO");
         _mint(_account, _amount);
         _mint(gasPool, DEBT_GAS_COMPENSATION);
 
@@ -102,7 +102,7 @@ contract DebtToken is OFT {
     }
 
     function burnWithGasCompensation(address _account, uint256 _amount) external returns (bool success) {
-        require(msg.sender == borrowerOperationsAddress);
+        require(msg.sender == borrowerOperationsAddress, "Debt: Caller not BO");
         _burn(_account, _amount);
         _burn(gasPool, DEBT_GAS_COMPENSATION);
 

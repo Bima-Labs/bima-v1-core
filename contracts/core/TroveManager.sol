@@ -223,7 +223,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     function setAddresses(address _priceFeedAddress, address _sortedTrovesAddress, address _collateralToken) external {
         // Factory::deployNewInstance calls this once when new TroveManager
         // deployed so even without access control it can't be called again
-        require(address(sortedTroves) == address(0));
+        require(address(sortedTroves) == address(0), "TroveManager: Addresses already set");
 
         priceFeed = IPriceFeed(_priceFeedAddress);
         sortedTroves = ISortedTroves(_sortedTrovesAddress);
@@ -238,7 +238,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     function notifyRegisteredId(uint256[] calldata _assignedIds) external returns (bool success) {
         // called by BimaVault when the TroveManager is registered
         // as an emissions receiver
-        require(msg.sender == address(vault));
+        require(msg.sender == address(vault), "!vault");
 
         // prevent vault from calling this multiple times
         require(emissionId.debt == 0, "Already assigned");
@@ -333,10 +333,17 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
 
         require(
             _minuteDecayFactor >= 977159968434245000 && // half-life of 30 minutes
-                _minuteDecayFactor <= 999931237762985000 // half-life of 1 week
+                _minuteDecayFactor <= 999931237762985000, // half-life of 1 week
+            "_minuteDecayFactor out of range"
         );
-        require(_redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= BIMA_DECIMAL_PRECISION);
-        require(_borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= BIMA_DECIMAL_PRECISION);
+        require(
+            _redemptionFeeFloor <= _maxRedemptionFee && _maxRedemptionFee <= BIMA_DECIMAL_PRECISION,
+            "Redemption fees out of range"
+        );
+        require(
+            _borrowingFeeFloor <= _maxBorrowingFee && _maxBorrowingFee <= BIMA_DECIMAL_PRECISION,
+            "Borrowing fees out of range"
+        );
 
         // checks with storage reads next
         require(!sunsetting, "Cannot change after sunset");
@@ -894,7 +901,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     }
 
     function vaultClaimReward(address claimant, address) external returns (uint256 amount) {
-        require(msg.sender == address(vault));
+        require(msg.sender == address(vault), "!vault");
 
         amount = _claimReward(claimant);
     }
