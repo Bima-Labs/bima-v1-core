@@ -14,6 +14,13 @@ import {BIMA_100_PCT} from "../dependencies/Constants.sol";
             each of which hold one collateral type which may be used to mint this token.
  */
 contract DebtToken is OFT {
+    event SetLendingVaultAdapterAddress(
+        address indexed _caller,
+        address indexed _previousAddress,
+        address indexed _newAddress,
+        uint256 _timestamp
+    );
+
     string public constant version = "1";
 
     // --- ERC 3156 Data ---
@@ -88,6 +95,14 @@ contract DebtToken is OFT {
 
     function setLendingVaultAdapterAddress(address _lendingVaultAdapterAddress) external {
         require(msg.sender == _bimaCore.owner(), "Only owner");
+
+        emit SetLendingVaultAdapterAddress(
+            msg.sender,
+            lendingVaultAdapterAddress,
+            _lendingVaultAdapterAddress,
+            block.timestamp
+        );
+
         lendingVaultAdapterAddress = _lendingVaultAdapterAddress;
     }
 
