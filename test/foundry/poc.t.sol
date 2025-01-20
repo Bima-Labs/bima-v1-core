@@ -368,6 +368,7 @@ contract PoCTest is TestSetup {
 
     function test_poc_stabilityPool_incorrectMarginalBimaGain() public {
         address user = users.user1;
+
         address user2 = users.user2;
         address user3 = makeAddr("User3");
         deal(address(stakedBTC), user, 1e6 * 1e18);
