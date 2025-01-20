@@ -38,8 +38,8 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
     IBorrowerOperations public immutable borrowerOperations;
     address public immutable factory;
 
-    uint256 private constant _100pct = 1000000000000000000; // 1e18 == 100%
-
+    // uint256 private constant _100pct = 1000000000000000000; // 1e18 == 100%
+    uint256 private constant _100pct =  1005000000000000000; // 1.005e18 == 100.5%
     mapping(ITroveManager troveManager => bool enabled) internal _enabledTroveManagers;
 
     /*
