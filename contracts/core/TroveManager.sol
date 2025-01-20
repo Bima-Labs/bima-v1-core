@@ -711,8 +711,14 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
         } else {
             currentBorrower = _sortedTrovesCached.getLast();
             // Find the first trove with ICR >= MCR
-            while (currentBorrower != address(0) && getCurrentICR(currentBorrower, totals.price) < _MCR) {
-                currentBorrower = _sortedTrovesCached.getPrev(currentBorrower);
+            while (currentBorrower != address(0)) {
+                // Apply pending rewards before checking ICR
+                _applyPendingRewards(currentBorrower);
+                if (getCurrentICR(currentBorrower, totals.price) < _MCR) {
+                    currentBorrower = _sortedTrovesCached.getPrev(currentBorrower);
+                } else {
+                    break;
+                }
             }
         }
 
