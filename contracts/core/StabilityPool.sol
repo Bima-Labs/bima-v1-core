@@ -9,6 +9,7 @@ import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR, BIMA_REWARD_DURATION} from ".
 import {IStabilityPool, IDebtToken, IBimaVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "forge-std/console.sol";
 
 /**
     @title Bima Stability Pool
@@ -239,6 +240,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         // overwrite old collateral with new one
         collateralTokens[idx] = _newCollateral;
+        lastCollateralError_Offset[idx] = 0;
     }
 
     /**
@@ -799,6 +801,8 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
                 depositorGains[collateralIndex] = 0;
+                console.log("gains   %e", gains);
+                console.log("balance %e", collateralTokens[collateralIndex].balanceOf(address(this)));
 
                 collateralTokens[collateralIndex].safeTransfer(recipient, gains);
             }
@@ -898,5 +902,9 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             amount += pending;
             storedPendingReward[account] = 0;
         }
+    }
+
+    function fixOtherIssue(uint256 collIndex) public {
+        depositSums[msg.sender][collIndex] = 0;
     }
 }
