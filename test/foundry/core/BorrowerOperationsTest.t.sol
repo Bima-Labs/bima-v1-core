@@ -57,8 +57,8 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(stakedBTCTroveMgr.getTroveStake(users.owner), OWNER_TROVE_COLLATERAL);
 
         (uint256 week, uint256 day) = stakedBTCTroveMgr.getWeekAndDay();
-        uint32[7] memory mints = stakedBTCTroveMgr.getTotalMints(week);
-        assertEq(mints[day], INIT_MIN_NET_DEBT / VOLUME_MULTIPLIER);
+        uint256[7] memory mints = stakedBTCTroveMgr.getTotalMints(week);
+        assertEq(mints[day], INIT_MIN_NET_DEBT + INIT_GAS_COMPENSATION);
 
         assertEq(stakedBTCTroveMgr.getTroveFromTroveOwnersArray(0), users.owner);
 

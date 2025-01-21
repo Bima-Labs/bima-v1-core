@@ -135,7 +135,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     uint256[65535] public dailyMintReward;
 
     // week -> day -> total amount redeemed this day
-    uint32[7][65535] private totalMints;
+    uint256[7][65535] private totalMints;
 
     // Array of all active trove addresses - used to compute
     // an approximate hint off-chain, for the sorted list insertion
@@ -156,7 +156,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     mapping(address borrower => RewardSnapshot) public rewardSnapshots;
 
     struct VolumeData {
-        uint32 amount;
+        uint256 amount;
         uint32 week;
         uint32 day;
     }
@@ -412,7 +412,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
         day = (duration % 1 weeks) / 1 days;
     }
 
-    function getTotalMints(uint256 week) external view returns (uint32[7] memory mints) {
+    function getTotalMints(uint256 week) external view returns (uint256[7] memory mints) {
         mints = totalMints[week];
     }
 
@@ -1000,7 +1000,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
         amount = vault.allocateNewEmissions(id.minting);
         uint256 reward = dailyMintReward[previousWeek];
         if (reward > 0) {
-            uint32[7] memory totals = totalMints[previousWeek];
+            uint256[7] memory totals = totalMints[previousWeek];
             for (uint256 i; i < 7; i++) {
                 if (totals[i] == 0) {
                     amount += reward;
@@ -1200,7 +1200,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     }
 
     function _updateMintVolume(address account, uint256 initialAmount) internal {
-        uint32 amount = SafeCast.toUint32(initialAmount / VOLUME_MULTIPLIER);
+        uint256 amount = initialAmount;
         (uint256 week, uint256 day) = getWeekAndDay();
         totalMints[week][day] += amount;
 
