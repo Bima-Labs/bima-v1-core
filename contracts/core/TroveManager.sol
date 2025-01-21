@@ -1277,7 +1277,9 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
             if (prevDebt != debt) {
                 t.debt = debt;
             }
-            _updateIntegrals(_borrower, prevDebt, supply);
+            _updateIntegrals(_borrower, debt, supply);
+            //
+      
         }
     }
 
