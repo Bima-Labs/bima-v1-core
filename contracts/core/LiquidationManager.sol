@@ -202,6 +202,7 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
         if (trovesRemaining > 0 && !troveManagerValues.sunsetting && troveCount > 1) {
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
+            // Only subtract SP collateral and surplus, NOT gas compensation
             entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
             address nextAccount = sortedTrovesCached.getLast();
@@ -232,6 +233,7 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
                 if (singleLiquidation.debtToOffset == 0) continue;
 
                 debtInStabPool -= singleLiquidation.debtToOffset;
+                // Update entireSystemColl with only SP collateral and surplus
                 entireSystemColl -=
                     (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
                     troveManagerValues.price;
