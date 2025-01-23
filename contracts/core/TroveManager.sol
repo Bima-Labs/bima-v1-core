@@ -1278,8 +1278,6 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
                 t.debt = debt;
             }
             _updateIntegrals(_borrower, debt, supply);
-            //
-      
         }
     }
 
