@@ -92,7 +92,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     // index values are mapped against the values within `collateralTokens`
     mapping(address depositor => uint256[MAX_COLLATERAL_COUNT] deposits) public depositSums;
 
-    mapping(address depositor => uint80[MAX_COLLATERAL_COUNT] gains) public collateralGainsByDepositor;
+    mapping(address => mapping(IERC20 => uint256)) public collateralGainsByDepositor;
 
     mapping(address depositor => uint256 rewards) private storedPendingReward;
 
@@ -610,7 +610,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint256 P_Snapshot = depositSnapshots[_depositor].P;
         if (P_Snapshot == 0) return collateralGains;
-        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[_depositor];
+        mapping(IERC20 => uint256) storage depositorGains = collateralGainsByDepositor[_depositor];
         uint256 initialDeposit = accountDeposits[_depositor].amount;
         uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
         uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
@@ -619,7 +619,8 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
         uint256[MAX_COLLATERAL_COUNT] storage depSums = depositSums[_depositor];
 
         for (uint256 i; i < collateralGains.length; i++) {
-            collateralGains[i] = depositorGains[i];
+            IERC20 collateral = collateralTokens[i];
+            collateralGains[i] = depositorGains[collateral];
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
             uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
@@ -632,7 +633,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
     function _accrueDepositorCollateralGain(address _depositor) private returns (bool hasGains) {
         // get storage reference to user's collateral gains
-        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[_depositor];
+        mapping(IERC20 => uint256) storage depositorGains = collateralGainsByDepositor[_depositor];
 
         // cache number of collateral tokens
         uint256 collaterals = collateralTokens.length;
@@ -657,9 +658,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
                 uint256 firstPortion = sumS[i] - depSums[i];
                 uint256 secondPortion = nextSumS[i] / BIMA_SCALE_FACTOR;
 
-                depositorGains[i] += SafeCast.toUint80(
-                    (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
-                );
+                depositorGains[collateralTokens[i]] += (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
             }
         }
     }
@@ -789,18 +788,19 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint256[] memory collateralGains = new uint256[](collateralTokens.length);
 
-        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[msg.sender];
+        mapping(IERC20 => uint256) storage depositorGains = collateralGainsByDepositor[msg.sender];
 
         // more efficient not to cache calldata input length
         for (uint256 i; i < collateralIndexes.length; ) {
             uint256 collateralIndex = collateralIndexes[i];
-            uint256 gains = depositorGains[collateralIndex];
+            IERC20 collateral = collateralTokens[collateralIndex];
+            uint256 gains = depositorGains[collateral];
 
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
-                depositorGains[collateralIndex] = 0;
+                depositorGains[collateral] = 0;
 
-                collateralTokens[collateralIndex].safeTransfer(recipient, gains);
+                collateral.safeTransfer(recipient, gains);
             }
             unchecked {
                 ++i;
