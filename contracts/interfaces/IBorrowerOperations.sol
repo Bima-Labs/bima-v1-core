@@ -32,7 +32,7 @@ interface IBorrowerOperations is IBimaOwnable, IBimaBase, IDelegatedOps {
         uint256 stake,
         BorrowerOperation operation
     );
-    event SetMinDetDebt(uint256 newMinNetDebt);
+    event SetMinNetDebt(uint256 newMinNetDebt);
 
     function addColl(
         ITroveManager troveManager,
