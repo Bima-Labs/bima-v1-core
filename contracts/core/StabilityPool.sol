@@ -9,7 +9,6 @@ import {BIMA_DECIMAL_PRECISION, BIMA_SCALE_FACTOR, BIMA_REWARD_DURATION} from ".
 import {IStabilityPool, IDebtToken, IBimaVault, IERC20} from "../interfaces/IStabilityPool.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "forge-std/console.sol";
 
 /**
     @title Bima Stability Pool
