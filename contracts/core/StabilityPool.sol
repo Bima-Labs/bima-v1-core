@@ -899,7 +899,5 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             amount += pending;
             storedPendingReward[account] = 0;
         }
-    }
-
-   
+    }   
 }
