@@ -57,8 +57,8 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     // Used to convert a chainlink price answer to an 18-digit precision uint
     uint256 public constant TARGET_DIGITS = 18;
 
-    // Responses are considered stale this many seconds after the oracle's heartbeat
-    uint256 public constant RESPONSE_TIMEOUT_BUFFER = 1 hours;
+    // Max heartbeat 
+    uint256 private constant MAX_HEARTBEAT = 86400;
 
     // Maximum deviation allowed between two consecutive Chainlink oracle prices. 18-digit precision.
     uint256 public constant MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND = 5e17; // 50%
@@ -91,7 +91,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
         uint8 sharePriceDecimals,
         bool _isEthIndexed
     ) public onlyOwner {
-        if (_heartbeat > 86400) revert PriceFeed__HeartbeatOutOfBoundsError();
+        if (_heartbeat > MAX_HEARTBEAT) revert PriceFeed__HeartbeatOutOfBoundsError();
         IAggregatorV3Interface newFeed = IAggregatorV3Interface(_chainlinkOracle);
         (FeedResponse memory currResponse, FeedResponse memory prevResponse, ) = _fetchFeedResponses(newFeed, 0);
 
@@ -215,7 +215,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     }
 
     function _isPriceStale(uint256 _priceTimestamp, uint256 _heartbeat) internal view returns (bool isPriceStale) {
-        isPriceStale = block.timestamp - _priceTimestamp > _heartbeat + RESPONSE_TIMEOUT_BUFFER;
+           isPriceStale = block.timestamp - _priceTimestamp > _heartbeat;
     }
 
     function _isFeedWorking(
