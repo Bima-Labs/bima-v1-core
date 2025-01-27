@@ -98,7 +98,7 @@ contract PoCTest is TestSetup {
 
         // Open initial troves
         _openTrove(sbtcTroveManager, 100000e18, 3e18);
-        _openTrove(sbtc2TroveManager, 100000e18, 2.25e18);
+        _openTrove(sbtc2TroveManager, 100000e18, 3e18);
 
         // Deposit debt token into the stability pool
         uint256 debtTokenBalance = debtToken.balanceOf(users.owner);
