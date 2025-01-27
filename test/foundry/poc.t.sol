@@ -413,5 +413,4 @@ contract PoCTest is TestSetup {
         console.log("User claimable rewards:", claimableRewards2);
         assertEq(claimableRewards, claimableRewards2);
     }
-
 }
