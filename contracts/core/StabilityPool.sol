@@ -902,7 +902,5 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
         }
     }
 
-    function fixOtherIssue(uint256 collIndex) public {
-        depositSums[msg.sender][collIndex] = 0;
-    }
+   
 }
