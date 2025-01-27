@@ -800,7 +800,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
                 depositorGains[collateralIndex] = 0;
-                
 
                 collateralTokens[collateralIndex].safeTransfer(recipient, gains);
             }
