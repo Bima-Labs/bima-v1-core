@@ -239,7 +239,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         // overwrite old collateral with new one
         collateralTokens[idx] = _newCollateral;
-        lastCollateralError_Offset[idx] = 0;
+        
     }
 
     /**
@@ -800,8 +800,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
                 depositorGains[collateralIndex] = 0;
-                console.log("gains   %e", gains);
-                console.log("balance %e", collateralTokens[collateralIndex].balanceOf(address(this)));
+                
 
                 collateralTokens[collateralIndex].safeTransfer(recipient, gains);
             }
