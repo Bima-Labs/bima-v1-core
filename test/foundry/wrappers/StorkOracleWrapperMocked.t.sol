@@ -117,7 +117,7 @@ contract StorkOracleWrapperMockedTest is TestSetup {
 
         priceFeed.setOracle(address(collateral), address(storkOracleWrapper), heartbeat, bytes4(0x00000000), 18, false);
 
-        skip(heartbeat + priceFeed.RESPONSE_TIMEOUT_BUFFER() + 1);
+         skip(heartbeat  + 1);
 
         vm.expectRevert();
         priceFeed.fetchPrice(address(collateral));
