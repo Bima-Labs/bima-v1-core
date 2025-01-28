@@ -58,7 +58,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     uint256 public constant TARGET_DIGITS = 18;
 
     // Max heartbeat 
-    uint256 private constant MAX_HEARTBEAT = 86400;
+    uint256 public constant MAX_HEARTBEAT = 86400;
 
     // Maximum deviation allowed between two consecutive Chainlink oracle prices. 18-digit precision.
     uint256 public constant MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND = 5e17; // 50%

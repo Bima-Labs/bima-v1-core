@@ -9,6 +9,9 @@ import {MockOracle} from "../../../contracts/mock/MockOracle.sol";
 
 // forge
 import {console} from "forge-std/console.sol";
+import {PriceFeed} from "../../../contracts/core/PriceFeed.sol";
+import "forge-std/Test.sol";
+  
 
 error PriceFeed__FeedFrozenError(address token);
 error PriceFeed__InvalidFeedResponseError(address token);
@@ -17,16 +20,17 @@ error PriceFeed__HeartbeatOutOfBoundsError();
 
 contract PriceFeedTest is TestSetup {
     MockOracle mockOracle2;
+   
 
-  // Max heartbeat 
-    uint256 public constant MAX_HEARTBEAT = 86400;
 
     function setUp() public virtual override {
         super.setUp();
 
         mockOracle2 = new MockOracle();
+       
+   
     }
-
+   
     function test_setOracle_invalidFeedResponse() external {
         vm.startPrank(users.owner);
 
@@ -52,7 +56,7 @@ contract PriceFeedTest is TestSetup {
     }
 
     function testFuzz_setOracle_frozenFeed(uint32 _heartbeat, uint16 _delta) external {
-        vm.assume(_heartbeat <= MAX_HEARTBEAT);
+        vm.assume(_heartbeat <= priceFeed.MAX_HEARTBEAT());
         vm.assume(_delta > 0);
 
         vm.startPrank(users.owner);
@@ -89,8 +93,8 @@ contract PriceFeedTest is TestSetup {
     }
 
     function testFuzz_setOracle_validHeartbeat(uint32 _heartbeat, uint16 _delta) external {
-    // Test for _heartbeat <= MAX_HEARTBEAT
-    vm.assume(_heartbeat <= MAX_HEARTBEAT);
+    // Test for _heartbeat <= priceFeed.MAX_HEARTBEAT()
+    vm.assume(_heartbeat <= priceFeed.MAX_HEARTBEAT());
 
     vm.assume(_delta > 0);
 
@@ -102,8 +106,8 @@ contract PriceFeedTest is TestSetup {
 }
 
 function testFuzz_setOracle_invalidHeartbeat(uint32 _heartbeat, uint16 _delta) external {
-    // Test for _heartbeat > MAX_HEARTBEAT
-    vm.assume(_heartbeat > MAX_HEARTBEAT);
+    // Test for _heartbeat > priceFeed.MAX_HEARTBEAT()
+    vm.assume(_heartbeat > priceFeed.MAX_HEARTBEAT());
 
     vm.assume(_delta > 0);
 
