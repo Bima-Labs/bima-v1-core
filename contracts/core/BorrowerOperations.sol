@@ -84,6 +84,7 @@ contract BorrowerOperations is IBorrowerOperations, BimaBase, BimaOwnable, Deleg
         minNetDebt = _minNetDebt;
 
         emit SetMinNetDebt(_minNetDebt);
+        
     }
 
     function configureCollateral(ITroveManager troveManager, IERC20 collateralToken) external {
