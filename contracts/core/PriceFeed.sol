@@ -58,7 +58,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     uint256 public constant TARGET_DIGITS = 18;
 
     // Responses are considered stale this many seconds after the oracle's heartbeat
-    uint256 public constant RESPONSE_TIMEOUT_BUFFER = 1 hours;
+    uint256 public constant RESPONSE_TIMEOUT_BUFFER = 15 minutes;
 
     // Maximum deviation allowed between two consecutive Chainlink oracle prices. 18-digit precision.
     uint256 public constant MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND = 5e17; // 50%
