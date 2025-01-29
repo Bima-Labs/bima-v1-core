@@ -1058,7 +1058,7 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
         totalActiveCollateral += _collateralAmount;
 
         // enforce collateral debt limit
-        uint256 _newTotalDebt = totalActiveDebtPre + _compositeDebt;
+        uint256 _newTotalDebt = totalActiveDebt + _compositeDebt;
         require(_newTotalDebt + defaultedDebt <= maxSystemDebt, "Collateral debt limit reached");
 
         // update storage new total active debt
