@@ -89,9 +89,8 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     mapping(address depositor => AccountDeposit) public accountDeposits;
     mapping(address depositor => Snapshots) public depositSnapshots;
 
-    // index values are mapped against the values within `collateralTokens`
-    mapping(address depositor => uint256[MAX_COLLATERAL_COUNT] deposits) public depositSums;
-
+    // Tracking depositSums per token instead
+    mapping(address depositor => mapping(IERC20 => uint256)) public depositSums;
     mapping(address depositor => uint80[MAX_COLLATERAL_COUNT] gains) public collateralGainsByDepositor;
 
     mapping(address depositor => uint256 rewards) private storedPendingReward;
@@ -105,8 +104,8 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
      * - The outer mapping records the (scale => sum) mappings, for different epochs.
      */
 
-    // index values are mapped against the values within `collateralTokens`
-    mapping(uint128 epoch => mapping(uint128 scale => uint256[MAX_COLLATERAL_COUNT] sumS)) public epochToScaleToSums;
+    // Tracking epochToScaleToSums per token
+    mapping(uint128 epoch => mapping(uint128 scale => mapping(IERC20 => uint256))) public epochToScaleToSums;
 
     /*
      * Similarly, the sum 'G' is used to calculate Bima gains. During it's lifetime, each deposit d_t earns a Bima gain of
