@@ -18,7 +18,7 @@ interface IPriceFeed is IBimaOwnable {
 
     function MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND() external view returns (uint256);
 
-    function RESPONSE_TIMEOUT_BUFFER() external view returns (uint256);
+    function MAX_HEARTBEAT() external view returns (uint256);
 
     function TARGET_DIGITS() external view returns (uint256);
 
