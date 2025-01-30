@@ -867,7 +867,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     }
 
     function vaultClaimReward(address claimant, address) external returns (uint256 amount) {
-        require(msg.sender == address(vault));
+        require(msg.sender == address(vault), "!vault");
 
         amount = _claimReward(claimant);
     }

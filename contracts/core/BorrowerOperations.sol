@@ -80,7 +80,7 @@ contract BorrowerOperations is IBorrowerOperations, BimaBase, BimaOwnable, Deleg
     }
 
     function _setMinNetDebt(uint256 _minNetDebt) internal {
-        require(_minNetDebt > 0);
+        require(_minNetDebt > 0, "BorrowerOps: _minNetDebt must be greater than 0");
         minNetDebt = _minNetDebt;
 
         emit SetMinDetDebt(_minNetDebt);
