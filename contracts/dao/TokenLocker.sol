@@ -1182,12 +1182,13 @@ contract TokenLocker is ITokenLocker, BimaOwnable, SystemStart {
         // update account locked and global totalDecayRate subtracting
         // locked tokens withdrawn including penalties paid
         accountData.locked -= lockedPlusPenalties;
-        totalDecayRate -= lockedPlusPenalties;
 
         // update account and global weights subtracting decreased weights
         systemWeek = getWeek();
         accountWeeklyWeights[msg.sender][systemWeek] = SafeCast.toUint40(weight - decreasedWeight);
         totalWeeklyWeights[systemWeek] = SafeCast.toUint40(getTotalWeightWrite() - decreasedWeight);
+
+        totalDecayRate -= lockedPlusPenalties;
 
         // send the withdraw tokens and pay penalty fees
         lockToken.transfer(msg.sender, amountToWithdraw);
