@@ -202,7 +202,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
         if (trovesRemaining > 0 && !troveManagerValues.sunsetting && troveCount > 1) {
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
-            entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
+            entireSystemColl -=
+                (totals.totalCollGasCompensation + totals.totalCollToSendToSP) *
+                troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
             address nextAccount = sortedTrovesCached.getLast();
             ITroveManager _troveManager = troveManager; //stack too deep workaround
@@ -233,7 +235,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
                 debtInStabPool -= singleLiquidation.debtToOffset;
                 entireSystemColl -=
-                    (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
+                    (singleLiquidation.collToSendToSP +
+                        singleLiquidation.collSurplus +
+                        singleLiquidation.collGasCompensation) *
                     troveManagerValues.price;
                 entireSystemDebt -= singleLiquidation.debtToOffset;
 
@@ -336,7 +340,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
         if (troveIter < length && troveCount > 1) {
             // second iteration round, if we receive a trove with ICR > MCR and need to track TCR
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
-            entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
+            entireSystemColl -=
+                (totals.totalCollGasCompensation + totals.totalCollToSendToSP) *
+                troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
 
             while (troveIter < length && troveCount > 1) {
@@ -371,7 +377,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
                 debtInStabPool -= singleLiquidation.debtToOffset;
                 entireSystemColl -=
-                    (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
+                    (singleLiquidation.collToSendToSP +
+                        singleLiquidation.collSurplus +
+                        singleLiquidation.collGasCompensation) *
                     troveManagerValues.price;
                 entireSystemDebt -= singleLiquidation.debtToOffset;
 
