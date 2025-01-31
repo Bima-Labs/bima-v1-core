@@ -610,7 +610,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint256 P_Snapshot = depositSnapshots[_depositor].P;
         if (P_Snapshot == 0) return collateralGains;
-        mapping(IERC20 => uint256) storage depositorGains = collateralGainsByDepositor[_depositor];
         uint256 initialDeposit = accountDeposits[_depositor].amount;
         uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
         uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
@@ -620,7 +619,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         for (uint256 i; i < collateralGains.length; i++) {
             IERC20 collateral = collateralTokens[i];
-            collateralGains[i] = depositorGains[collateral];
+            collateralGains[i] = collateralGainsByDepositor[_depositor][collateral];
             if (sums[i] == 0) continue; // Collateral was overwritten or not gains
             uint256 firstPortion = sums[i] - depSums[i];
             uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
@@ -632,9 +631,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     }
 
     function _accrueDepositorCollateralGain(address _depositor) private returns (bool hasGains) {
-        // get storage reference to user's collateral gains
-        mapping(IERC20 => uint256) storage depositorGains = collateralGainsByDepositor[_depositor];
-
         // cache number of collateral tokens
         uint256 collaterals = collateralTokens.length;
 
@@ -658,7 +654,9 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
                 uint256 firstPortion = sumS[i] - depSums[i];
                 uint256 secondPortion = nextSumS[i] / BIMA_SCALE_FACTOR;
 
-                depositorGains[collateralTokens[i]] += (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION;
+                collateralGainsByDepositor[_depositor][collateralTokens[i]] += SafeCast.toUint80(
+                    (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
+                );
             }
         }
     }
@@ -788,17 +786,15 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint256[] memory collateralGains = new uint256[](collateralTokens.length);
 
-        mapping(IERC20 => uint256) storage depositorGains = collateralGainsByDepositor[msg.sender];
-
         // more efficient not to cache calldata input length
         for (uint256 i; i < collateralIndexes.length; ) {
             uint256 collateralIndex = collateralIndexes[i];
             IERC20 collateral = collateralTokens[collateralIndex];
-            uint256 gains = depositorGains[collateral];
+            uint256 gains = collateralGainsByDepositor[msg.sender][collateral];
 
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
-                depositorGains[collateral] = 0;
+                collateralGainsByDepositor[msg.sender][collateral] = 0;
 
                 collateral.safeTransfer(recipient, gains);
             }
