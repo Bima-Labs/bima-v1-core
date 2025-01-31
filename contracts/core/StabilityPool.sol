@@ -239,6 +239,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         // overwrite old collateral with new one
         collateralTokens[idx] = _newCollateral;
+        lastCollateralError_Offset[idx] = 0;
     }
 
     /**
