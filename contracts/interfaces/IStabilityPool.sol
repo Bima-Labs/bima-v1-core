@@ -44,7 +44,7 @@ interface IStabilityPool is IBimaOwnable, ISystemStart {
 
     function claimableReward(address _depositor) external view returns (uint256);
 
-    function collateralGainsByDepositor(address depositor, uint256) external view returns (uint80 gains);
+function collateralGainsByDepositor(address depositor, IERC20 token) external view returns (uint256 gains);
 
     function collateralTokens(uint256) external view returns (IERC20);
 
