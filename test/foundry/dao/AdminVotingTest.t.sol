@@ -154,7 +154,45 @@ contract AdminVotingTest is TestSetup {
         }
     }
 
-    function test_createNewProposal_setGuardian() public returns (uint256 proposalId) {
+    function test_createNewProposal_setGuardian_singlePayload() public returns (uint256 proposalId) {
+        // create a setGuardian proposal
+        AdminVoting.Action[] memory payload = new AdminVoting.Action[](1);
+        payload[0].target = address(bimaCore);
+        payload[0].data = abi.encodeWithSelector(IBimaCore.setGuardian.selector, users.user1);
+
+        // lock up user tokens to receive voting power
+        // need to divide by lockToTokenRatio when calling the
+        // lock function since the token transfer multiplies by lockToTokenRatio
+        vm.prank(users.user1);
+        tokenLocker.lock(users.user1, USER1_TOKEN_ALLOCATION / INIT_LOCK_TO_TOKEN_RATIO, 52);
+
+        // warp forward BOOTSTRAP_PERIOD so voting power becomes active
+        // and setGuardian proposals are allowed
+        vm.warp(block.timestamp + adminVoting.BOOTSTRAP_PERIOD());
+
+        // create the proposal
+        vm.prank(users.user1);
+        proposalId = adminVoting.createNewProposal(users.user1, payload);
+
+        _verifyCreatedProposal(proposalId, adminVoting.getWeek() - 1, adminVoting.SET_GUARDIAN_PASSING_PCT(), payload);
+
+        // change default passing percent to be higher than hard-coded
+        // setGuardian passing percent
+        uint256 higherPassingPct = adminVoting.SET_GUARDIAN_PASSING_PCT() + 1;
+        vm.prank(address(adminVoting));
+        adminVoting.setPassingPct(higherPassingPct);
+
+        // create a second setGuardian proposal
+        vm.warp(block.timestamp + adminVoting.MIN_TIME_BETWEEN_PROPOSALS() + 1);
+        vm.prank(users.user1);
+        proposalId = adminVoting.createNewProposal(users.user1, payload);
+
+        // verify it received higher default passing percent instead
+        // of lower hard-coded setGuardian passing percent
+        _verifyCreatedProposal(proposalId, adminVoting.getWeek() - 1, higherPassingPct, payload);
+    }
+
+    function test_createNewProposal_setGuardian_multiplePayload() public returns (uint256 proposalId) {
         // create a setGuardian proposal that also contains other payloads
         AdminVoting.Action[] memory payload = new AdminVoting.Action[](3);
         payload[0].target = address(adminVoting);
@@ -287,12 +325,20 @@ contract AdminVotingTest is TestSetup {
         _cancelProposal(proposalId);
     }
 
-    function test_cancelProposal_cantCancelSetGuardian() external {
+    function test_cancelProposal_cantCancelSetGuardian_singlePayload() external {
         // create the setGuardian proposal
-        uint256 proposalId = test_createNewProposal_setGuardian();
+        uint256 proposalId = test_createNewProposal_setGuardian_singlePayload();
 
         // verify it is impossible to cancel
         vm.expectRevert("Guardian replacement not cancellable");
+        vm.prank(users.guardian);
+        adminVoting.cancelProposal(proposalId);
+    }
+
+    function test_cancelProposal_canCancelSetGuardian_multiplePayload() external {
+        // create the setGuardian proposal
+        uint256 proposalId = test_createNewProposal_setGuardian_multiplePayload();
+
         vm.prank(users.guardian);
         adminVoting.cancelProposal(proposalId);
     }
@@ -497,7 +543,7 @@ contract AdminVotingTest is TestSetup {
 
         // create the `setGuardian` proposal which also calls
         // `setPassingPct` and `setMinCreateProposalPct`
-        proposalId = test_createNewProposal_setGuardian();
+        proposalId = test_createNewProposal_setGuardian_multiplePayload();
 
         _executeProposal(users.user1, proposalId);
 
