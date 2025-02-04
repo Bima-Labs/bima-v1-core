@@ -26,7 +26,6 @@ contract BorrowerOperationsTest is StabilityPoolTest {
     // non-public copied from TroveManager.sol
     uint256 internal constant TM_INTEREST_PRECISION = 1e27;
     uint256 internal constant TM_SECONDS_IN_YEAR = 365 days;
-    uint256 internal constant VOLUME_MULTIPLIER = 1e20;
 
     // since owner opens an initial trove, don't want to revert
     // during fuzz tests for trying to open more debt than allowed
@@ -57,8 +56,8 @@ contract BorrowerOperationsTest is StabilityPoolTest {
         assertEq(stakedBTCTroveMgr.getTroveStake(users.owner), OWNER_TROVE_COLLATERAL);
 
         (uint256 week, uint256 day) = stakedBTCTroveMgr.getWeekAndDay();
-        uint32[7] memory mints = stakedBTCTroveMgr.getTotalMints(week);
-        assertEq(mints[day], INIT_MIN_NET_DEBT / VOLUME_MULTIPLIER);
+        uint256[7] memory mints = stakedBTCTroveMgr.getTotalMints(week);
+        assertEq(mints[day], INIT_MIN_NET_DEBT + INIT_GAS_COMPENSATION);
 
         assertEq(stakedBTCTroveMgr.getTroveFromTroveOwnersArray(0), users.owner);
 

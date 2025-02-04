@@ -180,7 +180,7 @@ interface ITroveManager is IBimaBase, IBimaOwnable, ISystemStart, IEmissionRecei
             uint256 activeInterestIndex
         );
 
-    function accountLatestMint(address) external view returns (uint32 amount, uint32 week, uint32 day);
+    function accountLatestMint(address) external view returns (uint256 amount, uint32 week, uint32 day);
 
     function activeInterestIndex() external view returns (uint256);
 
@@ -236,7 +236,7 @@ interface ITroveManager is IBimaBase, IBimaOwnable, ISystemStart, IEmissionRecei
 
     function getTotalActiveDebt() external view returns (uint256);
 
-    function getTotalMints(uint256 week) external view returns (uint32[7] memory);
+    function getTotalMints(uint256 week) external view returns (uint256[7] memory);
 
     function getTroveCollAndDebt(address _borrower) external view returns (uint256 coll, uint256 debt);
 
