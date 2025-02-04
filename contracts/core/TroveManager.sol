@@ -38,9 +38,6 @@ contract TroveManager is ITroveManager, BimaBase, BimaOwnable, SystemStart {
     uint256 constant INTEREST_PRECISION = 1e27;
     uint256 constant SECONDS_IN_YEAR = 365 days;
 
-    // volume-based amounts are divided by this value to allow storing as uint32
-    uint256 constant VOLUME_MULTIPLIER = 1e20;
-
     // Maximum interest rate must be lower than the minimum LST staking yield
     // so that over time the actual TCR becomes greater than the calculated TCR
     uint256 public constant MAX_INTEREST_RATE_IN_BPS = 400; // 4%

@@ -26,7 +26,6 @@ contract BorrowerOperationsTest is StabilityPoolTest {
     // non-public copied from TroveManager.sol
     uint256 internal constant TM_INTEREST_PRECISION = 1e27;
     uint256 internal constant TM_SECONDS_IN_YEAR = 365 days;
-    uint256 internal constant VOLUME_MULTIPLIER = 1e20;
 
     // since owner opens an initial trove, don't want to revert
     // during fuzz tests for trying to open more debt than allowed
