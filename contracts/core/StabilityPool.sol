@@ -214,22 +214,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
         // index to remove must be valid
         require(idx < length, "Index too large");
 
-        uint256 externalLoopEnd = currentEpoch;
-        uint256 internalLoopEnd = currentScale;
-
-        for (uint128 i; i <= externalLoopEnd; ) {
-            for (uint128 j; j <= internalLoopEnd; ) {
-                // reset collateral gain sum 'S' for collateral being removed
-                epochToScaleToSums[i][j][collateralTokens[idx]] = 0;
-                unchecked {
-                    ++j;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
         // update index of new collateral; note that `indexByCollateral`
         // stores (index + 1) eg [1...collateralTokens.length]
         indexByCollateral[_newCollateral] = idx + 1;
