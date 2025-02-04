@@ -38,7 +38,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
     IBorrowerOperations public immutable borrowerOperations;
     address public immutable factory;
 
-    uint256 private constant _100pct = 1000000000000000000; // 1e18 == 100%
+    // Troves under this % will be liquidated without an SP to account for liquidator's reward
+    // the number here should be X in formula: x - x/200 = 1e18 (x/200 being the liquidator's reward and 1e18 being 100%)
+    uint256 private constant _100pctPlusCollComp = (PERCENT_DIVISOR * 1e18) / (PERCENT_DIVISOR - 1);
 
     mapping(ITroveManager troveManager => bool enabled) internal _enabledTroveManagers;
 
@@ -180,7 +182,7 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
                 trovesRemaining = 0;
                 break;
             }
-            if (ICR <= _100pct) {
+            if (ICR <= _100pctPlusCollComp) {
                 singleLiquidation = _liquidateWithoutSP(troveManager, account);
                 _applyLiquidationValuesToTotals(totals, singleLiquidation);
             } else if (ICR < troveManagerValues.MCR) {
@@ -202,7 +204,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
         if (trovesRemaining > 0 && !troveManagerValues.sunsetting && troveCount > 1) {
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
-            entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
+            entireSystemColl -=
+                (totals.totalCollGasCompensation + totals.totalCollToSendToSP) *
+                troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
             address nextAccount = sortedTrovesCached.getLast();
             ITroveManager _troveManager = troveManager; //stack too deep workaround
@@ -233,7 +237,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
                 debtInStabPool -= singleLiquidation.debtToOffset;
                 entireSystemColl -=
-                    (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
+                    (singleLiquidation.collToSendToSP +
+                        singleLiquidation.collSurplus +
+                        singleLiquidation.collGasCompensation) *
                     troveManagerValues.price;
                 entireSystemDebt -= singleLiquidation.debtToOffset;
 
@@ -311,7 +317,7 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
             // closed / non-existent troves return an ICR of type(uint).max and are ignored
             uint256 ICR = troveManager.getCurrentICR(account, troveManagerValues.price);
-            if (ICR <= _100pct) {
+            if (ICR <= _100pctPlusCollComp) {
                 singleLiquidation = _liquidateWithoutSP(troveManager, account);
             } else if (ICR < troveManagerValues.MCR) {
                 singleLiquidation = _liquidateNormalMode(
@@ -336,7 +342,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
         if (troveIter < length && troveCount > 1) {
             // second iteration round, if we receive a trove with ICR > MCR and need to track TCR
             (uint256 entireSystemColl, uint256 entireSystemDebt) = borrowerOperations.getGlobalSystemBalances();
-            entireSystemColl -= totals.totalCollToSendToSP * troveManagerValues.price;
+            entireSystemColl -=
+                (totals.totalCollGasCompensation + totals.totalCollToSendToSP) *
+                troveManagerValues.price;
             entireSystemDebt -= totals.totalDebtToOffset;
 
             while (troveIter < length && troveCount > 1) {
@@ -346,7 +354,7 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
                     ++troveIter;
                 }
 
-                if (ICR <= _100pct) {
+                if (ICR <= _100pctPlusCollComp) {
                     singleLiquidation = _liquidateWithoutSP(troveManager, account);
                 } else if (ICR < troveManagerValues.MCR) {
                     singleLiquidation = _liquidateNormalMode(
@@ -371,7 +379,9 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
 
                 debtInStabPool -= singleLiquidation.debtToOffset;
                 entireSystemColl -=
-                    (singleLiquidation.collToSendToSP + singleLiquidation.collSurplus) *
+                    (singleLiquidation.collToSendToSP +
+                        singleLiquidation.collSurplus +
+                        singleLiquidation.collGasCompensation) *
                     troveManagerValues.price;
                 entireSystemDebt -= singleLiquidation.debtToOffset;
 

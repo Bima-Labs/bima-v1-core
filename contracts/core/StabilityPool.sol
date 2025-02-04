@@ -90,9 +90,9 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     mapping(address depositor => Snapshots) public depositSnapshots;
 
     // index values are mapped against the values within `collateralTokens`
-    mapping(address depositor => uint256[MAX_COLLATERAL_COUNT] deposits) public depositSums;
+    mapping(address depositor => mapping(IERC20 => uint256)) public depositSums;
 
-    mapping(address depositor => uint80[MAX_COLLATERAL_COUNT] gains) public collateralGainsByDepositor;
+    mapping(address => mapping(IERC20 => uint256)) public collateralGainsByDepositor;
 
     mapping(address depositor => uint256 rewards) private storedPendingReward;
 
@@ -106,7 +106,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
      */
 
     // index values are mapped against the values within `collateralTokens`
-    mapping(uint128 epoch => mapping(uint128 scale => uint256[MAX_COLLATERAL_COUNT] sumS)) public epochToScaleToSums;
+    mapping(uint128 epoch => mapping(uint128 scale => mapping(IERC20 => uint256))) public epochToScaleToSums;
 
     /*
      * Similarly, the sum 'G' is used to calculate Bima gains. During it's lifetime, each deposit d_t earns a Bima gain of
@@ -214,22 +214,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
         // index to remove must be valid
         require(idx < length, "Index too large");
 
-        uint256 externalLoopEnd = currentEpoch;
-        uint256 internalLoopEnd = currentScale;
-
-        for (uint128 i; i <= externalLoopEnd; ) {
-            for (uint128 j; j <= internalLoopEnd; ) {
-                // reset collateral gain sum 'S' for collateral being removed
-                epochToScaleToSums[i][j][idx] = 0;
-                unchecked {
-                    ++j;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
         // update index of new collateral; note that `indexByCollateral`
         // stores (index + 1) eg [1...collateralTokens.length]
         indexByCollateral[_newCollateral] = idx + 1;
@@ -239,6 +223,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         // overwrite old collateral with new one
         collateralTokens[idx] = _newCollateral;
+        lastCollateralError_Offset[idx] = 0;
     }
 
     /**
@@ -548,6 +533,8 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
         uint256 currentP = P;
         uint256 newP;
 
+        IERC20 collateral = collateralTokens[idx];
+
         /*
          * The newProductFactor is the factor by which to change all deposits, due to the depletion of Stability Pool Debt in the liquidation.
          * We make the product factor 0 if there was a pool-emptying. Otherwise, it is (1 - DebtLossPerUnitStaked)
@@ -556,7 +543,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint128 currentScaleCached = currentScale;
         uint128 currentEpochCached = currentEpoch;
-        uint256 currentS = epochToScaleToSums[currentEpochCached][currentScaleCached][idx];
+        uint256 currentS = epochToScaleToSums[currentEpochCached][currentScaleCached][collateral];
 
         /*
          * Calculate the new S first, before we update P.
@@ -567,7 +554,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
          */
         uint256 marginalCollateralGain = _collateralGainPerUnitStaked * currentP;
         uint256 newS = currentS + marginalCollateralGain;
-        epochToScaleToSums[currentEpochCached][currentScaleCached][idx] = newS;
+        epochToScaleToSums[currentEpochCached][currentScaleCached][collateral] = newS;
         emit S_Updated(idx, newS, currentEpochCached, currentScaleCached);
 
         // If the Stability Pool was emptied, increment the epoch, and reset the scale and product P
@@ -610,19 +597,21 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint256 P_Snapshot = depositSnapshots[_depositor].P;
         if (P_Snapshot == 0) return collateralGains;
-        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[_depositor];
         uint256 initialDeposit = accountDeposits[_depositor].amount;
         uint128 epochSnapshot = depositSnapshots[_depositor].epoch;
         uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
-        uint256[MAX_COLLATERAL_COUNT] storage sums = epochToScaleToSums[epochSnapshot][scaleSnapshot];
-        uint256[MAX_COLLATERAL_COUNT] storage nextSums = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
-        uint256[MAX_COLLATERAL_COUNT] storage depSums = depositSums[_depositor];
 
         for (uint256 i; i < collateralGains.length; i++) {
-            collateralGains[i] = depositorGains[i];
-            if (sums[i] == 0) continue; // Collateral was overwritten or not gains
-            uint256 firstPortion = sums[i] - depSums[i];
-            uint256 secondPortion = nextSums[i] / BIMA_SCALE_FACTOR;
+            IERC20 collateral = collateralTokens[i];
+            collateralGains[i] = collateralGainsByDepositor[_depositor][collateral];
+
+            uint256 collateralSum = epochToScaleToSums[epochSnapshot][scaleSnapshot][collateral];
+
+            if (collateralSum == 0) continue; // Collateral was overwritten or not gains
+
+            uint256 firstPortion = collateralSum - depositSums[_depositor][collateral];
+            uint256 secondPortion = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1][collateral] /
+                BIMA_SCALE_FACTOR;
             collateralGains[i] +=
                 (initialDeposit * (firstPortion + secondPortion)) /
                 P_Snapshot /
@@ -631,9 +620,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
     }
 
     function _accrueDepositorCollateralGain(address _depositor) private returns (bool hasGains) {
-        // get storage reference to user's collateral gains
-        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[_depositor];
-
         // cache number of collateral tokens
         uint256 collaterals = collateralTokens.length;
 
@@ -645,19 +631,20 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             uint128 scaleSnapshot = depositSnapshots[_depositor].scale;
             uint256 P_Snapshot = depositSnapshots[_depositor].P;
 
-            uint256[MAX_COLLATERAL_COUNT] storage sumS = epochToScaleToSums[epochSnapshot][scaleSnapshot];
-            uint256[MAX_COLLATERAL_COUNT] storage nextSumS = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1];
-            uint256[MAX_COLLATERAL_COUNT] storage depSums = depositSums[_depositor];
-
             for (uint256 i; i < collaterals; i++) {
-                if (sumS[i] == 0) continue; // Collateral was overwritten or not gains
+                IERC20 collateral = collateralTokens[i];
+
+                uint256 collateralSum = epochToScaleToSums[epochSnapshot][scaleSnapshot][collateral];
+
+                if (collateralSum == 0) continue; // Collateral was overwritten or not gains
 
                 hasGains = true;
 
-                uint256 firstPortion = sumS[i] - depSums[i];
-                uint256 secondPortion = nextSumS[i] / BIMA_SCALE_FACTOR;
+                uint256 firstPortion = collateralSum - depositSums[_depositor][collateral];
+                uint256 secondPortion = epochToScaleToSums[epochSnapshot][scaleSnapshot + 1][collateral] /
+                    BIMA_SCALE_FACTOR;
 
-                depositorGains[i] += SafeCast.toUint80(
+                collateralGainsByDepositor[_depositor][collateralTokens[i]] += SafeCast.toUint80(
                     (initialDeposit * (firstPortion + secondPortion)) / P_Snapshot / BIMA_DECIMAL_PRECISION
                 );
             }
@@ -789,18 +776,17 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
 
         uint256[] memory collateralGains = new uint256[](collateralTokens.length);
 
-        uint80[MAX_COLLATERAL_COUNT] storage depositorGains = collateralGainsByDepositor[msg.sender];
-
         // more efficient not to cache calldata input length
         for (uint256 i; i < collateralIndexes.length; ) {
             uint256 collateralIndex = collateralIndexes[i];
-            uint256 gains = depositorGains[collateralIndex];
+            IERC20 collateral = collateralTokens[collateralIndex];
+            uint256 gains = collateralGainsByDepositor[msg.sender][collateral];
 
             if (gains > 0) {
                 collateralGains[collateralIndex] = gains;
-                depositorGains[collateralIndex] = 0;
+                collateralGainsByDepositor[msg.sender][collateral] = 0;
 
-                collateralTokens[collateralIndex].safeTransfer(recipient, gains);
+                collateral.safeTransfer(recipient, gains);
             }
             unchecked {
                 ++i;
@@ -820,7 +806,7 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             uint256 length = collateralTokens.length;
 
             for (uint256 i; i < length; i++) {
-                depositSums[_depositor][i] = 0;
+                depositSums[_depositor][collateralTokens[i]] = 0;
             }
 
             emit DepositSnapshotUpdated(_depositor, 0, 0);
@@ -830,7 +816,6 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             uint256 currentP = P;
 
             // Get S and G for the current epoch and current scale
-            uint256[MAX_COLLATERAL_COUNT] storage currentS = epochToScaleToSums[currentEpochCached][currentScaleCached];
             uint256 currentG = epochToScaleToG[currentEpochCached][currentScaleCached];
 
             // Record new snapshots of the latest running product P, sum S, and sum G, for the depositor
@@ -842,7 +827,11 @@ contract StabilityPool is IStabilityPool, BimaOwnable, SystemStart {
             uint256 length = collateralTokens.length;
 
             for (uint256 i; i < length; i++) {
-                depositSums[_depositor][i] = currentS[i];
+                IERC20 collateral = collateralTokens[i];
+
+                depositSums[_depositor][collateral] = epochToScaleToSums[currentEpochCached][currentScaleCached][
+                    collateral
+                ];
             }
 
             emit DepositSnapshotUpdated(_depositor, currentP, currentG);

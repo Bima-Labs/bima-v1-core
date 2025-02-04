@@ -44,7 +44,7 @@ interface IStabilityPool is IBimaOwnable, ISystemStart {
 
     function claimableReward(address _depositor) external view returns (uint256);
 
-    function collateralGainsByDepositor(address depositor, uint256) external view returns (uint80 gains);
+function collateralGainsByDepositor(address depositor, IERC20 token) external view returns (uint256 gains);
 
     function collateralTokens(uint256) external view returns (IERC20);
 
@@ -56,13 +56,13 @@ interface IStabilityPool is IBimaOwnable, ISystemStart {
 
     function depositSnapshots(address) external view returns (uint256 P, uint256 G, uint128 scale, uint128 epoch);
 
-    function depositSums(address, uint256) external view returns (uint256);
+    function depositSums(address, IERC20) external view returns (uint256);
 
     function SP_EMISSION_ID() external view returns (uint256);
 
     function epochToScaleToG(uint128, uint128) external view returns (uint256);
 
-    function epochToScaleToSums(uint128, uint128, uint256) external view returns (uint256);
+    function epochToScaleToSums(uint128, uint128, IERC20) external view returns (uint256);
 
     function factory() external view returns (address);
 
