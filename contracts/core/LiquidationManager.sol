@@ -39,7 +39,8 @@ contract LiquidationManager is ILiquidationManager, BimaBase {
     address public immutable factory;
 
     // Troves under this % will be liquidated without an SP to account for liquidator's reward
-    uint256 private constant _100pctPlusCollComp = 1e18 + (1e18 / PERCENT_DIVISOR); // 100% + 0.5% (liquidator's gas compensation)
+    // the number here should be X in formula: x - x/200 = 1e18 (x/200 being the liquidator's reward and 1e18 being 100%)
+    uint256 private constant _100pctPlusCollComp = (PERCENT_DIVISOR * 1e18) / (PERCENT_DIVISOR - 1);
 
     mapping(ITroveManager troveManager => bool enabled) internal _enabledTroveManagers;
 
