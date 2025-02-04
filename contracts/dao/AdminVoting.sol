@@ -359,8 +359,11 @@ contract AdminVoting is DelegatedOps, SystemStart {
         // get a reference to storage data of proposal's payload
         Action[] storage payload = proposalPayloads[id];
 
-        // prevent cancellation of proposals with payloads containing `setGuardian` calls
-        require(!_containsSetGuardianPayload(payload.length, payload), "Guardian replacement not cancellable");
+        // prevent cancellation of proposals that have only 1 payload, containing `setGuardian` call
+        require(
+            payload.length > 1 || !_containsSetGuardianPayload(payload.length, payload),
+            "Guardian replacement not cancellable"
+        );
 
         // prevent cancellation of executed or cancelled proposals
         require(!proposalData[id].processed, "Already processed");
