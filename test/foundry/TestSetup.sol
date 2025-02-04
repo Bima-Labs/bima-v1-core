@@ -171,7 +171,7 @@ contract TestSetup is Test {
         priceFeed.setOracle(
             address(stakedBTC),
             address(mockOracle),
-            80000, // heartbeat,
+            30 minutes, // heartbeat,
             bytes4(0x00000000), // Read pure data assume stBTC is 1:1 with BTC :)
             18, // sharePriceDecimals
             false //_isEthIndexed

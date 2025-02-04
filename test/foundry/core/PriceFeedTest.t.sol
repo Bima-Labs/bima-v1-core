@@ -6,9 +6,10 @@ import {TestSetup} from "../TestSetup.sol";
 
 // mocks
 import {MockOracle} from "../../../contracts/mock/MockOracle.sol";
-
+import {PriceFeed} from "../../../contracts/core/PriceFeed.sol";
 // forge
 import {console} from "forge-std/console.sol";
+import {console2} from "forge-std/console2.sol";
 
 error PriceFeed__FeedFrozenError(address token);
 error PriceFeed__InvalidFeedResponseError(address token);
@@ -29,26 +30,26 @@ contract PriceFeedTest is TestSetup {
         mockOracle2.setResponse(1, 60_000e8, block.timestamp, block.timestamp, 1);
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
-        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 30 minutes, bytes4(0x00000000), 18, false);
 
         mockOracle2.setResponse(2, 0, block.timestamp, block.timestamp, 2);
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
-        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 30 minutes, bytes4(0x00000000), 18, false);
 
         mockOracle2.setResponse(2, 60_000e8, 0, 0, 2);
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
-        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 30 minutes, bytes4(0x00000000), 18, false);
 
         mockOracle2.setResponse(2, 60_000e8, block.timestamp + 1, block.timestamp + 1, 2);
 
         vm.expectRevert(abi.encodeWithSelector(PriceFeed__InvalidFeedResponseError.selector, address(stakedBTC)));
-        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 30 minutes, bytes4(0x00000000), 18, false);
     }
 
     function testFuzz_setOracle_frozenFeed(uint32 _heartbeat, uint16 _delta) external {
-        vm.assume(_heartbeat <= 86400);
+        vm.assume(_heartbeat <= priceFeed.MAX_HEARTBEAT());
         vm.assume(_delta > 0);
 
         vm.startPrank(users.owner);
@@ -56,8 +57,8 @@ contract PriceFeedTest is TestSetup {
         mockOracle2.setResponse(
             2,
             60_000e8,
-            block.timestamp - _heartbeat - priceFeed.RESPONSE_TIMEOUT_BUFFER() - _delta,
-            block.timestamp - _heartbeat - priceFeed.RESPONSE_TIMEOUT_BUFFER() - _delta,
+            block.timestamp - _heartbeat - _delta,
+            block.timestamp - _heartbeat - _delta,
             2
         );
 
@@ -77,7 +78,7 @@ contract PriceFeedTest is TestSetup {
 
         mockOracle2.setResponse(2, 60_000e8, block.timestamp, block.timestamp, 2);
 
-        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 80_000, bytes4(0x00000000), 18, false);
+        priceFeed.setOracle(address(stakedBTC), address(mockOracle2), 30 minutes, bytes4(0x00000000), 18, false);
 
         skip(1 minutes);
 

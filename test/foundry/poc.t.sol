@@ -69,7 +69,7 @@ contract PoCTest is TestSetup {
         priceFeed.setOracle(
             address(stakedBTC2),
             address(mockOracle),
-            80000, // heartbeat
+            30 minutes, // heartbeat
             bytes4(0x00000000), // Read pure data assume stBTC is 1:1 with BTC
             18, // sharePriceDecimals
             false // _isEthIndexed
@@ -273,7 +273,7 @@ contract PoCTest is TestSetup {
         mockOracle.set(uint64(block.timestamp * 1e9), 60_000e18);
 
         // Configure price feed to use the Stork Oracle wrapper
-        priceFeed.setOracle(address(stakedBTC), address(wrapper), 80_000, bytes4(0), 8, false);
+        priceFeed.setOracle(address(stakedBTC), address(wrapper), 30 minutes, bytes4(0), 8, false);
 
         assertEq(priceFeed.fetchPrice(address(stakedBTC)), 60_000e18);
 
