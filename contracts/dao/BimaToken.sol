@@ -14,7 +14,7 @@ contract BimaToken is OFT, IERC2612 {
     // --- ERC20 Data ---
 
     string internal constant _NAME = "Bima Governance Token";
-    string internal constant _SYMBOL = "BIMA";
+    string internal constant _SYMBOL = "BOOM";
     string public constant version = "1";
 
     // --- EIP 2612 Data ---
