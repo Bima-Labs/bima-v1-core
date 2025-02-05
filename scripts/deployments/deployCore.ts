@@ -56,14 +56,6 @@ async function deployCore() {
     );
     assertEq(priceFeedAddress, deployedPriceFeedAddress);
 
-    const [, interimAdminAddress] = await deployContract(factories.InterimAdmin, "InterimAdmin", bimaCoreAddress);
-
-    {
-        const tx = await (bimaCore as BimaCore).commitTransferOwnership(interimAdminAddress);
-        await tx.wait();
-        console.log("-- tx: Ownership transferred to interimAdmin!");
-    }
-
     const [, gasPoolAddress] = await deployContract(factories.GasPool, "GasPool");
 
     const [, sortedTrovesAddress] = await deployContract(factories.SortedTroves, "SortedTroves");
