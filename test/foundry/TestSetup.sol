@@ -166,7 +166,7 @@ contract TestSetup is Test {
         assertEq(addresses.core, address(bimaCore));
 
         // PriceFeed
-        priceFeed = new PriceFeed(addresses.core, address(mockOracle));
+        priceFeed = new PriceFeed(addresses.core);
         assertEq(addresses.priceFeed, address(priceFeed));
         priceFeed.setOracle(
             address(stakedBTC),

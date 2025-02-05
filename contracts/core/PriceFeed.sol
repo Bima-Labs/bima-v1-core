@@ -68,9 +68,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     mapping(address => OracleRecord) public oracleRecords;
     mapping(address => PriceRecord) public priceRecords;
 
-    constructor(address _bimaCore, address ethFeed) BimaOwnable(_bimaCore) {
-        setOracle(address(0), ethFeed, 3600, 0, 0, false);
-    }
+    constructor(address _bimaCore) BimaOwnable(_bimaCore) {}
 
     // Admin routines ---------------------------------------------------------------------------------------------------
 
