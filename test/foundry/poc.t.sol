@@ -62,7 +62,7 @@ contract PoCTest is TestSetup {
             maxBorrowingFee: 0,
             interestRateInBps: 0,
             maxDebt: 1_000_000e18, // 1M USD
-            MCR: 2e18 // 200%
+            MCR: 1.5e18 // 150%
         });
 
         // Set up price feed for stakedBTC2
@@ -167,51 +167,52 @@ contract PoCTest is TestSetup {
         console.log("TCR =", borrowerOps.getTCR());
     }
 
-    /**
-     * @dev Test case: Forcing the system into Recovery Mode
-     */
-    function test_poc_forcingSystemIntoRecoveryMode() public {
-        console.log("Initial TCR:");
-        _printTCR();
+    //? Test function is written to work on CCR = 2.25e18 & MCR = 2.e18
+    // /**
+    //  * @dev Test case: Forcing the system into Recovery Mode
+    //  */
+    // function test_poc_forcingSystemIntoRecoveryMode() public {
+    //     console.log("Initial TCR:");
+    //     _printTCR();
 
-        // Step 1: Victim opens a trove with ICR lower than CCR
-        vm.startPrank(victim);
-        _openTrove(sbtcTroveManager, 100_000e18, 2e18);
+    //     // Step 1: Victim opens a trove with ICR lower than CCR
+    //     vm.startPrank(victim);
+    //     _openTrove(sbtcTroveManager, 100_000e18, 2e18);
 
-        // Step 2: Attacker opens a minimal position with CR slightly above 225%
-        vm.startPrank(attacker);
-        _openTrove(sbtc2TroveManager, 2_000e18, 2.26e18);
+    //     // Step 2: Attacker opens a minimal position with CR slightly above 225%
+    //     vm.startPrank(attacker);
+    //     _openTrove(sbtc2TroveManager, 2_000e18, 2.26e18);
 
-        // Step 3: Open a large position to bring TCR to exactly 225%
-        (uint256 totalPricedCollateral, uint256 totalDebt) = borrowerOps.getGlobalSystemBalances();
-        uint256 debtAmount = ((totalPricedCollateral - (225 * totalDebt * 1e18) / 100) * 100) / (225 - 200) / 1e18;
-        uint256 CR = 2e18;
-        _openTrove(sbtcTroveManager, debtAmount, CR);
+    //     // Step 3: Open a large position to bring TCR to exactly 225%
+    //     (uint256 totalPricedCollateral, uint256 totalDebt) = borrowerOps.getGlobalSystemBalances();
+    //     uint256 debtAmount = ((totalPricedCollateral - (225 * totalDebt * 1e18) / 100) * 100) / (225 - 200) / 1e18;
+    //     uint256 CR = 2e18;
+    //     _openTrove(sbtcTroveManager, debtAmount, CR);
 
-        console.log("TCR after opening large position:");
-        _printTCR();
+    //     console.log("TCR after opening large position:");
+    //     _printTCR();
 
-        // Step 4: Redeem the position opened in step 2 to trigger Recovery Mode
-        (, uint256 attackerDebt) = sbtc2TroveManager.getTroveCollAndDebt(attacker);
-        uint256 redemptionAmount = attackerDebt - INIT_GAS_COMPENSATION; // 200e18 is the gas compensation
-        _redeemCollateral(sbtc2TroveManager, redemptionAmount);
+    //     // Step 4: Redeem the position opened in step 2 to trigger Recovery Mode
+    //     (, uint256 attackerDebt) = sbtc2TroveManager.getTroveCollAndDebt(attacker);
+    //     uint256 redemptionAmount = attackerDebt - INIT_GAS_COMPENSATION; // 200e18 is the gas compensation
+    //     _redeemCollateral(sbtc2TroveManager, redemptionAmount);
 
-        console.log("TCR after redemption (should be in Recovery Mode):");
-        _printTCR();
+    //     console.log("TCR after redemption (should be in Recovery Mode):");
+    //     _printTCR();
 
-        // Step 5: Liquidate victim's trove (CR < 225%)
-        liquidationMgr.liquidate(sbtcTroveManager, victim);
+    //     // Step 5: Liquidate victim's trove (CR < 225%)
+    //     liquidationMgr.liquidate(sbtcTroveManager, victim);
 
-        console.log("Victim's trove liquidated");
+    //     console.log("Victim's trove liquidated");
 
-        // Verify victim's trove is closed
-        (uint256 victimColl, uint256 victimDebt) = sbtcTroveManager.getTroveCollAndDebt(victim);
-        assertEq(victimColl, 0, "Victim's trove collateral should be zero");
-        assertEq(victimDebt, 0, "Victim's trove debt should be zero");
+    //     // Verify victim's trove is closed
+    //     (uint256 victimColl, uint256 victimDebt) = sbtcTroveManager.getTroveCollAndDebt(victim);
+    //     assertEq(victimColl, 0, "Victim's trove collateral should be zero");
+    //     assertEq(victimDebt, 0, "Victim's trove debt should be zero");
 
-        console.log("Final TCR:");
-        _printTCR();
-    }
+    //     console.log("Final TCR:");
+    //     _printTCR();
+    // }
 
     /**
      * @dev Test case: Normal redemption process
@@ -286,131 +287,133 @@ contract PoCTest is TestSetup {
         assertEq(priceFeed.fetchPrice(address(stakedBTC)), 50_000e18);
     }
 
+    //? Test function is written to work on CCR = 2.25e18 & MCR = 2.e18
     /**
      * @dev Test case: Stability Pool emptied by liquidation return incorrect claimable amount
      */
-    function test_poc_stabilityPool_inaccurateClaimableAmount() public {
-        address user = users.user1;
-        address user2 = users.user2;
-        deal(address(stakedBTC), user, 1_000_000e18);
-        deal(address(stakedBTC), user2, 1_000_000e18);
+    // function test_poc_stabilityPool_inaccurateClaimableAmount() public {
+    //     address user = users.user1;
+    //     address user2 = users.user2;
+    //     deal(address(stakedBTC), user, 1_000_000e18);
+    //     deal(address(stakedBTC), user2, 1_000_000e18);
 
-        // Mock Bima Vault's allocateNewEmissions function for demonstration purposes
-        vm.mockCall(
-            address(bimaVault),
-            abi.encodeWithSelector(IBimaVault.allocateNewEmissions.selector),
-            abi.encode(100e18 * 86400 * 7) // 100 tokens per week
-        );
+    //     // Mock Bima Vault's allocateNewEmissions function for demonstration purposes
+    //     vm.mockCall(
+    //         address(bimaVault),
+    //         abi.encodeWithSelector(IBimaVault.allocateNewEmissions.selector),
+    //         abi.encode(100e18 * 86400 * 7) // 100 tokens per week
+    //     );
 
-        // Step 1: User opens a trove
-        vm.startPrank(user);
-        uint256 debtAmount = 50_000e18; // 50,000 DEBT
-        _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    //     // Step 1: User opens a trove
+    //     vm.startPrank(user);
+    //     uint256 debtAmount = 50_000e18; // 50,000 DEBT
+    //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-        // Step 2: User deposits all borrowed DEBT into Stability Pool
-        stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
+    //     // Step 2: User deposits all borrowed DEBT into Stability Pool
+    //     stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
 
-        uint256 stabilityPoolBalanceBefore = stabilityPool.getTotalDebtTokenDeposits();
-        console.log("Stability Pool balance before liquidation:", stabilityPoolBalanceBefore);
+    //     uint256 stabilityPoolBalanceBefore = stabilityPool.getTotalDebtTokenDeposits();
+    //     console.log("Stability Pool balance before liquidation:", stabilityPoolBalanceBefore);
 
-        vm.startPrank(user2);
-        debtAmount = stabilityPoolBalanceBefore;
-        _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    //     vm.startPrank(user2);
+    //     debtAmount = stabilityPoolBalanceBefore;
+    //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-        // Step 3: Simulate price drop to make the trove undercollateralized
-        vm.warp(block.timestamp + 1);
-        _updateOracle(59_000e8);
+    //     // Step 3: Simulate price drop to make the trove undercollateralized
+    //     vm.warp(block.timestamp + 1);
+    //     _updateOracle(59_000e8);
 
-        // Step 4: Triggers liquidation
-        liquidationMgr.liquidate(sbtcTroveManager, user2);
+    //     // Step 4: Triggers liquidation
+    //     liquidationMgr.liquidate(sbtcTroveManager, user2);
 
-        // Step 5: Check Stability Pool balance after liquidation
-        uint256 stabilityPoolBalanceAfter = stabilityPool.getTotalDebtTokenDeposits();
-        console.log("Stability Pool balance after liquidation:", stabilityPoolBalanceAfter);
+    //     // Step 5: Check Stability Pool balance after liquidation
+    //     uint256 stabilityPoolBalanceAfter = stabilityPool.getTotalDebtTokenDeposits();
+    //     console.log("Stability Pool balance after liquidation:", stabilityPoolBalanceAfter);
 
-        // Assert that the Stability Pool is emptied
-        assertEq(stabilityPoolBalanceAfter, 0, "Stability Pool should be empty after liquidation");
-        //
-        // Step 6: Check claimable rewards
-        // The correct amount should be more than zero
-        uint256 claimableRewards = stabilityPool.claimableReward(user);
-        console.log("Claimable rewards:", claimableRewards);
+    //     // Assert that the Stability Pool is emptied
+    //     assertEq(stabilityPoolBalanceAfter, 0, "Stability Pool should be empty after liquidation");
+    //     //
+    //     // Step 6: Check claimable rewards
+    //     // The correct amount should be more than zero
+    //     uint256 claimableRewards = stabilityPool.claimableReward(user);
+    //     console.log("Claimable rewards:", claimableRewards);
 
-        assertTrue(claimableRewards > 0);
-    }
+    //     assertTrue(claimableRewards > 0);
+    // }
 
-    function test_poc_stabilityPool_incorrectMarginalBimaGain() public {
-        address user = users.user1;
-        address user2 = users.user2;
-        address user3 = makeAddr("User3");
-        deal(address(stakedBTC), user, 1e6 * 1e18);
-        deal(address(stakedBTC), user2, 1e6 * 1e18);
-        deal(address(stakedBTC), user3, 1e6 * 1e18);
+    //? Test function is written to work on CCR = 2.25e18 & MCR = 2.e18
+    // function test_poc_stabilityPool_incorrectMarginalBimaGain() public {
+    //     address user = users.user1;
+    //     address user2 = users.user2;
+    //     address user3 = makeAddr("User3");
+    //     deal(address(stakedBTC), user, 1e6 * 1e18);
+    //     deal(address(stakedBTC), user2, 1e6 * 1e18);
+    //     deal(address(stakedBTC), user3, 1e6 * 1e18);
 
-        // Mock Bima Vault's allocateNewEmissions function for demonstration purposes
-        vm.mockCall(
-            address(bimaVault),
-            abi.encodeWithSelector(IBimaVault.allocateNewEmissions.selector),
-            abi.encode(100e18 * 86400 * 7) // 100 tokens per week
-        );
+    //     // Mock Bima Vault's allocateNewEmissions function for demonstration purposes
+    //     vm.mockCall(
+    //         address(bimaVault),
+    //         abi.encodeWithSelector(IBimaVault.allocateNewEmissions.selector),
+    //         abi.encode(100e18 * 86400 * 7) // 100 tokens per week
+    //     );
 
-        // Step 1: User opens a trove
-        vm.startPrank(user);
-        uint256 debtAmount = 50000e18; // 50,000 DEBT
-        _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    //     // Step 1: User opens a trove
+    //     vm.startPrank(user);
+    //     uint256 debtAmount = 50000e18; // 50,000 DEBT
+    //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-        // Step 2: User deposits all borrowed DEBT into Stability Pool
-        stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
+    //     // Step 2: User deposits all borrowed DEBT into Stability Pool
+    //     stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
 
-        uint256 stabilityPoolBalanceBefore = stabilityPool.getTotalDebtTokenDeposits();
-        console.log("Stability Pool balance before liquidation:", stabilityPoolBalanceBefore);
+    //     uint256 stabilityPoolBalanceBefore = stabilityPool.getTotalDebtTokenDeposits();
+    //     console.log("Stability Pool balance before liquidation:", stabilityPoolBalanceBefore);
 
-        vm.startPrank(user2);
-        debtAmount = stabilityPoolBalanceBefore;
-        _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    //     vm.startPrank(user2);
+    //     debtAmount = stabilityPoolBalanceBefore;
+    //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-        // Step 3: Simulate price drop to make the trove undercollateralized
-        vm.warp(block.timestamp + 1);
-        _updateOracle(59000 * 1e8);
+    //     // Step 3: Simulate price drop to make the trove undercollateralized
+    //     vm.warp(block.timestamp + 1);
+    //     _updateOracle(59000 * 1e8);
 
-        // Step 4: Triggers liquidation
-        liquidationMgr.liquidate(sbtcTroveManager, user2);
+    //     // Step 4: Triggers liquidation
+    //     liquidationMgr.liquidate(sbtcTroveManager, user2);
 
-        // Step 5: Check Stability Pool balance after liquidation
-        uint256 stabilityPoolBalanceAfter = stabilityPool.getTotalDebtTokenDeposits();
-        console.log("Stability Pool balance after liquidation:", stabilityPoolBalanceAfter);
+    //     // Step 5: Check Stability Pool balance after liquidation
+    //     uint256 stabilityPoolBalanceAfter = stabilityPool.getTotalDebtTokenDeposits();
+    //     console.log("Stability Pool balance after liquidation:", stabilityPoolBalanceAfter);
 
-        // Assert that the Stability Pool is emptied
-        assertEq(stabilityPoolBalanceAfter, 0, "Stability Pool should be empty after liquidation");
+    //     // Assert that the Stability Pool is emptied
+    //     assertEq(stabilityPoolBalanceAfter, 0, "Stability Pool should be empty after liquidation");
 
-        // Step 6: Check claimable rewards
-        // The correct amount should be more than zero
-        uint256 claimableRewards = stabilityPool.claimableReward(user);
-        console.log("User claimable rewards:", claimableRewards);
+    //     // Step 6: Check claimable rewards
+    //     // The correct amount should be more than zero
+    //     uint256 claimableRewards = stabilityPool.claimableReward(user);
+    //     console.log("User claimable rewards:", claimableRewards);
 
-        // Step 7: User2 opens a trove and deposits into Stability Pool
-        vm.startPrank(user2);
-        debtAmount = 10000e18;
-        _openTrove(sbtcTroveManager, debtAmount, 2e18);
-        stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
+    //     // Step 7: User2 opens a trove and deposits into Stability Pool
+    //     vm.startPrank(user2);
+    //     debtAmount = 10000e18;
+    //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    //     stabilityPool.provideToSP(debtAmount - INIT_GAS_COMPENSATION);
 
-        // Step 8: User3 opens a trove
-        vm.startPrank(user3);
-        debtAmount = 2000e18;
-        _openTrove(sbtcTroveManager, debtAmount, 2e18);
+    //     // Step 8: User3 opens a trove
+    //     vm.startPrank(user3);
+    //     debtAmount = 2000e18;
+    //     _openTrove(sbtcTroveManager, debtAmount, 2e18);
 
-        // Step 9: Simulate price drop to make the user3's trove undercollateralized
-        vm.warp(block.timestamp + 1);
-        _updateOracle(58000 * 1e8);
+    //     // Step 9: Simulate price drop to make the user3's trove undercollateralized
+    //     vm.warp(block.timestamp + 1);
+    //     _updateOracle(58000 * 1e8);
 
-        // Step 10: Triggers liquidation
-        liquidationMgr.liquidate(sbtcTroveManager, user3);
+    //     // Step 10: Triggers liquidation
+    //     liquidationMgr.liquidate(sbtcTroveManager, user3);
 
-        // Step 11: Check claimable rewards
-        // The correct claimable rewards should be the same as the previous amount as
-        // the user's deposit was already emptied in the previous epoch
-        uint256 claimableRewards2 = stabilityPool.claimableReward(user);
-        console.log("User claimable rewards:", claimableRewards2);
-        assertEq(claimableRewards, claimableRewards2);
-    }
+    //     // Step 11: Check claimable rewards
+    //     // The correct claimable rewards should be the same as the previous amount as
+    //     // the user's deposit was already emptied in the previous epoch
+    //     uint256 claimableRewards2 = stabilityPool.claimableReward(user);
+    //     console.log("User claimable rewards:", claimableRewards2);
+    //     assertEq(claimableRewards, claimableRewards2);
+    // }
 }

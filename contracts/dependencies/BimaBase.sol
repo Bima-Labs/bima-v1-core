@@ -12,7 +12,7 @@ contract BimaBase is IBimaBase {
     // Critical Collateral Ratio
     // If the system's total collateral ratio (TCR) falls
     // below the CCR, Recovery Mode is triggered
-    uint256 public constant CCR = 2.25e18; // 225%
+    uint256 public constant CCR = 1.6e18; // 160%
 
     // Amount of debt to be locked in gas pool on opening troves
     uint256 public immutable DEBT_GAS_COMPENSATION;
