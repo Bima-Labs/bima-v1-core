@@ -8,6 +8,8 @@ import {BIMA_100_PCT} from "../../../contracts/dependencies/Constants.sol";
 import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 
 contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
+    event AuthorizedMint(address indexed _caller, address indexed _to, uint256 _amount, uint256 _timestamp);
+
     uint256 internal constant MIN_AMOUNT = 1e18;
     uint256 internal constant MAX_AMOUNT = 1_000_000_000_000e18;
 
@@ -203,5 +205,30 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
 
         // approve debt token contract to take amount + fee
         debtToken.approve(address(debtToken), amount + fee);
+    }
+
+    function testFuzz_authorizedMint(address to, uint256 amount) public {
+        vm.assume(to != address(0));
+
+        vm.startPrank(bimaCore.owner());
+
+        uint256 balanceBefore = debtToken.balanceOf(to);
+        uint256 totalSupplyBefore = debtToken.totalSupply();
+
+        vm.expectEmit(true, true, true, true);
+        emit AuthorizedMint(bimaCore.owner(), to, amount, block.timestamp);
+        debtToken.authorizedMint(to, amount);
+
+        assertEq(debtToken.balanceOf(to), balanceBefore + amount);
+        assertEq(debtToken.totalSupply(), totalSupplyBefore + amount);
+    }
+
+    function testFuzz_authorizedMint_unauthorized(address caller, address to, uint256 amount) public {
+        vm.assume(to != address(0));
+        vm.assume(caller != bimaCore.owner() && caller != address(0));
+
+        vm.prank(caller);
+        vm.expectRevert("Only owner");
+        debtToken.authorizedMint(to, amount);
     }
 }
