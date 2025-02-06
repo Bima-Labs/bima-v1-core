@@ -26,13 +26,15 @@ async function deployCore() {
     // Disgusting hack to get the addresses of the contracts before deployment
     const bimaCoreAddress = ethers.getCreateAddress({
         from: owner.address,
-        nonce: deployerNonce,
+        nonce: deployerNonce + 1,
     });
 
     const priceFeedAddress = ethers.getCreateAddress({
         from: owner.address,
-        nonce: deployerNonce + 1,
+        nonce: deployerNonce + 2,
     });
+
+    await deployContract(factories.BimaWrappedCollateralFactory, "BimaWrappedCollateralFactory", bimaCoreAddress);
 
     const [, deployedBimaCoreAddress] = await deployContract(
         factories.BimaCore,
@@ -245,6 +247,7 @@ const getFactories = async () => ({
     IncentiveVoting: await ethers.getContractFactory("IncentiveVoting"),
     BimaToken: await ethers.getContractFactory("BimaToken"),
     BimaVault: await ethers.getContractFactory("BimaVault"),
+    BimaWrappedCollateralFactory: await ethers.getContractFactory("BimaWrappedCollateralFactory"),
 });
 
 const deployContract = async (
