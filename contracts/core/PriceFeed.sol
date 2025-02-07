@@ -58,7 +58,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     uint256 public constant TARGET_DIGITS = 18;
 
     // Maximum oracle's heartbeat allowed
-    uint256 public constant MAX_HEARTBEAT = 1 hours;
+    uint256 public constant MAX_HEARTBEAT = 6 hours;
 
     // Maximum deviation allowed between two consecutive Chainlink oracle prices. 18-digit precision.
     uint256 public constant MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND = 5e17; // 50%
@@ -68,9 +68,7 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     mapping(address => OracleRecord) public oracleRecords;
     mapping(address => PriceRecord) public priceRecords;
 
-    constructor(address _bimaCore, address ethFeed) BimaOwnable(_bimaCore) {
-        setOracle(address(0), ethFeed, 3600, 0, 0, false);
-    }
+    constructor(address _bimaCore) BimaOwnable(_bimaCore) {}
 
     // Admin routines ---------------------------------------------------------------------------------------------------
 

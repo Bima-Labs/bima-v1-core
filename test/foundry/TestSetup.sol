@@ -107,8 +107,8 @@ contract TestSetup is Test {
     BoostCalculator internal boostCalc;
 
     // constants
-    uint256 internal constant INIT_MCR = 2e18; // 200%
-    uint256 internal constant INIT_MAX_DEBT = 1_000_000e18; // 1M USD
+    uint256 internal constant INIT_MCR = 1.5e18; // 150%
+    uint256 internal constant INIT_MAX_DEBT = 10_000_000_000e18; // 10B USD
     uint256 internal constant INIT_REDEMPTION_FEE_FLOOR = 5e15;
     uint256 internal constant INIT_MAX_REDEMPTION_FEE = 1e18;
     uint256 internal constant INIT_BORROWING_FEE_FLOOR = 0;
@@ -166,7 +166,7 @@ contract TestSetup is Test {
         assertEq(addresses.core, address(bimaCore));
 
         // PriceFeed
-        priceFeed = new PriceFeed(addresses.core, address(mockOracle));
+        priceFeed = new PriceFeed(addresses.core);
         assertEq(addresses.priceFeed, address(priceFeed));
         priceFeed.setOracle(
             address(stakedBTC),

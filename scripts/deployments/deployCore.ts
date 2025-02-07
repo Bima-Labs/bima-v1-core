@@ -1,6 +1,5 @@
 import { BaseContract, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
-import { BimaCore } from "../../typechain-types";
 
 const DEBT_TOKEN_NAME = "US Bitcoin Dollar"; //! IMPORTANT
 const DEBT_TOKEN_SYMBOL = "USBD"; //! IMPORTANT
@@ -14,14 +13,13 @@ const LZ_ENDPOINT = ethers.ZeroAddress; //! IMPORTANT
 async function deployCore() {
     const [owner] = await ethers.getSigners();
 
-    const BIMA_OWNER_ADDRESS = owner.address; //! IMPORTANT
-    const BIMA_GUARDIAN_ADDRESS = owner.address; //! IMPORTANT
-    const TOKEN_LOCKER_DEPLOYMENT_MANAGER = owner.address; //! IMPORTANT
-    const BIMA_VAULT_DEPLOYMENT_MANAGER = owner.address; //! IMPORTANT
+    const BIMA_OWNER_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
+    const BIMA_GUARDIAN_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
+    const FEE_RECEIVER_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
+    const TOKEN_LOCKER_DEPLOYMENT_MANAGER = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
+    const BIMA_VAULT_DEPLOYMENT_MANAGER = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
 
     const factories = await getFactories();
-
-    const [, mockAaggregatorAddress] = await deployContract(factories.MockAggregator, "MockAggregator");
 
     let deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
@@ -36,33 +34,20 @@ async function deployCore() {
         nonce: deployerNonce + 2,
     });
 
-    const [, deployedFeeReceiverAddress] = await deployContract(factories.FeeReceiver, "FeeReceiver", bimaCoreAddress);
+    await deployContract(factories.BimaWrappedCollateralFactory, "BimaWrappedCollateralFactory", bimaCoreAddress);
 
-    const [bimaCore, deployedBimaCoreAddress] = await deployContract(
+    const [, deployedBimaCoreAddress] = await deployContract(
         factories.BimaCore,
         "BimaCore",
         BIMA_OWNER_ADDRESS,
         BIMA_GUARDIAN_ADDRESS,
         priceFeedAddress,
-        deployedFeeReceiverAddress
+        FEE_RECEIVER_ADDRESS
     );
     assertEq(bimaCoreAddress, deployedBimaCoreAddress);
 
-    const [, deployedPriceFeedAddress] = await deployContract(
-        factories.PriceFeed,
-        "PriceFeed",
-        bimaCoreAddress,
-        mockAaggregatorAddress
-    );
+    const [, deployedPriceFeedAddress] = await deployContract(factories.PriceFeed, "PriceFeed", bimaCoreAddress);
     assertEq(priceFeedAddress, deployedPriceFeedAddress);
-
-    const [, interimAdminAddress] = await deployContract(factories.InterimAdmin, "InterimAdmin", bimaCoreAddress);
-
-    {
-        const tx = await (bimaCore as BimaCore).commitTransferOwnership(interimAdminAddress);
-        await tx.wait();
-        console.log("-- tx: Ownership transferred to interimAdmin!");
-    }
 
     const [, gasPoolAddress] = await deployContract(factories.GasPool, "GasPool");
 
@@ -262,6 +247,7 @@ const getFactories = async () => ({
     IncentiveVoting: await ethers.getContractFactory("IncentiveVoting"),
     BimaToken: await ethers.getContractFactory("BimaToken"),
     BimaVault: await ethers.getContractFactory("BimaVault"),
+    BimaWrappedCollateralFactory: await ethers.getContractFactory("BimaWrappedCollateralFactory"),
 });
 
 const deployContract = async (

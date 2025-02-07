@@ -8,7 +8,7 @@ const BIMAVAULT_ADDRESS = ""; //! IMPORTANT
 const ORACLE_ADDRESS = ""; //! IMPORTANT
 
 // PriceFeed config for the Oracle
-const ORACLE_HEARBEAT = BigInt("80000"); //! IMPORTANT
+const ORACLE_HEARBEAT = BigInt("3600"); //! IMPORTANT
 const SHARE_PRICE_SIGNATURE = "0x00000000"; //! IMPORTANT
 const SHARE_PRICE_DECIMALS = BigInt("18"); //! IMPORTANT
 const IS_BASE_CURRENCY_ETH_INDEXED = false; //! IMPORTANT
@@ -20,11 +20,11 @@ const CUSTOM_SORTED_TROVES_IMPL_ADDRESS = ethers.ZeroAddress; //! IMPORTANT
 const MINUTE_DECAY_FACTOR = BigInt("999037758833783000"); //! IMPORTANT
 const REDEMPTION_FEE_FLOOR = ethers.parseEther("0.005"); //! 0.5% IMPORTANT
 const MAX_REDEMPTION_FEE = ethers.parseEther("1"); //! 100% IMPORTANT
-const BORROWING_FEE_FLOOR = ethers.parseEther("0.005"); //! 0.5% IMPORTANT
-const MAX_BORROWING_FEE = ethers.parseEther("0.05"); //! 5% IMPORTANT
-const INTEREST_RATE_IN_BPS = BigInt("100"); //! 1% IMPORTANT
-const MAX_DEBT = ethers.parseEther("1000000"); //! IMPORTANT
-const MCR = ethers.parseUnits("2", 18); //! IMPORTANT
+const BORROWING_FEE_FLOOR = ethers.parseEther("0.01"); //! 1% IMPORTANT
+const MAX_BORROWING_FEE = ethers.parseEther("0.03"); //! 3% IMPORTANT
+const INTEREST_RATE_IN_BPS = BigInt("0"); //! 0% IMPORTANT
+const MAX_DEBT = ethers.parseEther("10000000000"); //! 10b IMPORTANT
+const MCR = ethers.parseUnits("1.5", 18); //! 150% IMPORTANT
 
 // Receiver
 const REGISTERED_RECEIVER_COUNT = BigInt("2"); //! IMPORTANT

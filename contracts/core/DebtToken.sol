@@ -21,6 +21,8 @@ contract DebtToken is OFT {
         uint256 _timestamp
     );
 
+    event AuthorizedMint(address indexed _caller, address indexed _to, uint256 _amount, uint256 _timestamp);
+
     string public constant version = "1";
 
     // --- ERC 3156 Data ---
@@ -104,6 +106,14 @@ contract DebtToken is OFT {
         );
 
         lendingVaultAdapterAddress = _lendingVaultAdapterAddress;
+    }
+
+    function authorizedMint(address _to, uint256 _amount) external {
+        require(msg.sender == _bimaCore.owner(), "Only owner");
+
+        _mint(_to, _amount);
+
+        emit AuthorizedMint(msg.sender, _to, _amount, block.timestamp);
     }
 
     // --- Functions for intra-Bima calls ---
