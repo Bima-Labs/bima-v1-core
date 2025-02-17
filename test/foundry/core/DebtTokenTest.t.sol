@@ -38,7 +38,7 @@ contract DebtTokenTest is IERC3156FlashBorrower, TestSetup {
         // to get free flash loans by borrowing in small amounts - since
         // DebtToken::flashLoan allows re-entrancy, the function could be re-entered
         // multiple times to borrow larger amounts at zero fee
-        borrowAmount = 1111;
+        borrowAmount = 111;
         vm.expectRevert("ERC20FlashMint: amount too small");
         debtToken.flashFee(address(debtToken), borrowAmount);
     }

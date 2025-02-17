@@ -27,7 +27,7 @@ contract DebtToken is OFT {
 
     // --- ERC 3156 Data ---
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint256 public constant FLASH_LOAN_FEE = 9; // 1 = 0.01%
+    uint256 public constant FLASH_LOAN_FEE = 10; // 1 = 0.01%
 
     // --- Data for EIP2612 ---
 
