@@ -24,6 +24,6 @@
 
 #### Collaterals
 
-| Name | Address                                    | Wrapped                                    | TroveManager                               | Oracle                                     |
-| ---- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| WBTC | 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599 | 0xD7e863cB980436eB059F9Fa0F9e36566b2247AB4 | 0xB2D7EeBD408991cc21EC150f9ee2bB6a8804a0f1 | 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c |
+| Name | Address (wrapper address if applicable)    | TroveManager                               | Oracle                                     |
+| ---- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| WBTC | 0xD7e863cB980436eB059F9Fa0F9e36566b2247AB4 | 0xB2D7EeBD408991cc21EC150f9ee2bB6a8804a0f1 | 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c |
