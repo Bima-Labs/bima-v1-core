@@ -22,5 +22,8 @@
 | BimaVault                    | 0x7DeDE51F9B2426B1F4dfc70e6E51Df1c0b95aeed |
 | BimaWrappedCollateralFactory | 0xe40b972b6a38a52d5aC9b83E78AD1AA086c6B243 |
 
-| Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
-| --------------- | ------------------ | -------------------- | -------------- |
+#### Collaterals
+
+| Name | Address                                    | Wrapped                                    | TroveManager                               | Oracle                                     |
+| ---- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| WBTC | 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599 | 0xD7e863cB980436eB059F9Fa0F9e36566b2247AB4 | 0xB2D7EeBD408991cc21EC150f9ee2bB6a8804a0f1 | 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c |
