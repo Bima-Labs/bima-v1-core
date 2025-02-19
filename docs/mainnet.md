@@ -18,6 +18,10 @@
 | SortedTroves (Implementation) | 0x196c9993C111b7Abf0d2B90f9042421c71180912 |
 | Gas Pool                      | 0x59CB636187545281339B8a7eB05c97f22DF8299a |
 | BimaWrappedCollateralFactory  | 0xe40b972b6a38a52d5aC9b83E78AD1AA086c6B243 |
+| -                             | -                                          |
+| MultiCollateralHintHelpers    | 0x342c82D61E8EeD36F4b58F5E285a6F464B24E86A |
+| MultiTroveGetter              | 0x60143F3BD1111BAD288535621fca910294883aF4 |
+| TroveManagerGetters           | 0x7c761a108301CF3CD17c6c237b428Ef2b75A8cCa |
 
 #### Collaterals
 
@@ -40,6 +44,10 @@
 | SortedTroves (Implementation) | 0x196c9993C111b7Abf0d2B90f9042421c71180912 |
 | Gas Pool                      | 0x59CB636187545281339B8a7eB05c97f22DF8299a |
 | BimaWrappedCollateralFactory  | 0xe40b972b6a38a52d5aC9b83E78AD1AA086c6B243 |
+| -                             | -                                          |
+| MultiCollateralHintHelpers    | 0x342c82D61E8EeD36F4b58F5E285a6F464B24E86A |
+| MultiTroveGetter              | 0x60143F3BD1111BAD288535621fca910294883aF4 |
+| TroveManagerGetters           | 0x7c761a108301CF3CD17c6c237b428Ef2b75A8cCa |
 
 #### Collaterals
 

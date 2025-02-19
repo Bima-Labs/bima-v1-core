@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     defaultNetwork: "localhost",
     etherscan: {
         apiKey: {
-            eth_mainnet: process.env.ETH_MAINNET_API_KEY as string,
+            mainnet: process.env.ETH_MAINNET_API_KEY as string,
             core_mainnet: process.env.CORE_MAINNET_API_KEY as string,
         },
         customChains: [
@@ -30,7 +30,7 @@ const config: HardhatUserConfig = {
     },
     networks: {
         localhost: { url: "http://127.0.0.1:8545", accounts },
-        eth_mainnet: { url: process.env.ETH_MAINNET_RPC_URL, accounts },
+        mainnet: { url: process.env.ETH_MAINNET_RPC_URL, accounts },
         core_mainnet: { url: process.env.CORE_MAINNET_RPC_URL, accounts },
     },
     solidity: { compilers: [{ version: "0.8.19", settings: { optimizer: { enabled: true, runs: 200 } } }] },
