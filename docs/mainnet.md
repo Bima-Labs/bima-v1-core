@@ -18,10 +18,6 @@
 | SortedTroves (Implementation) | 0x196c9993C111b7Abf0d2B90f9042421c71180912 |
 | Gas Pool                      | 0x59CB636187545281339B8a7eB05c97f22DF8299a |
 | BimaWrappedCollateralFactory  | 0xe40b972b6a38a52d5aC9b83E78AD1AA086c6B243 |
-| BimaToken                     | 0x03D79e6A9c7309c55dA64FE7F05e6a804566543D |
-| BimaVault                     | 0x7DeDE51F9B2426B1F4dfc70e6E51Df1c0b95aeed |
-| TokenLocker                   | 0x9b34bCAf9C9c41d6608e85cf82d5947c0BaA25dE |
-| IncentiveVoting               | 0x00cACbEbFF4EAB3e193778C0471FC3acb29775a3 |
 
 #### Collaterals
 
@@ -44,10 +40,6 @@
 | SortedTroves (Implementation) | 0x196c9993C111b7Abf0d2B90f9042421c71180912 |
 | Gas Pool                      | 0x59CB636187545281339B8a7eB05c97f22DF8299a |
 | BimaWrappedCollateralFactory  | 0xe40b972b6a38a52d5aC9b83E78AD1AA086c6B243 |
-| BimaToken                     | 0x03D79e6A9c7309c55dA64FE7F05e6a804566543D |
-| BimaVault                     | 0x7DeDE51F9B2426B1F4dfc70e6E51Df1c0b95aeed |
-| TokenLocker                   | 0x9b34bCAf9C9c41d6608e85cf82d5947c0BaA25dE |
-| IncentiveVoting               | 0x00cACbEbFF4EAB3e193778C0471FC3acb29775a3 |
 
 #### Collaterals
 
