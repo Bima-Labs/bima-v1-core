@@ -28,6 +28,7 @@
 | Name | Address (wrapper address if applicable)    | TroveManager                               | Oracle                                     |
 | ---- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | WBTC | 0xD7e863cB980436eB059F9Fa0F9e36566b2247AB4 | 0xB2D7EeBD408991cc21EC150f9ee2bB6a8804a0f1 | 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c |
+| USDC | 0x31dde4ed4af473aab43cf0c047cb453bcb8bf1e9 | 0x8B747C2254f21f332cDa427d4B5E5ABd3d881B44 | 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6 |
 
 ## Core Mainnet
 
