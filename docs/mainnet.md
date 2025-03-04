@@ -9,7 +9,7 @@
 | ----------------------------- | ------------------------------------------ |
 | BimaCore                      | 0x8Ce660d89872678EFC91321846c6E105ceeF4F2a |
 | USBD (DebtToken)              | 0x67fC348989E69514088A883428D9723A6cA63d64 |
-| PriceFeed                     | 0xf7f3b49B29971f27D5Fa2229c49d5F9CA3941D31 |
+| PriceFeed                     | 0x95A2eEf17CDd7685Fd5049B872aCA97B84f68FE5 |
 | BorrowerOperations            | 0xe03f70DcE442DdBA14fdBB2B4bc6B95D230cdc30 |
 | LiquidationManager            | 0x540080da48E2a4B1aBC134153b45E303a82cf9F7 |
 | StabilityPool                 | 0x6B161EF5890389C408cbeAee78c3dF43c4DF2c9A |
