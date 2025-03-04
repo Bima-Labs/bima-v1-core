@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 interface IDebtToken {
     event Approval(address indexed owner, address indexed spender, uint256 value);

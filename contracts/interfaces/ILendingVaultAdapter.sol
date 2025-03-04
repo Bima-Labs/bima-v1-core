@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IDebtToken} from "../interfaces/IDebtToken.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";

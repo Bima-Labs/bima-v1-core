@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 // test setup
 import {TestSetup, IBimaVault, BimaVault, EmissionSchedule, IIncentiveVoting, ITokenLocker, IEmissionReceiver, IEmissionSchedule, IBoostCalculator, IRewards, MockEmissionReceiver, MockBoostDelegate, SafeCast} from "../TestSetup.sol";

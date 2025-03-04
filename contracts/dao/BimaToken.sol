@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC2612} from "../interfaces/IERC2612.sol";
-import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
+import {OFT} from "@layerzerolabs/oft-evm/contracts/OFT.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20}  from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
@@ -41,7 +43,7 @@ contract BimaToken is OFT, IERC2612 {
 
     // --- Functions ---
 
-    constructor(address _vault, address _layerZeroEndpoint, address _locker) OFT(_NAME, _SYMBOL, _layerZeroEndpoint) {
+    constructor(address _vault, address _layerZeroEndpoint, address _locker,address _delegate) OFT(_NAME, _SYMBOL, _layerZeroEndpoint,_delegate) {
         bytes32 hashedName = keccak256(bytes(_NAME));
         bytes32 hashedVersion = keccak256(bytes(version));
 

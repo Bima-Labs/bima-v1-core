@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IBimaOwnable} from "./IBimaOwnable.sol";
 import {ISystemStart} from "./ISystemStart.sol";
@@ -44,7 +44,7 @@ interface IStabilityPool is IBimaOwnable, ISystemStart {
 
     function claimableReward(address _depositor) external view returns (uint256);
 
-function collateralGainsByDepositor(address depositor, IERC20 token) external view returns (uint256 gains);
+    function collateralGainsByDepositor(address depositor, IERC20 token) external view returns (uint256 gains);
 
     function collateralTokens(uint256) external view returns (IERC20);
 

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
-import {OFT, IERC20, ERC20} from "@layerzerolabs/solidity-examples/contracts/token/oft/v1/OFT.sol";
+import {OFT} from "@layerzerolabs/oft-evm/contracts/OFT.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20}  from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 import {IBimaCore} from "../interfaces/IBimaCore.sol";
@@ -71,8 +73,9 @@ contract DebtToken is OFT {
         address _layerZeroEndpoint,
         address _factory,
         address _gasPool,
-        uint256 _gasCompensation
-    ) OFT(_name, _symbol, _layerZeroEndpoint) {
+        uint256 _gasCompensation,
+        address _delegate
+    ) OFT(_name, _symbol, _layerZeroEndpoint,_delegate)  {
         stabilityPoolAddress = _stabilityPoolAddress;
         _bimaCore = bimaCore_;
         borrowerOperationsAddress = _borrowerOperationsAddress;
@@ -161,7 +164,7 @@ contract DebtToken is OFT {
 
     // --- External functions ---
 
-    function transfer(address recipient, uint256 amount) public override(IERC20, ERC20) returns (bool success) {
+    function transfer(address recipient, uint256 amount) public override( ERC20) returns (bool success) {
         _requireValidRecipient(recipient);
         success = super.transfer(recipient, amount);
     }
@@ -170,7 +173,7 @@ contract DebtToken is OFT {
         address sender,
         address recipient,
         uint256 amount
-    ) public override(IERC20, ERC20) returns (bool success) {
+    ) public override(ERC20) returns (bool success) {
         _requireValidRecipient(recipient);
         success = super.transferFrom(sender, recipient, amount);
     }
