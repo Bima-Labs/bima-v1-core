@@ -112,7 +112,7 @@ contract StorkOracleWrapperMockedTest is TestSetup {
 
     // Test how the PriceFeed contract will handle the stale price, which hasn't been updated for a while
     function test_StalePrice(uint32 heartbeat) public {
-        vm.assume(heartbeat > 0 && heartbeat <= priceFeed.MAX_HEARTBEAT());
+        vm.assume(heartbeat > 0 && heartbeat <= 365 days);
 
         _setUp();
 
