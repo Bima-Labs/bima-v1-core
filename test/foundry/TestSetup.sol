@@ -234,7 +234,8 @@ contract TestSetup is Test {
             ZERO_ADDRESS, // LayerZero endpoint
             addresses.factory,
             users.gasPool,
-            INIT_GAS_COMPENSATION
+            INIT_GAS_COMPENSATION,
+            users.owner
         );
         assertEq(addresses.debtToken, address(debtToken));
 
@@ -288,7 +289,8 @@ contract TestSetup is Test {
         bimaToken = new BimaToken(
             addresses.bimaVault,
             ZERO_ADDRESS, // LayerZero endpoint
-            addresses.tokenLocker
+            addresses.tokenLocker,
+            users.owner
         );
         assertEq(addresses.bimaToken, address(bimaToken));
 
