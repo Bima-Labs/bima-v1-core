@@ -49,7 +49,7 @@ contract PriceFeedTest is TestSetup {
     }
 
     function testFuzz_setOracle_frozenFeed(uint32 _heartbeat, uint16 _delta) external {
-        vm.assume(_heartbeat <= priceFeed.MAX_HEARTBEAT());
+        vm.assume(_heartbeat <= 365 days);
         vm.assume(_delta > 0);
 
         vm.startPrank(users.owner);

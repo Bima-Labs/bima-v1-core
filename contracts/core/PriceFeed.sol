@@ -44,7 +44,6 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
     error PriceFeed__InvalidFeedResponseError(address token);
     error PriceFeed__FeedFrozenError(address token);
     error PriceFeed__UnknownFeedError(address token);
-    error PriceFeed__HeartbeatOutOfBoundsError();
 
     // Events ---------------------------------------------------------------------------------------------------------
 
@@ -56,9 +55,6 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
 
     // Used to convert a chainlink price answer to an 18-digit precision uint
     uint256 public constant TARGET_DIGITS = 18;
-
-    // Maximum oracle's heartbeat allowed
-    uint256 public constant MAX_HEARTBEAT = 6 hours;
 
     // Maximum deviation allowed between two consecutive Chainlink oracle prices. 18-digit precision.
     uint256 public constant MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND = 5e17; // 50%
@@ -89,7 +85,6 @@ contract PriceFeed is IPriceFeed, BimaOwnable {
         uint8 sharePriceDecimals,
         bool _isEthIndexed
     ) public onlyOwner {
-        if (_heartbeat > MAX_HEARTBEAT) revert PriceFeed__HeartbeatOutOfBoundsError();
         IAggregatorV3Interface newFeed = IAggregatorV3Interface(_chainlinkOracle);
         (FeedResponse memory currResponse, FeedResponse memory prevResponse, ) = _fetchFeedResponses(newFeed, 0);
 
