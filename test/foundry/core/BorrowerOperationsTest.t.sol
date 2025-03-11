@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 // test setup
 import {IBorrowerOperations, IIncentiveVoting, IFactory, SafeCast} from "../TestSetup.sol";

@@ -15,6 +15,7 @@ async function deployCore() {
 
     const BIMA_OWNER_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
     const BIMA_GUARDIAN_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
+    const LZ_DELEGATE_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
     const FEE_RECEIVER_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
     const TOKEN_LOCKER_DEPLOYMENT_MANAGER = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
     const BIMA_VAULT_DEPLOYMENT_MANAGER = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5"; //! IMPORTANT
@@ -140,7 +141,8 @@ async function deployCore() {
         LZ_ENDPOINT,
         factoryAddress,
         gasPoolAddress,
-        GAS_COMPENSATION
+        GAS_COMPENSATION,
+        LZ_DELEGATE_ADDRESS
     );
     assertEq(debtTokenAddress, deployedDebtTokenAddress);
 
@@ -204,7 +206,8 @@ async function deployCore() {
         "BimaToken",
         bimaVaultAddress,
         LZ_ENDPOINT,
-        tokenLockerAddress
+        tokenLockerAddress,
+        LZ_DELEGATE_ADDRESS
     );
     assertEq(bimaTokenAddress, deployedBimaTokenAddress);
 

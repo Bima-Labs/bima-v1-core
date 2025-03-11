@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IEmissionSchedule, IIncentiveVoting, IBimaVault} from "../interfaces/IEmissionSchedule.sol";
 import {BimaOwnable} from "../dependencies/BimaOwnable.sol";

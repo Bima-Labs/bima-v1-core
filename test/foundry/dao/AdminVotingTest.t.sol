@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {AdminVoting} from "../../../contracts/dao/AdminVoting.sol";
 import {IBimaCore} from "../../../contracts/interfaces/IBimaCore.sol";

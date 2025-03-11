@@ -33,7 +33,8 @@ const config: HardhatUserConfig = {
         mainnet: { url: process.env.ETH_MAINNET_RPC_URL, accounts },
         core_mainnet: { url: process.env.CORE_MAINNET_RPC_URL, accounts },
     },
-    solidity: { compilers: [{ version: "0.8.19", settings: { optimizer: { enabled: true, runs: 200 } } }] },
+
+    solidity: { compilers: [{ version: "0.8.20", settings: { optimizer: { enabled: true, runs: 200 } } }] },
 };
 
 export default config;
