@@ -1,7 +1,76 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
+import {ILayerZeroEndpointV2} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 
 interface IDebtToken {
+    struct SendParam {
+        uint32 dstEid; // Destination endpoint ID.
+        bytes32 to; // Recipient address.
+        uint256 amountLD; // Amount to send in local decimals.
+        uint256 minAmountLD; // Minimum amount to send in local decimals.
+        bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
+        bytes composeMsg; // The composed message for the send() operation.
+        bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
+    }
+
+    struct OFTLimit {
+        uint256 minAmountLD; // Minimum amount in local decimals that can be sent to the recipient.
+        uint256 maxAmountLD; // Maximum amount in local decimals that can be sent to the recipient.
+    }
+
+    struct OFTReceipt {
+        uint256 amountSentLD; // Amount of tokens ACTUALLY debited from the sender in local decimals.
+        // @dev In non-default implementations, the amountReceivedLD COULD differ from this value.
+        uint256 amountReceivedLD; // Amount of tokens to be received on the remote side.
+    }
+
+    struct OFTFeeDetail {
+        int256 feeAmountLD; // Amount of the fee in local decimals.
+        string description; // Description of the fee.
+    }
+
+    struct MessagingParams {
+        uint32 dstEid;
+        bytes32 receiver;
+        bytes message;
+        bytes options;
+        bool payInLzToken;
+    }
+
+    struct MessagingReceipt {
+        bytes32 guid;
+        uint64 nonce;
+        MessagingFee fee;
+    }
+
+    struct MessagingFee {
+        uint256 nativeFee;
+        uint256 lzTokenFee;
+    }
+
+    struct Origin {
+        uint32 srcEid;
+        bytes32 sender;
+        uint64 nonce;
+    }
+
+    struct InboundPacket {
+        Origin origin; // Origin information of the packet.
+        uint32 dstEid; // Destination endpointId of the packet.
+        address receiver; // Receiver address for the packet.
+        bytes32 guid; // Unique identifier of the packet.
+        uint256 value; // msg.value of the packet.
+        address executor; // Executor address for the packet.
+        bytes message; // Message payload of the packet.
+        bytes extraData; // Additional arbitrary data for the packet.
+    }
+
+    struct EnforcedOptionParam {
+        uint32 eid; // Endpoint ID
+        uint16 msgType; // Message Type
+        bytes options; // Additional options
+    }
+
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event MessageFailed(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes _payload, bytes _reason);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -18,18 +87,13 @@ interface IDebtToken {
     event PeerSet(uint32 eid, bytes32 peer);
 
     event OFTSent(
-        bytes32 indexed guid, 
+        bytes32 indexed guid,
         uint32 dstEid,
         address indexed fromAddress,
         uint256 amountSentLD,
         uint256 amountReceivedLD
     );
-    event OFTReceived(
-        bytes32 indexed guid,
-        uint32 srcEid,
-        address indexed toAddress,
-        uint256 amountReceivedLD
-    );
+    event OFTReceived(bytes32 indexed guid, uint32 srcEid, address indexed toAddress, uint256 amountReceivedLD);
 
     function approve(address spender, uint256 amount) external returns (bool);
 
@@ -63,7 +127,7 @@ interface IDebtToken {
         bytes calldata _message,
         address _executor,
         bytes calldata _extraData
-    ) internal;
+    ) external;
 
     function mint(address _account, uint256 _amount) external;
 
@@ -97,7 +161,7 @@ interface IDebtToken {
 
     function setLendingVaultAdapterAddress(address _lendingVaultAdapterAddress) external;
 
-    function setMsgInspector(address _msgInspector) public;
+    function setMsgInspector(address _msgInspector) external;
 
     function setPeer(uint32 _eid, bytes32 _peer) external;
 
@@ -151,7 +215,7 @@ interface IDebtToken {
 
     function isPeer(uint32 _eid, bytes32 _peer) external view returns (bool);
 
-    function maxFlashLoan(address token) public view returns (uint256);
+    function maxFlashLoan(address token) external view returns (uint256);
 
     function name() external view returns (string memory);
 
@@ -192,3 +256,4 @@ interface IDebtToken {
     function troveManager(address) external view returns (bool);
 
     function version() external view returns (string memory);
+}
