@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 // mocks
 import {MockOracle} from "../../contracts/mock/MockOracle.sol";
@@ -130,10 +130,12 @@ contract TestSetup is Test {
     uint256 internal constant MIN_BTC_PRICE_8DEC = 10_000 * 10 ** 8;
     uint256 internal constant MAX_BTC_PRICE_8DEC = 500_000 * 10 ** 8;
 
+    string MAINNET_RPC_URL = vm.envString("ETH_MAINNET_RPC_URL");
+
+    address LZ_ETH_MAINNET_ENDPOINT = 0x1a44076050125825900e736c501f859c50fE728c;
+
     function setUp() public virtual {
-        // prevent Foundry from setting block.timestamp = 1 which can cause
-        // errors in this protocol
-        vm.warp(1659973223);
+        vm.createSelectFork(MAINNET_RPC_URL, 22075000);
 
         // set addresses used by tests
         users.owner = address(0x1111);
@@ -231,10 +233,11 @@ contract TestSetup is Test {
             addresses.stabilityPool,
             addresses.borrowerOps,
             bimaCore,
-            ZERO_ADDRESS, // LayerZero endpoint
+            LZ_ETH_MAINNET_ENDPOINT,
             addresses.factory,
             users.gasPool,
-            INIT_GAS_COMPENSATION
+            INIT_GAS_COMPENSATION,
+            users.owner
         );
         assertEq(addresses.debtToken, address(debtToken));
 
@@ -285,11 +288,7 @@ contract TestSetup is Test {
         assertEq(addresses.incentiveVoting, address(incentiveVoting));
 
         // BimaToken
-        bimaToken = new BimaToken(
-            addresses.bimaVault,
-            ZERO_ADDRESS, // LayerZero endpoint
-            addresses.tokenLocker
-        );
+        bimaToken = new BimaToken(addresses.bimaVault, LZ_ETH_MAINNET_ENDPOINT, addresses.tokenLocker, users.owner);
         assertEq(addresses.bimaToken, address(bimaToken));
 
         // BimaVault
