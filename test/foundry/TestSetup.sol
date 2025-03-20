@@ -135,7 +135,7 @@ contract TestSetup is Test {
     address LZ_ETH_MAINNET_ENDPOINT = 0x1a44076050125825900e736c501f859c50fE728c;
 
     function setUp() public virtual {
-        vm.createSelectFork(MAINNET_RPC_URL);
+        vm.createSelectFork(MAINNET_RPC_URL, 22075000);
 
         // set addresses used by tests
         users.owner = address(0x1111);
