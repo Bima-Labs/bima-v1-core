@@ -17,6 +17,7 @@
     "format": "prettier --write \"**/*.{js,ts}\""
   },
   "dependencies": {
+    "@layerzerolabs/lz-v2-utilities": "^3.0.79",
     "@layerzerolabs/oft-evm": "^3.1.2",
     "dotenv": "^16.4.5"
   }

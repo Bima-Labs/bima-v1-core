@@ -1,22 +1,25 @@
 import { ethers } from "hardhat";
+import { Options } from "@layerzerolabs/lz-v2-utilities";
 
-const ARB_SEPOLIA_OFT_ADDRESS = "0xA02b9C28D949243772087d4993FB3A486dF98359";
-const BITLAYER_TESTNET_OFT_ADDRESS = "0xC0dC5053349B6f5B3f94622ad5846771C09fA6dE";
+const ARBITRUM_OFT_ADDRESS = "0x099DfC1131CaB9e04A88dB03F36ae057E3b1e878";
+const POLYGON_OFT_ADDRESS = "0x099DfC1131CaB9e04A88dB03F36ae057E3b1e878";
 
 async function main() {
-    const arbSepoliaOft = await ethers.getContractAt("OFT", ARB_SEPOLIA_OFT_ADDRESS);
-    const bitlayerTestnetOft = await ethers.getContractAt("OFT", BITLAYER_TESTNET_OFT_ADDRESS);
+    const [owner] = await ethers.getSigners();
 
-    const arbSepoliaEid = 40231;
-    const bitlayerTestnetEid = 40320;
+    const arbitrumOft = await ethers.getContractAt("OFT", ARBITRUM_OFT_ADDRESS);
+    const polygonOft = await ethers.getContractAt("OFT", POLYGON_OFT_ADDRESS);
 
-    console.log("whitelisting..");
+    const arbitrumEid = 30110;
+    const polygonEid = 30109;
 
-    // const tx = await arbSepoliaOft.setPeer(bitlayerTestnetEid, ethers.zeroPadValue(BITLAYER_TESTNET_OFT_ADDRESS, 32));
+    // console.log("whitelisting..");
+
+    // const tx = await arbitrumOft.setPeer(polygonEid, ethers.zeroPadValue(POLYGON_OFT_ADDRESS, 32));
     // await tx.wait();
 
-    const tx = await bitlayerTestnetOft.setPeer(arbSepoliaEid, ethers.zeroPadValue(ARB_SEPOLIA_OFT_ADDRESS, 32));
-    await tx.wait();
+    // const tx = await polygonOft.setPeer(arbitrumEid, ethers.zeroPadValue(ARBITRUM_OFT_ADDRESS, 32));
+    // await tx.wait();
 
     console.log("done");
 }
