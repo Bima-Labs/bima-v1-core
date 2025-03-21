@@ -31,10 +31,10 @@ const config: HardhatUserConfig = {
         ],
     },
     networks: {
-        localhost: { url: "http://127.0.0.1:8545", accounts },
+        // localhost: { url: "http://127.0.0.1:8545", accounts },
         mainnet: { url: process.env.ETH_MAINNET_RPC_URL, accounts },
         core_mainnet: { url: process.env.CORE_MAINNET_RPC_URL, accounts },
-        arbitrum: { url: process.env.ARBITRUM_MAINNER_RPC_URL, accounts },
+        arbitrum: { url: process.env.ARBITRUM_MAINNET_RPC_URL, accounts },
         polygon: { url: process.env.POLYGON_MAINNET_RPC_URL, accounts },
     },
 
