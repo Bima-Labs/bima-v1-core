@@ -232,9 +232,9 @@ async function deployCore() {
         GAS_COMPENSATION
     );
 
-    await deployContract(factories.MultiTroveGetterFactory, "MultiTroveGetterFactory");
+    await deployContract(factories.MultiTroveGetter, "MultiTroveGetter");
 
-    await deployContract(factories.TroveManagerGettersFactory, "TroveManagerGettersFactory", factoryAddress);
+    await deployContract(factories.TroveManagerGetters, "TroveManagerGetters", factoryAddress);
 }
 
 deployCore()
@@ -265,8 +265,8 @@ const getFactories = async () => ({
     BimaVault: await ethers.getContractFactory("BimaVault"),
     BimaWrappedCollateralFactory: await ethers.getContractFactory("BimaWrappedCollateralFactory"),
     MultiCollateralHintHelpers: await ethers.getContractFactory("MultiCollateralHintHelpers"),
-    MultiTroveGetterFactory: await ethers.getContractFactory("MultiTroveGetter"),
-    TroveManagerGettersFactory: await ethers.getContractFactory("TroveManagerGetters"),
+    MultiTroveGetter: await ethers.getContractFactory("MultiTroveGetter"),
+    TroveManagerGetters: await ethers.getContractFactory("TroveManagerGetters"),
 });
 
 const deployContract = async (
