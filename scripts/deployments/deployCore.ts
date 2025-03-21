@@ -222,6 +222,19 @@ async function deployCore() {
         BIMA_VAULT_DEPLOYMENT_MANAGER
     );
     assertEq(bimaVaultAddress, deployedBimaVaultAddress);
+
+    // ========== DEPLOYING HELPER CONTRACTS ========== //
+
+    await deployContract(
+        factories.MultiCollateralHintHelpers,
+        "MultiCollateralHintHelpers",
+        borrowerOperationsAddress,
+        GAS_COMPENSATION
+    );
+
+    await deployContract(factories.MultiTroveGetterFactory, "MultiTroveGetterFactory");
+
+    await deployContract(factories.TroveManagerGettersFactory, "TroveManagerGettersFactory", factoryAddress);
 }
 
 deployCore()
@@ -251,6 +264,9 @@ const getFactories = async () => ({
     BimaToken: await ethers.getContractFactory("BimaToken"),
     BimaVault: await ethers.getContractFactory("BimaVault"),
     BimaWrappedCollateralFactory: await ethers.getContractFactory("BimaWrappedCollateralFactory"),
+    MultiCollateralHintHelpers: await ethers.getContractFactory("MultiCollateralHintHelpers"),
+    MultiTroveGetterFactory: await ethers.getContractFactory("MultiTroveGetter"),
+    TroveManagerGettersFactory: await ethers.getContractFactory("TroveManagerGetters"),
 });
 
 const deployContract = async (
