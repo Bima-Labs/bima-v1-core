@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
             core_mainnet: process.env.CORE_MAINNET_API_KEY as string,
             arbitrumOne: process.env.ARBITRUM_MAINNET_API_KEY as string,
             polygon: process.env.POLYGON_MAINNET_API_KEY as string,
+            hemi: "not_required",
         },
         customChains: [
             {
@@ -26,6 +27,14 @@ const config: HardhatUserConfig = {
                 urls: {
                     apiURL: "https://openapi.coredao.org/api",
                     browserURL: "https://scan.coredao.org/",
+                },
+            },
+            {
+                network: "hemi",
+                chainId: 43111,
+                urls: {
+                    apiURL: "https://explorer.hemi.xyz/api",
+                    browserURL: "https://explorer.hemi.xyz",
                 },
             },
         ],
