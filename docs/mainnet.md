@@ -24,6 +24,12 @@
 | MultiTroveGetter              | 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b |
 | TroveManagerGetters           | 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1 |
 
+#### Collaterals
+
+| Name | Address (wrapper address if applicable)    | TroveManager                               | Oracle                                     |
+| ---- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| WBTC | 0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1 | 0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2 | 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c |
+
 ## Core Mainnet
 
 | Contracts                     | Address                                    |
