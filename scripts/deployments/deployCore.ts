@@ -5,7 +5,7 @@ const DEBT_TOKEN_NAME = "US Bitcoin Dollar"; //! IMPORTANT
 const DEBT_TOKEN_SYMBOL = "USBD"; //! IMPORTANT
 
 const GAS_COMPENSATION = ethers.parseUnits("200", 18); //! 200 USBD
-const MIN_NET_DEBT = ethers.parseUnits("1800", 18); //! 1800 USDB
+const MIN_NET_DEBT = ethers.parseUnits("10", 18); //! 10 USDB
 const LOCK_TO_TOKEN_RATIO = ethers.parseUnits("1", 18); //! 1 BIMA
 
 const LZ_ENDPOINT = ethers.ZeroAddress; //! IMPORTANT
