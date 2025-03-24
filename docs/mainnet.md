@@ -98,6 +98,7 @@ BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
 MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
 MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
 TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+StorkOracleWrapper deployed!: 0xDA44aa5C42C020147625cCe1f1878075D106f92a
 
 HEMI:
 
