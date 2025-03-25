@@ -6,8 +6,8 @@
 
 ## Ethereum Mainnet
 
-| Contracts                     | Address                                    | Explorer Link |
-| ----------------------------- | ------------------------------------------ |---------------|
+| Contracts                     | Address                                    |
+| ----------------------------- | ------------------------------------------ |
 | BimaCore                      | [0x227E9323D692578Ca3dF92b87d06625Df22380Ab](https://etherscan.io/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
 | USBD (DebtToken)              | [0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c](https://etherscan.io/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
 | PriceFeed                     | [0x4B248F3646755F5b71A66BAe8C55C568809CbFf2](https://etherscan.io/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
