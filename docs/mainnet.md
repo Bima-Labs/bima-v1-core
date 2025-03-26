@@ -72,9 +72,10 @@
 
 #### Collaterals
 
-| Name | Address (wrapper address if applicable)    | TroveManager                               | Oracle                                     |
-| ---- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| iBTC | 0x8154Aaf094c2f03Ad550B6890E1d4264B5DdaD9A | 0x35052fFc80c2c681eAb675488394A40DCEb61823 | 0xDA44aa5C42C020147625cCe1f1878075D106f92a |
+| Name  | Address (wrapper address if applicable)    | TroveManager                               | Oracle                                     |
+| ----- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| iBTC  | 0x8154Aaf094c2f03Ad550B6890E1d4264B5DdaD9A | 0x35052fFc80c2c681eAb675488394A40DCEb61823 | 0xDA44aa5C42C020147625cCe1f1878075D106f92a |
+| diBTC | 0x7f76b22E3be6735373e91E3eC2e872560E595990 | 0xE3C54065C976DFAc691bC0d444A468ee3a5FD2e0 | 0xDA44aa5C42C020147625cCe1f1878075D106f92a |
 
 ## Raw Address Logs
 
