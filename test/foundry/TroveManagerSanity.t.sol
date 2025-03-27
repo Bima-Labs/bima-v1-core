@@ -32,7 +32,7 @@ contract TroveManagerSanityTest is Test {
         vm.createSelectFork(RPC_URL);
     }
 
-    function testFlow() public {
+    function testSanityFlow() public {
         console.log("Current Timestamp: ", block.timestamp);
 
         console.log("latestRoundData from IAggregatorV3Interface..");

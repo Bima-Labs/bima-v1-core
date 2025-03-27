@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
             core_mainnet: process.env.CORE_MAINNET_API_KEY as string,
             arbitrumOne: process.env.ARBITRUM_MAINNET_API_KEY as string,
             polygon: process.env.POLYGON_MAINNET_API_KEY as string,
+            hemi: "not_required",
         },
         customChains: [
             {
@@ -28,6 +29,14 @@ const config: HardhatUserConfig = {
                     browserURL: "https://scan.coredao.org/",
                 },
             },
+            {
+                network: "hemi",
+                chainId: 43111,
+                urls: {
+                    apiURL: "https://explorer.hemi.xyz/api",
+                    browserURL: "https://explorer.hemi.xyz",
+                },
+            },
         ],
     },
     networks: {
@@ -36,6 +45,7 @@ const config: HardhatUserConfig = {
         core_mainnet: { url: process.env.CORE_MAINNET_RPC_URL, accounts },
         arbitrum: { url: process.env.ARBITRUM_MAINNET_RPC_URL, accounts },
         polygon: { url: process.env.POLYGON_MAINNET_RPC_URL, accounts },
+        hemi: { url: "https://rpc.hemi.network/rpc", accounts },
     },
 
     solidity: { compilers: [{ version: "0.8.20", settings: { optimizer: { enabled: true, runs: 200 } } }] },
