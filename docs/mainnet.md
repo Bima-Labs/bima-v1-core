@@ -53,6 +53,12 @@ Ah, I see! You want the contract addresses themselves to be clickable and link d
 
 Now, the contract addresses are clickable and will direct you to the Core mainnet Explorer page for each respective contract.
 
+#### Collaterals
+
+| Name         | Address (wrapper address if applicable)                                                                                 | TroveManager                                                                                                            | Oracle                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| SolvBTC.CORE | [0x9410e8052Bc661041e5cB27fDf7d9e9e842af2aa](https://scan.coredao.org/token/0x9410e8052Bc661041e5cB27fDf7d9e9e842af2aa) | [0xD30A489A75780784C286DC2dfBd261579B373967](https://scan.coredao.org/token/0xD30A489A75780784C286DC2dfBd261579B373967) | [0xDA44aa5C42C020147625cCe1f1878075D106f92a](https://scan.coredao.org/token/0xDA44aa5C42C020147625cCe1f1878075D106f92a) |
+
 ## Hemi Mainnet
 
 To link the contract addresses to the Hemi mainnet Explorer, you would follow a similar approach as with the Core mainnet Explorer. Assuming the URL format for the Hemi mainnet Explorer is `https://explorer.hemi.xyz/address/` followed by the contract address, here's how your updated table will look:
