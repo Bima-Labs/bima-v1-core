@@ -25,9 +25,10 @@
 
 #### Collaterals
 
-| Name | Address (wrapper address if applicable)                                                                               | TroveManager                                                                                                          | Oracle                                                                                                                |
-| ---- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| WBTC | [0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1](https://etherscan.io/address/0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1) | [0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2](https://etherscan.io/address/0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2) | [0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c](https://etherscan.io/address/0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c) |
+| Name   | Address (wrapper address if applicable)                                                                               | TroveManager                                                                                                          | Oracle                                                                                                                |
+| ------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| WBTC   | [0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1](https://etherscan.io/address/0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1) | [0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2](https://etherscan.io/address/0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2) | [0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c](https://etherscan.io/address/0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c) |
+| tacBTC | [0xdc0CcAd18ca645A03870676C78a81524B4655197](https://etherscan.io/address/0xdc0CcAd18ca645A03870676C78a81524B4655197) | [0x29467211ad35f97cea26ae11da0c427836ec4c05](https://etherscan.io/address/0x29467211ad35f97cea26ae11da0c427836ec4c05) | [0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c](https://etherscan.io/address/0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c) |
 
 ## Core Mainnet
 
