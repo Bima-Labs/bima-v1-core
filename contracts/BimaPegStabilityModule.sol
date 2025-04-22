@@ -27,6 +27,8 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
         uint256 timestamp
     );
 
+    error BimaPegStabilityModule_NotEnoughLiquidty();
+
     DebtToken public immutable usbd;
     IERC20 public immutable underlying;
 
@@ -39,7 +41,7 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
         DECIMAL_FACTOR = IERC20Metadata(address(underlying)).decimals();
     }
 
-    function mint(address _from, address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
+    function getUsbd(address _from, address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
         uint256 balance = underlying.balanceOf(address(this));
 
         underlying.transferFrom(_from, address(this), _underlyingAmount);
@@ -48,7 +50,11 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
 
         usbdAmount = _underlyingToUsbd(transferredUnderlyingAmount);
 
-        usbd.mint(_to, usbdAmount);
+        if(usbd.balanceOf(address(this)) < usbdAmount) {
+            revert BimaPegStabilityModule_NotEnoughLiquidty();
+        }
+
+        usbd.transfer(_to, usbdAmount);
 
         emit Mint(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
     }
@@ -73,13 +79,5 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
 
     function removeLiquidity(uint256 _usbdAmount) external onlyOwner {
         usbd.transfer(msg.sender, _usbdAmount);
-    }
-
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function unpause() external onlyOwner {
-        _unpause();
     }
 }
