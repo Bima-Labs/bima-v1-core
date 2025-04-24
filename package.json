@@ -1,22 +1,39 @@
 {
   "name": "hardhat-project",
   "devDependencies": {
+    "@midl-xyz/hardhat-deploy": "^0.1.10",
+    "@midl-xyz/midl-js-executor": "^1.0.6",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-foundry": "^1.1.2",
+    "@nomicfoundation/hardhat-ignition": "^0.15.11",
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
+    "@nomicfoundation/ignition-core": "^0.15.11",
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@openzeppelin/contracts": "^4.8.3",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "^4.2.0",
+    "@types/mocha": ">=9.1.0",
+    "chai": "^4.2.0",
     "ethers": "^6.13.0",
     "hardhat": "^2.22.9",
+    "hardhat-deploy": "^1.0.2",
+    "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^3.3.3",
-    "typechain": "^8.3.2"
+    "solidity-coverage": "^0.8.1",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^5.8.3"
   },
   "scripts": {
     "format": "prettier --write \"**/*.{js,ts}\""
   },
   "dependencies": {
+    "@layerzerolabs/lz-evm-protocol-v2": "^3.0.88",
     "@layerzerolabs/lz-v2-utilities": "^3.0.79",
     "@layerzerolabs/oft-evm": "^3.1.2",
     "dotenv": "^16.4.5"
