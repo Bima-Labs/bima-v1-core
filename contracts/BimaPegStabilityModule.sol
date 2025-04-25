@@ -4,14 +4,12 @@ pragma solidity 0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
-
 import {DebtToken} from "./core/DebtToken.sol";
 
 import {BimaOwnable} from "./dependencies/BimaOwnable.sol";
 
-contract BimaPegStabilityModule is BimaOwnable, Pausable {
-    event Mint(
+contract BimaPegStabilityModule is BimaOwnable {
+    event BimaPegStabilityModule_GetUsbd(
         address indexed from,
         address indexed to,
         uint256 underlyingAmount,
@@ -19,7 +17,7 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
         uint256 timestamp
     );
 
-    event Redeem(
+    event BimaPegStabilityModule_Redeem(
         address indexed from,
         address indexed to,
         uint256 underlyingAmount,
@@ -27,7 +25,7 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
         uint256 timestamp
     );
 
-    error BimaPegStabilityModule_NotEnoughLiquidty();
+    error BimaPegStabilityModule_NotEnoughLiquidty(address asset);
 
     DebtToken public immutable usbd;
     IERC20 public immutable underlying;
@@ -50,13 +48,13 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
 
         usbdAmount = _underlyingToUsbd(transferredUnderlyingAmount);
 
-        if(usbd.balanceOf(address(this)) < usbdAmount) {
-            revert BimaPegStabilityModule_NotEnoughLiquidty();
+        if (usbd.balanceOf(address(this)) < usbdAmount) {
+            revert BimaPegStabilityModule_NotEnoughLiquidty(address(usbd));
         }
 
         usbd.transfer(_to, usbdAmount);
 
-        emit Mint(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
+        emit BimaPegStabilityModule_GetUsbd(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
     }
 
     function redeem(address _from, address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
@@ -64,9 +62,13 @@ contract BimaPegStabilityModule is BimaOwnable, Pausable {
 
         usbd.transferFrom(_from, address(this), usbdAmount);
 
+        if (underlying.balanceOf(address(this)) < _underlyingAmount) {
+            revert BimaPegStabilityModule_NotEnoughLiquidty(address(underlying));
+        }
+
         underlying.transfer(_to, _underlyingAmount);
 
-        emit Redeem(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
+        emit BimaPegStabilityModule_Redeem(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
     }
 
     function underlyingToUsbd(uint256 _underlyingAmount) external view returns (uint256 usbdAmount) {
