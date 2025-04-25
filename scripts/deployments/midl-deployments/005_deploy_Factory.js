@@ -7,50 +7,50 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const [owner] = await ethers.getSigners();
-        const deployerNonce = await ethers.provider.getTransactionCount(owner.address);
+        const owner = hre.midl.wallet.getEVMAddress();
+        const deployerNonce = await ethers.provider.getTransactionCount(owner);
 
-        // Retrieve deployed addresses
-        const { deployments } = hre;
-        const bimaCoreAddress = "0x8fdE16d9d1A87Dfb699a493Fa45451d63a3E722D";
-        const sortedTrovesAddress = "0xf08C945ad422809D29F599f6F4839cf8003bC051";
-
+        const bimaCoreAddress = await hre.midl.getDeployment("BimaCore");
+        const sortedTrovesAddress = await hre.midl.getDeployment("SortedTroves");
         // Predict addresses for not-yet-deployed contracts
         const debtTokenAddress = ethers.getCreateAddress({
-            from: owner.address,
-            nonce: deployerNonce + 2, // DebtToken is in script 007
+            from: owner,
+            nonce: deployerNonce + 4, // DebtToken is in script 009
         });
         const borrowerOperationsAddress = ethers.getCreateAddress({
-            from: owner.address,
-            nonce: deployerNonce + 3, // BorrowerOperations is in script 008
+            from: owner,
+            nonce: deployerNonce + 2, // BorrowerOperations is in script 007
         });
         const stabilityPoolAddress = ethers.getCreateAddress({
-            from: owner.address,
-            nonce: deployerNonce + 4, // StabilityPool is in script 009
+            from: owner,
+            nonce: deployerNonce + 3, // StabilityPool is in script 008
         });
         const troveManagerAddress = ethers.getCreateAddress({
-            from: owner.address,
+            from: owner,
             nonce: deployerNonce + 5, // TroveManager is in script 010
         });
         const liquidationManagerAddress = ethers.getCreateAddress({
-            from: owner.address,
+            from: owner,
             nonce: deployerNonce + 1, // LiquidationManager is in script 006
         });
 
         // Deploy Factory
         await hre.midl.deploy("Factory", {
             args: [
-                bimaCoreAddress,
+                bimaCoreAddress.address,
                 debtTokenAddress,
                 stabilityPoolAddress,
                 borrowerOperationsAddress,
-                sortedTrovesAddress,
+                sortedTrovesAddress.address,
                 troveManagerAddress,
                 liquidationManagerAddress,
             ],
         });
 
         await hre.midl.execute();
+
+        const factoryAddress = await hre.midl.getDeployment("Factory");
+        console.log("Factory Deployed Address:", factoryAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         return;

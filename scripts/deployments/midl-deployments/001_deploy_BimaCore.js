@@ -11,44 +11,24 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const [owner] = await ethers.getSigners();
-        const deployerNonce = await ethers.provider.getTransactionCount(owner.address);
+        // const [owner] = await ethers.getSigners();
+        const owner = hre.midl.wallet.getEVMAddress(); //0xF5EEeCDd8b7790A6CA1021e019f96DBD9470F2f9
+        console.log("Owner address:", owner);
+        const deployerNonce = await ethers.provider.getTransactionCount(owner);
 
         // Predict PriceFeed address (deployed in next script)
         const priceFeedAddress = ethers.getCreateAddress({
-            from: owner.address,
+            from: owner,
             nonce: deployerNonce + 1,
         });
-
-        // Predict BimaCore address (for verification)
-        const bimaCoreAddress = ethers.getCreateAddress({
-            from: owner.address,
-            nonce: deployerNonce,
-        });
-
         // Deploy BimaCore
         await hre.midl.deploy("BimaCore", {
             args: [BIMA_OWNER_ADDRESS, BIMA_GUARDIAN_ADDRESS, priceFeedAddress, FEE_RECEIVER_ADDRESS],
         });
 
-        // Execute deployment
-        const executeResult = await hre.midl.execute();
-
-        // Check if contract was already deployed
-        if (executeResult === "No intentions to execute") {
-            // Skip verification if already deployed
-            return;
-        }
-
-        // Verify predicted address
-        try {
-            const { deployments } = hre;
-            const deployedBimaCoreAddress = (await deployments.get("BimaCore")).address;
-            assertEq(bimaCoreAddress, deployedBimaCoreAddress);
-        } catch (error) {
-            console.error("Failed to verify BimaCore deployment artifact:", error.message);
-            // Continue despite artifact lookup failure, as deployment succeeded
-        }
+        const bimaCoreAddress = await hre.midl.getDeployment("BimaCore");
+        console.log("BimaCore Deployed Address:", bimaCoreAddress);
+        await hre.midl.execute();
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         return;

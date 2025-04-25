@@ -8,22 +8,19 @@ async function main(hre) {
         await hre.midl.initialize();
 
         // Retrieve BimaCore address
-        let bimaCoreAddress;
-        try {
-            const { deployments } = hre;
-            bimaCoreAddress = (await deployments.get("BimaCore")).address;
-        } catch (error) {
-            console.error("Failed to retrieve BimaCore deployment artifact:", error.message);
-            // Fallback to hardcoded address from logs (temporary workaround)
-            bimaCoreAddress = "0x8fdE16d9d1A87Dfb699a493Fa45451d63a3E722D";
-        }
+        const bimaCoreAddress = await hre.midl.getDeployment("BimaCore");
+
+        console.log("BimaCore Deployed Address:", bimaCoreAddress.address);
 
         // Deploy PriceFeed
         await hre.midl.deploy("PriceFeed", {
-            args: [bimaCoreAddress],
+            args: [bimaCoreAddress.address],
         });
 
         await hre.midl.execute();
+
+        const priceFeedAddress = await hre.midl.getDeployment("PriceFeed");
+        console.log("PriceFeed Deployed Address:", priceFeedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         return;

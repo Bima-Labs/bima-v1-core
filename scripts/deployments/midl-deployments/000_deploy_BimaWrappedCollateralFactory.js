@@ -1,18 +1,19 @@
 /**
  * @param {import('hardhat/types').HardhatRuntimeEnvironment} hre
  */
-const { ethers } = require("hardhat");
 
 async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const [owner] = await ethers.getSigners();
-        const deployerNonce = await ethers.provider.getTransactionCount(owner.address);
+        const owner = hre.midl.wallet.getEVMAddress(); //0xF5EEeCDd8b7790A6CA1021e019f96DBD9470F2f9
+
+        console.log("Owner address:", owner);
+        const deployerNonce = await ethers.provider.getTransactionCount(owner);
 
         // Predict BimaCore address (deployed in next script)
         const bimaCoreAddress = ethers.getCreateAddress({
-            from: owner.address,
+            from: owner,
             nonce: deployerNonce + 1,
         });
 

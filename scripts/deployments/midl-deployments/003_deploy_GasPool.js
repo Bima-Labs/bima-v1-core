@@ -13,6 +13,8 @@ async function main(hre) {
         });
 
         await hre.midl.execute();
+        const gasPoolAddress = await hre.midl.getDeployment("GasPool");
+        console.log("GasPool Deployed Address:", gasPoolAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         return;

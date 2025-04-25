@@ -9,29 +9,24 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const [owner] = await ethers.getSigners();
-        const deployerNonce = await ethers.provider.getTransactionCount(owner.address);
+        const owner = hre.midl.wallet.getEVMAddress();
+        const deployerNonce = await ethers.provider.getTransactionCount(owner);
+        const bimaCoreAddress = await hre.midl.getDeployment("BimaCore");
+        const factoryAddress = await hre.midl.getDeployment("Factory");
 
-        // Hardcode addresses
-        const bimaCoreAddress = "0x8fdE16d9d1A87Dfb699a493Fa45451d63a3E722D";
-        const factoryAddress = "0x16C05D5BbD83613Fb89c05fDc71975C965c978Fd";
-        const liquidationManagerAddress = "0xD5Ab94196584defAa17eb417b26F98c525a48223";
-        // Predict addresses for not-yet-deployed contracts
-        const stabilityPoolAddress = ethers.getCreateAddress({
-            from: owner.address,
-            nonce: deployerNonce + 1, // StabilityPool is in script 008
-        });
         const debtTokenAddress = ethers.getCreateAddress({
-            from: owner.address,
+            from: owner,
             nonce: deployerNonce + 2, // DebtToken is in script 009
         });
 
         // Deploy BorrowerOperations
         await hre.midl.deploy("BorrowerOperations", {
-            args: [bimaCoreAddress, debtTokenAddress, factoryAddress, MIN_NET_DEBT, GAS_COMPENSATION],
+            args: [bimaCoreAddress.address, debtTokenAddress, factoryAddress.address, MIN_NET_DEBT, GAS_COMPENSATION],
         });
 
         await hre.midl.execute();
+        const borrowerOperationsAddress = await hre.midl.getDeployment("BorrowerOperations");
+        console.log("BorrowerOperations Deployed Address:", borrowerOperationsAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         return;

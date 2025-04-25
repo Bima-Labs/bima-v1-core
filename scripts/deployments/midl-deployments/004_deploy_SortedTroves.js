@@ -13,6 +13,9 @@ async function main(hre) {
         });
 
         await hre.midl.execute();
+
+        const sortedTrovesAddress = await hre.midl.getDeployment("SortedTroves");
+        console.log("SortedTroves Deployed Address:", sortedTrovesAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         return;

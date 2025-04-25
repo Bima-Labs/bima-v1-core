@@ -1,4 +1,4 @@
-Contract BimaWrappedCollateralFactory will be deployed at 0xC97eEC1EFdc97270868eBB383c2bDD5e1e9958ED
+<!-- Contract BimaWrappedCollateralFactory will be deployed at 0xC97eEC1EFdc97270868eBB383c2bDD5e1e9958ED
 Transaction sent 0x85dc4aa30dd1d9edfbdf5c862ad3e8cdd9906c6fa6d831653de1ec36e2226b32
 Transaction confirmed 8cc7363fa0aac640625f6170ba3c03dbfd90dcac596086ad397c2d1d4ddfb72e
 
@@ -48,4 +48,20 @@ Contract StabilityPool will be deployed at 0xE2984407d457433F1F472B44dA4b49cA814
 Transaction sent 0xa9108004e9dddbe89742e26d1a1592d8942cddf4708f2fc89ebdbd808a0a5c65
 Transaction confirmed e4c0711cd494159a8c8cb622cd6483b9fb6f433c9a207652199c0c1f9b88adca
 
----
+--- -->
+
+## Contract BimaWrappedCollateralFactory will be deployed at 0xe0e31a9844c9A12207FF71f1A26C4b3E1CA28C68
+
+## Contract BimaCore will be deployed at 0x2877d41E84b6f862Be1aff65d043dd804398468e
+
+## PriceFeed Deployed Address: 0xcC6B2FA37d4d2736917Ee4Ef6631fB48b54040Cb
+
+## GasPool Deployed Address: 0x5F298E19A866cb9D2C23e896207546F4238FCae5
+
+## SortedTroves Deployed Address: 0x814AB43895FEA7B670Cc5Eff99FfB6E9901bD23a
+
+## Factory Deployed Address: 0x3D8ac11452B97C52266ea79D611b02Ea0E226CD0
+
+## LiquidationManager Deployed Address: 0xf08C945ad422809D29F599f6F4839cf8003bC051
+
+## BorrowerOperations Deployed Address: 0x16C05D5BbD83613Fb89c05fDc71975C965c978Fd

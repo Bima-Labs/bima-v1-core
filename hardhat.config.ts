@@ -19,7 +19,7 @@ const config = {
     defaultNetwork: "localhost",
     midl: {
         mnemonic: vars.get("MNEMONIC"),
-        path: "midldeployments",
+        path: "deployments",
         confirmationsRequired: 1,
         btcConfirmationsRequired: 1,
     },
