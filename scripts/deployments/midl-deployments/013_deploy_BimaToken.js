@@ -5,6 +5,9 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
+        const LZ_ENDPOINT = hre.ethers.ZeroAddress;
+        const LZ_DELEGATE_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5";
+
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 
@@ -13,17 +16,27 @@ async function main(hre) {
         const deployerNonce = await provider.getTransactionCount(owner);
         console.log("Deployer nonce:", deployerNonce);
 
-        // Deploy GasPool (no future addresses needed in args)
-        await hre.midl.deploy("GasPool", {
-            args: [],
+        // Predict BimaVault address (needed for BimaToken constructor, to be deployed in 014_deploy_BimaVault.js)
+        const bimaVaultAddress = hre.ethers.getCreateAddress({
+            from: owner,
+            nonce: deployerNonce + 1, // BimaVault will be deployed in 014
+        });
+        console.log("Predicted BimaVault address:", bimaVaultAddress);
+
+        // Fetch previously deployed contract addresses
+        const tokenLockerAddress = await hre.midl.getDeployment("TokenLocker");
+
+        // Deploy BimaToken
+        await hre.midl.deploy("BimaToken", {
+            args: [bimaVaultAddress, LZ_ENDPOINT, tokenLockerAddress.address, LZ_DELEGATE_ADDRESS],
         });
 
-        console.log("Deploying GasPool...");
+        console.log("Deploying BimaToken...");
         await hre.midl.execute();
 
         console.log("_________________________________________________");
-        const deployedAddress = await hre.midl.getDeployment("GasPool");
-        console.log("GasPool Deployed Address:", deployedAddress.address);
+        const deployedAddress = await hre.midl.getDeployment("BimaToken");
+        console.log("BimaToken Deployed Address:", deployedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         throw error;

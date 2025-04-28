@@ -5,8 +5,6 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const GAS_COMPENSATION = hre.ethers.parseUnits("200", 18);
-
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 
@@ -15,34 +13,20 @@ async function main(hre) {
         const deployerNonce = await provider.getTransactionCount(owner);
         console.log("Deployer nonce:", deployerNonce);
 
-        // Predict BorrowerOperations address (needed for LiquidationManager constructor, to be deployed in 008_deploy_BorrowerOperations.js)
-        const borrowerOperationsAddress = hre.ethers.getCreateAddress({
-            from: owner,
-            nonce: deployerNonce + 2, // BorrowerOperations will be deployed in 008
-        });
-        console.log("Predicted BorrowerOperations address:", borrowerOperationsAddress);
-
-        // Predict StabilityPool address (needed for LiquidationManager constructor, to be deployed in 009_deploy_StabilityPool.js)
-        const stabilityPoolAddress = hre.ethers.getCreateAddress({
-            from: owner,
-            nonce: deployerNonce + 3, // StabilityPool will be deployed in 009
-        });
-        console.log("Predicted StabilityPool address:", stabilityPoolAddress);
-
         // Fetch previously deployed contract addresses
         const factoryAddress = await hre.midl.getDeployment("Factory");
 
-        // Deploy LiquidationManager
-        await hre.midl.deploy("LiquidationManager", {
-            args: [stabilityPoolAddress, borrowerOperationsAddress, factoryAddress.address, GAS_COMPENSATION],
+        // Deploy TroveManagerGetters (no future addresses needed in args)
+        await hre.midl.deploy("TroveManagerGetters", {
+            args: [factoryAddress.address],
         });
 
-        console.log("Deploying LiquidationManager...");
+        console.log("Deploying TroveManagerGetters...");
         await hre.midl.execute();
 
         console.log("_________________________________________________");
-        const deployedAddress = await hre.midl.getDeployment("LiquidationManager");
-        console.log("LiquidationManager Deployed Address:", deployedAddress.address);
+        const deployedAddress = await hre.midl.getDeployment("TroveManagerGetters");
+        console.log("TroveManagerGetters Deployed Address:", deployedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         throw error;

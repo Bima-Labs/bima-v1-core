@@ -15,34 +15,20 @@ async function main(hre) {
         const deployerNonce = await provider.getTransactionCount(owner);
         console.log("Deployer nonce:", deployerNonce);
 
-        // Predict BorrowerOperations address (needed for LiquidationManager constructor, to be deployed in 008_deploy_BorrowerOperations.js)
-        const borrowerOperationsAddress = hre.ethers.getCreateAddress({
-            from: owner,
-            nonce: deployerNonce + 2, // BorrowerOperations will be deployed in 008
-        });
-        console.log("Predicted BorrowerOperations address:", borrowerOperationsAddress);
-
-        // Predict StabilityPool address (needed for LiquidationManager constructor, to be deployed in 009_deploy_StabilityPool.js)
-        const stabilityPoolAddress = hre.ethers.getCreateAddress({
-            from: owner,
-            nonce: deployerNonce + 3, // StabilityPool will be deployed in 009
-        });
-        console.log("Predicted StabilityPool address:", stabilityPoolAddress);
-
         // Fetch previously deployed contract addresses
-        const factoryAddress = await hre.midl.getDeployment("Factory");
+        const borrowerOperationsAddress = await hre.midl.getDeployment("BorrowerOperations");
 
-        // Deploy LiquidationManager
-        await hre.midl.deploy("LiquidationManager", {
-            args: [stabilityPoolAddress, borrowerOperationsAddress, factoryAddress.address, GAS_COMPENSATION],
+        // Deploy MultiCollateralHintHelpers (no future addresses needed in args)
+        await hre.midl.deploy("MultiCollateralHintHelpers", {
+            args: [borrowerOperationsAddress.address, GAS_COMPENSATION],
         });
 
-        console.log("Deploying LiquidationManager...");
+        console.log("Deploying MultiCollateralHintHelpers...");
         await hre.midl.execute();
 
         console.log("_________________________________________________");
-        const deployedAddress = await hre.midl.getDeployment("LiquidationManager");
-        console.log("LiquidationManager Deployed Address:", deployedAddress.address);
+        const deployedAddress = await hre.midl.getDeployment("MultiCollateralHintHelpers");
+        console.log("MultiCollateralHintHelpers Deployed Address:", deployedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         throw error;

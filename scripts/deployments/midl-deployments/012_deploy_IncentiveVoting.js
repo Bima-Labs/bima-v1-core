@@ -13,17 +13,28 @@ async function main(hre) {
         const deployerNonce = await provider.getTransactionCount(owner);
         console.log("Deployer nonce:", deployerNonce);
 
-        // Deploy GasPool (no future addresses needed in args)
-        await hre.midl.deploy("GasPool", {
-            args: [],
+        // Predict BimaVault address (needed for IncentiveVoting constructor, to be deployed in 014_deploy_BimaVault.js)
+        const bimaVaultAddress = hre.ethers.getCreateAddress({
+            from: owner,
+            nonce: deployerNonce + 2, // BimaVault will be deployed in 014
+        });
+        console.log("Predicted BimaVault address:", bimaVaultAddress);
+
+        // Fetch previously deployed contract addresses
+        const bimaCoreAddress = await hre.midl.getDeployment("BimaCore");
+        const tokenLockerAddress = await hre.midl.getDeployment("TokenLocker");
+
+        // Deploy IncentiveVoting
+        await hre.midl.deploy("IncentiveVoting", {
+            args: [bimaCoreAddress.address, tokenLockerAddress.address, bimaVaultAddress],
         });
 
-        console.log("Deploying GasPool...");
+        console.log("Deploying IncentiveVoting...");
         await hre.midl.execute();
 
         console.log("_________________________________________________");
-        const deployedAddress = await hre.midl.getDeployment("GasPool");
-        console.log("GasPool Deployed Address:", deployedAddress.address);
+        const deployedAddress = await hre.midl.getDeployment("IncentiveVoting");
+        console.log("IncentiveVoting Deployed Address:", deployedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         throw error;

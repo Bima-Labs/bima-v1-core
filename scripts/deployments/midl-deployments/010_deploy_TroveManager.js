@@ -15,34 +15,39 @@ async function main(hre) {
         const deployerNonce = await provider.getTransactionCount(owner);
         console.log("Deployer nonce:", deployerNonce);
 
-        // Predict BorrowerOperations address (needed for LiquidationManager constructor, to be deployed in 008_deploy_BorrowerOperations.js)
-        const borrowerOperationsAddress = hre.ethers.getCreateAddress({
+        // Predict BimaVault address (needed for TroveManager constructor, to be deployed in 014_deploy_BimaVault.js)
+        const bimaVaultAddress = hre.ethers.getCreateAddress({
             from: owner,
-            nonce: deployerNonce + 2, // BorrowerOperations will be deployed in 008
+            nonce: deployerNonce + 4, // BimaVault will be deployed in 014
         });
-        console.log("Predicted BorrowerOperations address:", borrowerOperationsAddress);
-
-        // Predict StabilityPool address (needed for LiquidationManager constructor, to be deployed in 009_deploy_StabilityPool.js)
-        const stabilityPoolAddress = hre.ethers.getCreateAddress({
-            from: owner,
-            nonce: deployerNonce + 3, // StabilityPool will be deployed in 009
-        });
-        console.log("Predicted StabilityPool address:", stabilityPoolAddress);
+        console.log("Predicted BimaVault address:", bimaVaultAddress);
 
         // Fetch previously deployed contract addresses
-        const factoryAddress = await hre.midl.getDeployment("Factory");
+        const bimaCoreAddress = await hre.midl.getDeployment("BimaCore");
+        const gasPoolAddress = await hre.midl.getDeployment("GasPool");
+        const debtTokenAddress = await hre.midl.getDeployment("DebtToken");
+        const borrowerOperationsAddress = await hre.midl.getDeployment("BorrowerOperations");
+        const liquidationManagerAddress = await hre.midl.getDeployment("LiquidationManager");
 
-        // Deploy LiquidationManager
-        await hre.midl.deploy("LiquidationManager", {
-            args: [stabilityPoolAddress, borrowerOperationsAddress, factoryAddress.address, GAS_COMPENSATION],
+        // Deploy TroveManager
+        await hre.midl.deploy("TroveManager", {
+            args: [
+                bimaCoreAddress.address,
+                gasPoolAddress.address,
+                debtTokenAddress.address,
+                borrowerOperationsAddress.address,
+                bimaVaultAddress,
+                liquidationManagerAddress.address,
+                GAS_COMPENSATION,
+            ],
         });
 
-        console.log("Deploying LiquidationManager...");
+        console.log("Deploying TroveManager...");
         await hre.midl.execute();
 
         console.log("_________________________________________________");
-        const deployedAddress = await hre.midl.getDeployment("LiquidationManager");
-        console.log("LiquidationManager Deployed Address:", deployedAddress.address);
+        const deployedAddress = await hre.midl.getDeployment("TroveManager");
+        console.log("TroveManager Deployed Address:", deployedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         throw error;

@@ -13,17 +13,17 @@ async function main(hre) {
         const deployerNonce = await provider.getTransactionCount(owner);
         console.log("Deployer nonce:", deployerNonce);
 
-        // Deploy GasPool (no future addresses needed in args)
-        await hre.midl.deploy("GasPool", {
+        // Deploy MultiTroveGetter (no future addresses needed in args)
+        await hre.midl.deploy("MultiTroveGetter", {
             args: [],
         });
 
-        console.log("Deploying GasPool...");
+        console.log("Deploying MultiTroveGetter...");
         await hre.midl.execute();
 
         console.log("_________________________________________________");
-        const deployedAddress = await hre.midl.getDeployment("GasPool");
-        console.log("GasPool Deployed Address:", deployedAddress.address);
+        const deployedAddress = await hre.midl.getDeployment("MultiTroveGetter");
+        console.log("MultiTroveGetter Deployed Address:", deployedAddress.address);
     } catch (error) {
         console.error("Error initializing MIDL:", error);
         throw error;
