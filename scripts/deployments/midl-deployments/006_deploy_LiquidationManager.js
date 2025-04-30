@@ -6,7 +6,7 @@ async function main(hre) {
         await hre.midl.initialize();
 
         const GAS_COMPENSATION = hre.ethers.parseUnits("200", 18);
-
+        console.log("GAS_COMPENSATION:", GAS_COMPENSATION.toString());
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 

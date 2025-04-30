@@ -1,1 +1,10 @@
 # Contract Addresses for MIDL Deployments
+
+BimaWrappedCollateralFactory Deployed Address: 0xe0e31a9844c9A12207FF71f1A26C4b3E1CA28C68
+BimaCore Deployed Address: 0x2877d41E84b6f862Be1aff65d043dd804398468e
+PriceFeed Deployed Address: 0x3ebC5c1dF3EE95f92dF86094c32F293F15998016
+GasPool Deployed Address: 0xDde448c6188b6F273117587F569571bf71C657ae
+SortedTroves Deployed Address: 0x7d70cb6F306689817A38087bF40Bf2e043393a12
+Factory Deployed Address: 0xb1dF28E9ca204ad8fe4EA2605e1efd13Bbf3d145
+LiquidationManager Deployed Address: 0x9F9bC41031B7D2F9Ff94f119659B83532FE4DD77
+DebtToken Deployed Address: 0x06CAb814d8658f4f5A514b42C11B6AE48407d88F

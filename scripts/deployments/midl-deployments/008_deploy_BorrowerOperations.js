@@ -7,7 +7,8 @@ async function main(hre) {
 
         const GAS_COMPENSATION = hre.ethers.parseUnits("200", 18);
         const MIN_NET_DEBT = hre.ethers.parseUnits("10", 18);
-
+        console.log("Gas compensation:", GAS_COMPENSATION.toString());
+        console.log("Minimum net debt:", MIN_NET_DEBT.toString());
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 

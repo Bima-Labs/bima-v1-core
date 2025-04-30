@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {OFT} from "@layerzerolabs/oft-evm/contracts/OFT.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -15,7 +14,7 @@ import {BIMA_100_PCT} from "../dependencies/Constants.sol";
             This contract has a 1:n relationship with multiple deployments of `TroveManager`,
             each of which hold one collateral type which may be used to mint this token.
  */
-contract DebtToken is OFT {
+contract DebtToken is ERC20 {
     event SetLendingVaultAdapterAddress(
         address indexed _caller,
         address indexed _previousAddress,
@@ -55,7 +54,7 @@ contract DebtToken is OFT {
     address public immutable factory;
     address public immutable gasPool;
     // Adapter that will mint DebtToken and deposit it in the vault,
-    // and vice verca, withdrawing from vault and burning DebtToken.
+    // and vice versa, withdrawing from vault and burning DebtToken.
     // making it available for borrowing against other assets
     address public lendingVaultAdapterAddress;
 
@@ -70,12 +69,10 @@ contract DebtToken is OFT {
         address _stabilityPoolAddress,
         address _borrowerOperationsAddress,
         IBimaCore bimaCore_,
-        address _layerZeroEndpoint,
         address _factory,
         address _gasPool,
-        uint256 _gasCompensation,
-        address _delegate
-    ) OFT(_name, _symbol, _layerZeroEndpoint, _delegate) {
+        uint256 _gasCompensation
+    ) ERC20(_name, _symbol) {
         stabilityPoolAddress = _stabilityPoolAddress;
         _bimaCore = bimaCore_;
         borrowerOperationsAddress = _borrowerOperationsAddress;
@@ -164,16 +161,12 @@ contract DebtToken is OFT {
 
     // --- External functions ---
 
-    function transfer(address recipient, uint256 amount) public override(ERC20) returns (bool success) {
+    function transfer(address recipient, uint256 amount) public override returns (bool success) {
         _requireValidRecipient(recipient);
         success = super.transfer(recipient, amount);
     }
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public override(ERC20) returns (bool success) {
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool success) {
         _requireValidRecipient(recipient);
         success = super.transferFrom(sender, recipient, amount);
     }

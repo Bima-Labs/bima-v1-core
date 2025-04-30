@@ -8,9 +8,9 @@ async function main(hre) {
         const DEBT_TOKEN_NAME = "US Bitcoin Dollar";
         const DEBT_TOKEN_SYMBOL = "USBD";
         const GAS_COMPENSATION = hre.ethers.parseUnits("200", 18);
-        const LZ_ENDPOINT = hre.ethers.ZeroAddress;
-        const LZ_DELEGATE_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5";
-
+        console.log("Gas compensation:", GAS_COMPENSATION.toString());
+        console.log("DebtToken name:", DEBT_TOKEN_NAME);
+        console.log("DebtToken symbol:", DEBT_TOKEN_SYMBOL);
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 
@@ -38,7 +38,7 @@ async function main(hre) {
         const factoryAddress = await hre.midl.getDeployment("Factory");
         const gasPoolAddress = await hre.midl.getDeployment("GasPool");
 
-        // Deploy DebtToken
+        // Deploy DebtToken (updated constructor without lzEndpoint and lzDelegate)
         await hre.midl.deploy("DebtToken", {
             args: [
                 DEBT_TOKEN_NAME,
@@ -46,11 +46,9 @@ async function main(hre) {
                 stabilityPoolAddress,
                 borrowerOperationsAddress,
                 bimaCoreAddress.address,
-                LZ_ENDPOINT,
                 factoryAddress.address,
                 gasPoolAddress.address,
                 GAS_COMPENSATION,
-                LZ_DELEGATE_ADDRESS,
             ],
         });
 
