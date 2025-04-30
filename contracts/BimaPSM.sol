@@ -8,7 +8,7 @@ import {DebtToken} from "./core/DebtToken.sol";
 
 import {BimaOwnable} from "./dependencies/BimaOwnable.sol";
 
-import {IBimaPSM} from "./IBimaPSM.sol";
+import {IBimaPSM} from "./interfaces/IBimaPSM.sol";
 
 contract BimaPSM is IBimaPSM, BimaOwnable {
     DebtToken public immutable usbd;
