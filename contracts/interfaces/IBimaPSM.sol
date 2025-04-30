@@ -18,7 +18,7 @@ interface IBimaPSM {
         uint256 timestamp
     );
 
-    error NotEnoughLiquidty(address asset, uint256 availableAmount, uint256 requestedAmount);
+    error NotEnoughLiquidity(address asset, uint256 availableAmount, uint256 requestedAmount);
 
     function mint(address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount);
 

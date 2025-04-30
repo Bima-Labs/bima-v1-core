@@ -37,7 +37,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
 
         uint256 usbdLiquidity = usbd.balanceOf(address(this));
 
-        if (usbdLiquidity < usbdAmount) revert NotEnoughLiquidty(address(usbd), usbdLiquidity, _underlyingAmount);
+        if (usbdLiquidity < usbdAmount) revert NotEnoughLiquidity(address(usbd), usbdLiquidity, usbdAmount);
 
         usbd.transfer(_to, usbdAmount);
 
@@ -53,7 +53,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
         uint256 underlyingLiquidity = underlying.balanceOf(address(this));
 
         if (underlyingLiquidity < _underlyingAmount)
-            revert NotEnoughLiquidty(address(underlying), underlyingLiquidity, _underlyingAmount);
+            revert NotEnoughLiquidity(address(underlying), underlyingLiquidity, _underlyingAmount);
 
         underlying.transfer(_to, _underlyingAmount);
 
