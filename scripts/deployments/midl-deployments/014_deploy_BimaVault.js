@@ -5,8 +5,6 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const BIMA_VAULT_DEPLOYMENT_MANAGER = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5";
-
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 
@@ -30,7 +28,7 @@ async function main(hre) {
                 tokenLockerAddress.address,
                 incentiveVotingAddress.address,
                 stabilityPoolAddress.address,
-                BIMA_VAULT_DEPLOYMENT_MANAGER,
+                owner,
             ],
         });
 

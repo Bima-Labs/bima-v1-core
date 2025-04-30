@@ -5,9 +5,6 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const LZ_ENDPOINT = hre.ethers.ZeroAddress;
-        const LZ_DELEGATE_ADDRESS = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5";
-
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 
@@ -26,9 +23,9 @@ async function main(hre) {
         // Fetch previously deployed contract addresses
         const tokenLockerAddress = await hre.midl.getDeployment("TokenLocker");
 
-        // Deploy BimaToken
+        // Deploy BimaToken (updated constructor without lzEndpoint and lzDelegate)
         await hre.midl.deploy("BimaToken", {
-            args: [bimaVaultAddress, LZ_ENDPOINT, tokenLockerAddress.address, LZ_DELEGATE_ADDRESS],
+            args: [bimaVaultAddress, tokenLockerAddress.address],
         });
 
         console.log("Deploying BimaToken...");

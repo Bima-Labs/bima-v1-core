@@ -6,8 +6,7 @@ async function main(hre) {
         await hre.midl.initialize();
 
         const LOCK_TO_TOKEN_RATIO = hre.ethers.parseUnits("1", 18);
-        const TOKEN_LOCKER_DEPLOYMENT_MANAGER = "0xaCA5d659364636284041b8D3ACAD8a57f6E7B8A5";
-
+        console.log("LOCK_TO_TOKEN_RATIO:", LOCK_TO_TOKEN_RATIO.toString());
         const owner = hre.midl.wallet.getEVMAddress();
         console.log("Owner address:", owner);
 
@@ -35,13 +34,7 @@ async function main(hre) {
 
         // Deploy TokenLocker
         await hre.midl.deploy("TokenLocker", {
-            args: [
-                bimaCoreAddress.address,
-                bimaTokenAddress,
-                incentiveVotingAddress,
-                TOKEN_LOCKER_DEPLOYMENT_MANAGER,
-                LOCK_TO_TOKEN_RATIO,
-            ],
+            args: [bimaCoreAddress.address, bimaTokenAddress, incentiveVotingAddress, owner, LOCK_TO_TOKEN_RATIO],
         });
 
         console.log("Deploying TokenLocker...");

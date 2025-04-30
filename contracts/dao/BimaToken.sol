@@ -2,7 +2,6 @@
 pragma solidity 0.8.20;
 
 import {IERC2612} from "../interfaces/IERC2612.sol";
-import {OFT} from "@layerzerolabs/oft-evm/contracts/OFT.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -12,7 +11,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
     @notice Given as an incentive for users of the protocol. Can be locked in `TokenLocker`
             to receive lock weight, which gives governance power within the Bima DAO.
  */
-contract BimaToken is OFT, IERC2612 {
+contract BimaToken is ERC20, IERC2612 {
     // --- ERC20 Data ---
 
     string internal constant _NAME = "Bima Governance Token";
@@ -43,12 +42,7 @@ contract BimaToken is OFT, IERC2612 {
 
     // --- Functions ---
 
-    constructor(
-        address _vault,
-        address _layerZeroEndpoint,
-        address _locker,
-        address _delegate
-    ) OFT(_NAME, _SYMBOL, _layerZeroEndpoint, _delegate) {
+    constructor(address _vault, address _locker) ERC20(_NAME, _SYMBOL) {
         bytes32 hashedName = keccak256(bytes(_NAME));
         bytes32 hashedVersion = keccak256(bytes(version));
 
