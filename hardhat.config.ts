@@ -46,6 +46,7 @@ const config: HardhatUserConfig = {
         arbitrum: { url: process.env.ARBITRUM_MAINNET_RPC_URL, accounts },
         polygon: { url: process.env.POLYGON_MAINNET_RPC_URL, accounts },
         hemi: { url: "https://rpc.hemi.network/rpc", accounts },
+        arbitrum_sepolia: { url: "https://arbitrum-sepolia-rpc.publicnode.com", accounts },
     },
 
     solidity: { compilers: [{ version: "0.8.20", settings: { optimizer: { enabled: true, runs: 200 } } }] },
