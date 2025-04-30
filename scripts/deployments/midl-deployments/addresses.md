@@ -18,3 +18,4 @@ BimaVault Deployed Address: 0x5A3c9c955d6909574756C96F80f10F6BD603b073
 MultiCollateralHintHelpers Deployed Address: 0x78ba76153D573424ca7DD6Ea9cB3009c6489B260
 MultiTroveGetter Deployed Address: 0xB1399fc795a38f4563b944CA40AB71d743d4342d
 TroveManagerGetters Deployed Address: 0xBa7Ce3Da631aF6f8AbA1985713cfe399fECbdF67
+MOCKED StakedBTC Deployed Address: 0x756121da5326a9963ddAb75575c751B0CeB46362
