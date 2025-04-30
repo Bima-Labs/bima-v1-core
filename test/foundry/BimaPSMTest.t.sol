@@ -4,6 +4,8 @@ pragma solidity 0.8.20;
 import {console} from "forge-std/console.sol";
 import {DebtToken} from "../../contracts/core/DebtToken.sol";
 import {BimaPSM} from "../../contracts/BimaPSM.sol";
+import {IBimaPSM} from "../../contracts/IBimaPSM.sol";
+
 import {TestSetup} from "./TestSetup.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
@@ -114,7 +116,14 @@ contract BimaPSMTest is TestSetup {
         vm.startPrank(USER);
         mockUnderlyingToken.approve(address(psm), amountToDeposit);
         uint256 usbdBalanceOfPSM = debtToken.balanceOf(address(psm));
-        vm.expectRevert(abi.encodeWithSelector(BimaPSM.NotEnoughLiquidty.selector, address(debtToken),usbdBalanceOfPSM,amountToDeposit));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IBimaPSM.NotEnoughLiquidty.selector,
+                address(debtToken),
+                usbdBalanceOfPSM,
+                amountToDeposit
+            )
+        );
         psm.mint(USER, USER, amountToDeposit);
         vm.stopPrank();
     }
@@ -170,9 +179,14 @@ contract BimaPSMTest is TestSetup {
         vm.startPrank(USER);
         debtToken.approve(address(psm), 100000e18);
 
-        uint256 underlyingTokenBalanceOfPSM =mockUnderlyingToken.balanceOf(address(psm));
+        uint256 underlyingTokenBalanceOfPSM = mockUnderlyingToken.balanceOf(address(psm));
         vm.expectRevert(
-            abi.encodeWithSelector(BimaPSM.NotEnoughLiquidty.selector, address(mockUnderlyingToken),underlyingTokenBalanceOfPSM,100000e8)
+            abi.encodeWithSelector(
+                IBimaPSM.NotEnoughLiquidty.selector,
+                address(mockUnderlyingToken),
+                underlyingTokenBalanceOfPSM,
+                100000e8
+            )
         );
         psm.redeem(USER, USER, 100000e8);
         vm.stopPrank();

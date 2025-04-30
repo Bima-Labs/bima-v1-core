@@ -8,25 +8,9 @@ import {DebtToken} from "./core/DebtToken.sol";
 
 import {BimaOwnable} from "./dependencies/BimaOwnable.sol";
 
-contract BimaPSM is BimaOwnable {
-    event Mint(
-        address indexed from,
-        address indexed to,
-        uint256 underlyingAmount,
-        uint256 usbdAmount,
-        uint256 timestamp
-    );
+import {IBimaPSM} from "./IBimaPSM.sol";
 
-    event Redeem(
-        address indexed from,
-        address indexed to,
-        uint256 underlyingAmount,
-        uint256 usbdAmount,
-        uint256 timestamp
-    );
-
-    error NotEnoughLiquidty(address asset, uint256 availableAmount, uint256 requestedAmount);
-
+contract BimaPSM is IBimaPSM, BimaOwnable {
     DebtToken public immutable usbd;
     IERC20 public immutable underlying;
 
@@ -39,48 +23,74 @@ contract BimaPSM is BimaOwnable {
         DECIMAL_FACTOR = IERC20Metadata(address(underlying)).decimals();
     }
 
-    function mint(address _from, address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
+    // ========== MINT/REDEEM FUNCTIONS ========== //
+
+    /// @inheritdoc IBimaPSM
+    function mint(address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
         uint256 balance = underlying.balanceOf(address(this));
 
-        underlying.transferFrom(_from, address(this), _underlyingAmount);
+        underlying.transferFrom(msg.sender, address(this), _underlyingAmount);
 
         uint256 transferredUnderlyingAmount = underlying.balanceOf(address(this)) - balance;
 
         usbdAmount = _underlyingToUsbd(transferredUnderlyingAmount);
 
-        uint256 usbdBalanceOfPSM = usbd.balanceOf(address(this));
-        if (usbdBalanceOfPSM < usbdAmount) {
-            revert NotEnoughLiquidty(address(usbd),usbdBalanceOfPSM,_underlyingAmount);
-        }
+        uint256 usbdLiquidity = usbd.balanceOf(address(this));
+
+        if (usbdLiquidity < usbdAmount) revert NotEnoughLiquidty(address(usbd), usbdLiquidity, _underlyingAmount);
 
         usbd.transfer(_to, usbdAmount);
 
-        emit Mint(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
+        emit Mint(msg.sender, _to, _underlyingAmount, usbdAmount, block.timestamp);
     }
 
-    function redeem(address _from, address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
+    /// @inheritdoc IBimaPSM
+    function redeem(address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
         usbdAmount = _underlyingToUsbd(_underlyingAmount);
 
-        usbd.transferFrom(_from, address(this), usbdAmount);
-        
-        uint256 underlyingTokenBalanceOfPSM =underlying.balanceOf(address(this));
-        if(underlyingTokenBalanceOfPSM < _underlyingAmount) {
-            revert NotEnoughLiquidty(address(underlying),underlyingTokenBalanceOfPSM,_underlyingAmount);
-        }
+        usbd.transferFrom(msg.sender, address(this), usbdAmount);
+
+        uint256 underlyingLiquidity = underlying.balanceOf(address(this));
+
+        if (underlyingLiquidity < _underlyingAmount)
+            revert NotEnoughLiquidty(address(underlying), underlyingLiquidity, _underlyingAmount);
 
         underlying.transfer(_to, _underlyingAmount);
 
-        emit Redeem(_from, _to, _underlyingAmount, usbdAmount, block.timestamp);
+        emit Redeem(msg.sender, _to, _underlyingAmount, usbdAmount, block.timestamp);
     }
 
+    // ========== VIEW FUNCTIONS ========== //
+
+    /// @inheritdoc IBimaPSM
     function underlyingToUsbd(uint256 _underlyingAmount) external view returns (uint256 usbdAmount) {
         return _underlyingToUsbd(_underlyingAmount);
     }
+
+    /// @inheritdoc IBimaPSM
+    function usbdToUnderlying(uint256 _usbdAmount) external view returns (uint256 underlyingAmount) {
+        underlyingAmount = _usbdAmount / (10 ** (18 - DECIMAL_FACTOR));
+    }
+
+    /// @inheritdoc IBimaPSM
+    function getUsbdLiquidity() external view returns (uint256 liquidity) {
+        liquidity = usbd.balanceOf(address(this));
+    }
+
+    /// @inheritdoc IBimaPSM
+    function getUnderlyingLiquidity() external view returns (uint256 liquidity) {
+        liquidity = underlying.balanceOf(address(this));
+    }
+
+    // ========== INTERNAL FUNCTIONS ========== //
 
     function _underlyingToUsbd(uint256 _underlyingAmount) internal view returns (uint256 usbdAmount) {
         usbdAmount = _underlyingAmount * (10 ** (18 - DECIMAL_FACTOR));
     }
 
+    // ========== OWNER FUNCTIONS ========== //
+
+    /// @inheritdoc IBimaPSM
     function removeLiquidity(uint256 _usbdAmount) external onlyOwner {
         usbd.transfer(msg.sender, _usbdAmount);
     }
