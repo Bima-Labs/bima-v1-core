@@ -2,11 +2,12 @@
 pragma solidity 0.8.20;
 
 import {console} from "forge-std/console.sol";
-import {DebtToken} from "../../contracts/core/DebtToken.sol";
-import {BimaPSM} from "../../contracts/BimaPSM.sol";
-import {IBimaPSM} from "../../contracts/IBimaPSM.sol";
+import {DebtToken} from "../../../contracts/core/DebtToken.sol";
+import {BimaPSM} from "../../../contracts/BimaPSM.sol";
+import {IBimaPSM} from "../../../contracts/interfaces/IBimaPSM.sol";
 
-import {TestSetup} from "./TestSetup.sol";
+import {TestSetup} from "../TestSetup.sol";
+
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
@@ -87,7 +88,7 @@ contract BimaPSMTest is TestSetup {
 
         vm.expectEmit(true, true, false, true);
         emit Mint(USER, USER, underlyingtDepositAmount, 1000e18, block.timestamp);
-        psm.mint(USER, USER, underlyingtDepositAmount);
+        psm.mint(USER, underlyingtDepositAmount);
 
         vm.stopPrank();
 
@@ -124,7 +125,7 @@ contract BimaPSMTest is TestSetup {
                 amountToDeposit
             )
         );
-        psm.mint(USER, USER, amountToDeposit);
+        psm.mint(USER, amountToDeposit);
         vm.stopPrank();
     }
 
@@ -138,7 +139,7 @@ contract BimaPSMTest is TestSetup {
 
         vm.startPrank(USER);
         mockUnderlyingToken.approve(address(psm), underlyingtDepositAmount);
-        psm.mint(USER, USER, underlyingtDepositAmount);
+        psm.mint(USER, underlyingtDepositAmount);
         vm.stopPrank();
 
         // // redeem
@@ -146,7 +147,7 @@ contract BimaPSMTest is TestSetup {
         debtToken.approve(address(psm), 1000e18);
         vm.expectEmit(true, true, false, true);
         emit Redeem(USER, USER, underlyingtDepositAmount, 1000e18, block.timestamp);
-        psm.redeem(USER, USER, underlyingtDepositAmount);
+        psm.redeem(USER, underlyingtDepositAmount);
         vm.stopPrank();
 
         /**
@@ -188,7 +189,7 @@ contract BimaPSMTest is TestSetup {
                 100000e8
             )
         );
-        psm.redeem(USER, USER, 100000e8);
+        psm.redeem(USER, 100000e8);
         vm.stopPrank();
     }
 

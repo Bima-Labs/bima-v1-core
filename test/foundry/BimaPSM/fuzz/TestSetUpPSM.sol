@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {console} from "forge-std/console.sol";
-import {DebtToken} from "../../../contracts/core/DebtToken.sol";
-import {BimaPSM} from "../../../contracts/BimaPSM.sol";
-import {TestSetup} from "./../TestSetup.sol";
+import {DebtToken} from "../../../../contracts/core/DebtToken.sol";
+import {BimaPSM} from "../../../../contracts/BimaPSM.sol";
+import {TestSetup} from "../../TestSetup.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
@@ -14,11 +13,11 @@ contract UnderlyingToken is ERC20, ERC20Permit {
     uint8 customDecimal;
 
     constructor(uint8 _decimal) ERC20("Mock USDT", "mUSDT") ERC20Permit("Bima Mock BTC") {
-        customDecimal= _decimal ;
+        customDecimal = _decimal;
         _mint(msg.sender, 1000000000000 * 10 ** decimals());
     }
 
-    function decimals() public view override  returns (uint8) {
+    function decimals() public view override returns (uint8) {
         return customDecimal;
     }
 }
@@ -46,12 +45,10 @@ contract TestSetUpPSM is TestSetup {
     address USER = makeAddr("USER 1");
     UnderlyingToken mockUnderlyingToken;
     BimaPSM psm;
-    uint8 customTokenDecimal = 15 ; 
+    uint8 customTokenDecimal = 15;
     // owner providing initial liquidity
     uint256 public initialLiquidity = 100000000000000000000000000000000000000000000e18;
     uint256 public initalMintToUser = 1000000000000 * 10 ** customTokenDecimal;
-
-    
 
     function setUp() public virtual override {
         super.setUp();
