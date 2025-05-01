@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import {IBimaPSM} from "./interfaces/IBimaPSM.sol";
+import {BimaOwnable} from "./dependencies/BimaOwnable.sol";
 import {DebtToken} from "./core/DebtToken.sol";
 
-import {BimaOwnable} from "./dependencies/BimaOwnable.sol";
-
-import {IBimaPSM} from "./interfaces/IBimaPSM.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract BimaPSM is IBimaPSM, BimaOwnable {
     using SafeERC20 for IERC20;

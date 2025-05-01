@@ -12,7 +12,11 @@ interface IBimaPSM {
     /// @param usbdAmount Amount of USBD tokens transferred
     /// @param timestamp Timestamp of calling the mint function
     event Mint(
-        address indexed from, address indexed to, uint256 underlyingAmount, uint256 usbdAmount, uint256 timestamp
+        address indexed from,
+        address indexed to,
+        uint256 underlyingAmount,
+        uint256 usbdAmount,
+        uint256 timestamp
     );
 
     /// @notice Emitted when a user redeems USBD tokens for underlying tokens
@@ -22,7 +26,11 @@ interface IBimaPSM {
     /// @param usbdAmount  Amount of USBD deposited for redeeming
     /// @param timestamp Timestamp of redeeming
     event Redeem(
-        address indexed from, address indexed to, uint256 underlyingAmount, uint256 usbdAmount, uint256 timestamp
+        address indexed from,
+        address indexed to,
+        uint256 underlyingAmount,
+        uint256 usbdAmount,
+        uint256 timestamp
     );
 
     /// @notice Emitted when there is not enough liquidity in the PSM
