@@ -19,3 +19,4 @@ MultiCollateralHintHelpers Deployed Address: 0x78ba76153D573424ca7DD6Ea9cB3009c6
 MultiTroveGetter Deployed Address: 0xB1399fc795a38f4563b944CA40AB71d743d4342d
 TroveManagerGetters Deployed Address: 0xBa7Ce3Da631aF6f8AbA1985713cfe399fECbdF67
 MOCKED StakedBTC Deployed Address: 0x756121da5326a9963ddAb75575c751B0CeB46362
+MockOracle Deployed Address: 0xf711d342630cB0649e4D07d458B8a3c4750bE32f
