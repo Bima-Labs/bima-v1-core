@@ -5,8 +5,6 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        console.log("\n________________________________\n");
-
         const owner = hre.midl.wallet.getEVMAddress();
         const signer = await hre.ethers.getSigner(owner);
         console.log("Owner address (MIDL wallet):", owner);
@@ -21,43 +19,7 @@ async function main(hre) {
         const priceFeedAddress = (await hre.midl.getDeployment("PriceFeed")).address;
         const bimaVaultAddress = (await hre.midl.getDeployment("BimaVault")).address;
         const oracleAddress = (await hre.midl.getDeployment("MockOracle")).address;
-        const bimaCoreAddress = (await hre.midl.getDeployment("BimaCore")).address;
-
-        const bimaCore = await hre.ethers.getContractAt("BimaCore", bimaCoreAddress, signer);
-        const priceFeed = await hre.ethers.getContractAt("PriceFeed", priceFeedAddress, signer);
         const factory = await hre.ethers.getContractAt("Factory", factoryAddress, signer);
-        const bimaVault = await hre.ethers.getContractAt("BimaVault", bimaVaultAddress, signer);
-
-        const bimaCoreOwner = await bimaCore.owner();
-        console.log("BimaCore Owner:", bimaCoreOwner);
-        if (bimaCoreOwner.toLowerCase() !== owner.toLowerCase()) {
-            throw new Error(
-                `Ownership mismatch: The MIDL wallet (${owner}) is not the owner of BimaCore. Current owner is ${bimaCoreOwner}. ` +
-                    `Please transfer ownership of BimaCore to ${owner} by calling transferOwnership(${owner}) on BimaCore ` +
-                    `from the current owner (${bimaCoreOwner}) using a wallet interface (e.g., Hardhat Console, MetaMask). ` +
-                    `Then re-run this script.`
-            );
-        } else {
-            console.log("Ownership verified: MIDL wallet is the owner of BimaCore.");
-        }
-
-        let priceFeedOwner;
-        try {
-            priceFeedOwner = await priceFeed.owner();
-            console.log("PriceFeed Owner (if applicable):", priceFeedOwner);
-            if (priceFeedOwner.toLowerCase() !== owner.toLowerCase()) {
-                throw new Error(
-                    `PriceFeed ownership mismatch: The MIDL wallet (${owner}) is not the owner of PriceFeed. Current owner is ${priceFeedOwner}. ` +
-                        `Please transfer ownership of PriceFeed to ${owner} by calling transferOwnership(${owner}) on PriceFeed ` +
-                        `from the current owner (${priceFeedOwner}) using a wallet interface (e.g., Hardhat Console, MetaMask). ` +
-                        `Then re-run this script.`
-                );
-            } else {
-                console.log("Ownership verified: MIDL wallet is the owner of PriceFeed (if applicable).");
-            }
-        } catch (error) {
-            console.log("Note: PriceFeed does not have an 'owner' function; may have a different access control.");
-        }
 
         console.log("\n________\n");
 
@@ -83,19 +45,23 @@ async function main(hre) {
         const initialTroveManagerCount = await factory.troveManagerCount();
         console.log("troveManagerCount before:", initialTroveManagerCount.toString());
 
-        // Step 1: Set Oracle on PriceFeed contract
+        // Step 1: Queue setOracle on PriceFeed contract using midl.callContract
         console.log("Setting Oracle on PriceFeed contract...");
-        const setOracleTx = await priceFeed
-            .connect(signer)
-            .setOracle(
+        await hre.midl.callContract("PriceFeed", "setOracle", {
+            address: priceFeedAddress,
+            args: [
                 collateralAddress,
                 oracleAddress,
                 ORACLE_HEARBEAT,
                 SHARE_PRICE_SIGNATURE,
                 SHARE_PRICE_DECIMALS,
-                IS_BASE_CURRENCY_ETH_INDEXED
-            );
-        await setOracleTx.wait();
+                IS_BASE_CURRENCY_ETH_INDEXED,
+            ],
+        });
+        console.log("setOracle call queued");
+
+        // Execute the queued transaction
+        await hre.midl.execute();
         console.log("Oracle is set on PriceFeed contract!");
 
         console.log("\n________________________________\n");
@@ -104,25 +70,31 @@ async function main(hre) {
         console.log("Waiting for 10 seconds before the next transaction...");
         await new Promise((res) => setTimeout(res, 10000));
 
-        // Step 3: Deploy new TroveManager via Factory contract
+        // Step 3: Queue deployNewInstance on Factory contract using midl.callContract
         console.log("Deploying new TroveManager via Factory contract...");
-        const deployTx = await factory.deployNewInstance(
-            collateralAddress,
-            priceFeedAddress,
-            CUSTOM_TROVE_MANAGER_IMPL_ADDRESS,
-            CUSTOM_SORTED_TROVES_IMPL_ADDRESS,
-            {
-                minuteDecayFactor: MINUTE_DECAY_FACTOR,
-                redemptionFeeFloor: REDEMPTION_FEE_FLOOR,
-                maxRedemptionFee: MAX_REDEMPTION_FEE,
-                borrowingFeeFloor: BORROWING_FEE_FLOOR,
-                maxBorrowingFee: MAX_BORROWING_FEE,
-                interestRateInBps: INTEREST_RATE_IN_BPS,
-                maxDebt: MAX_DEBT,
-                MCR: MCR,
-            }
-        );
-        await deployTx.wait();
+        await hre.midl.callContract("Factory", "deployNewInstance", {
+            address: factoryAddress,
+            args: [
+                collateralAddress,
+                priceFeedAddress,
+                CUSTOM_TROVE_MANAGER_IMPL_ADDRESS,
+                CUSTOM_SORTED_TROVES_IMPL_ADDRESS,
+                {
+                    minuteDecayFactor: MINUTE_DECAY_FACTOR,
+                    redemptionFeeFloor: REDEMPTION_FEE_FLOOR,
+                    maxRedemptionFee: MAX_REDEMPTION_FEE,
+                    borrowingFeeFloor: BORROWING_FEE_FLOOR,
+                    maxBorrowingFee: MAX_BORROWING_FEE,
+                    interestRateInBps: INTEREST_RATE_IN_BPS,
+                    maxDebt: MAX_DEBT,
+                    MCR: MCR,
+                },
+            ],
+        });
+        console.log("deployNewInstance call queued");
+
+        // Execute the queued transaction
+        await hre.midl.execute();
         console.log("New TroveManager is deployed from Factory contract!");
 
         // Step 4: Log updated troveManagerCount and fetch TroveManager address
@@ -133,10 +105,16 @@ async function main(hre) {
 
         console.log("\n________________________________\n");
 
-        // Step 5: Register TroveManager as receiver in BimaVault
+        // Step 5: Queue registerReceiver on BimaVault contract using midl.callContract
         console.log("Registering TroveManager as receiver in BimaVault...");
-        const registerTx = await bimaVault.registerReceiver(troveManagerAddress, REGISTERED_RECEIVER_COUNT);
-        await registerTx.wait();
+        await hre.midl.callContract("BimaVault", "registerReceiver", {
+            address: bimaVaultAddress,
+            args: [troveManagerAddress, REGISTERED_RECEIVER_COUNT],
+        });
+        console.log("registerReceiver call queued");
+
+        // Execute the queued transaction
+        await hre.midl.execute();
         console.log("Receiver has been registered!");
 
         console.log("\n________________________________\n");
