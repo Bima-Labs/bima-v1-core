@@ -52,7 +52,7 @@ contract PSMTestSetup is TestSetup {
         assertEq(address(psm.usbd()), address(debtToken));
         assertEq(address(psm.underlying()), address(underlying));
         assertEq(address(psm.owner()), bimaCore.owner());
-        assertEq(psm.DECIMAL_DIFF(), debtToken.decimals() - underlyingDecimals);
+        assertEq(psm.DECIMAL_DIFF(), 10 ** (debtToken.decimals() - underlyingDecimals));
         assertEq(psm.getUsbdLiquidity(), initialUsbdLiquidity);
         assertEq(psm.getUnderlyingLiquidity(), initialUnderlyingLiquidity);
     }

@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {DebtToken} from "./core/DebtToken.sol";
 
@@ -11,16 +12,18 @@ import {BimaOwnable} from "./dependencies/BimaOwnable.sol";
 import {IBimaPSM} from "./interfaces/IBimaPSM.sol";
 
 contract BimaPSM is IBimaPSM, BimaOwnable {
+    using SafeERC20 for IERC20;
+
     DebtToken public immutable usbd;
     IERC20 public immutable underlying;
 
-    uint8 public immutable DECIMAL_DIFF;
+    uint256 public immutable DECIMAL_DIFF;
 
     constructor(address _bimaCore, address _usbd, address _underlying) BimaOwnable(_bimaCore) {
         usbd = DebtToken(_usbd);
         underlying = IERC20(_underlying);
 
-        DECIMAL_DIFF = usbd.decimals() - IERC20Metadata(_underlying).decimals();
+        DECIMAL_DIFF = 10 ** (usbd.decimals() - IERC20Metadata(_underlying).decimals());
     }
 
     // ========== MINT/REDEEM FUNCTIONS ========== //
@@ -29,7 +32,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
     function mint(address _to, uint256 _underlyingAmount) external returns (uint256 usbdAmount) {
         uint256 balance = underlying.balanceOf(address(this));
 
-        underlying.transferFrom(msg.sender, address(this), _underlyingAmount);
+        underlying.safeTransferFrom(msg.sender, address(this), _underlyingAmount);
 
         uint256 transferredUnderlyingAmount = underlying.balanceOf(address(this)) - balance;
 
@@ -52,10 +55,11 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
 
         uint256 underlyingLiquidity = underlying.balanceOf(address(this));
 
-        if (underlyingLiquidity < _underlyingAmount)
+        if (underlyingLiquidity < _underlyingAmount) {
             revert NotEnoughLiquidity(address(underlying), underlyingLiquidity, _underlyingAmount);
+        }
 
-        underlying.transfer(_to, _underlyingAmount);
+        underlying.safeTransfer(_to, _underlyingAmount);
 
         emit Redeem(msg.sender, _to, _underlyingAmount, usbdAmount, block.timestamp);
     }
@@ -69,7 +73,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
 
     /// @inheritdoc IBimaPSM
     function usbdToUnderlying(uint256 _usbdAmount) external view returns (uint256 underlyingAmount) {
-        underlyingAmount = _usbdAmount / (10 ** DECIMAL_DIFF);
+        underlyingAmount = _usbdAmount / DECIMAL_DIFF;
     }
 
     /// @inheritdoc IBimaPSM
@@ -85,7 +89,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
     // ========== INTERNAL FUNCTIONS ========== //
 
     function _underlyingToUsbd(uint256 _underlyingAmount) internal view returns (uint256 usbdAmount) {
-        usbdAmount = _underlyingAmount * (10 ** DECIMAL_DIFF);
+        usbdAmount = _underlyingAmount * DECIMAL_DIFF;
     }
 
     // ========== OWNER FUNCTIONS ========== //
