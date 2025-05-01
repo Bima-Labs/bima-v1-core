@@ -14,13 +14,13 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
     DebtToken public immutable usbd;
     IERC20 public immutable underlying;
 
-    uint8 public immutable DECIMAL_FACTOR;
+    uint8 public immutable DECIMAL_DIFF;
 
     constructor(address _bimaCore, address _usbd, address _underlying) BimaOwnable(_bimaCore) {
         usbd = DebtToken(_usbd);
         underlying = IERC20(_underlying);
 
-        DECIMAL_FACTOR = IERC20Metadata(address(underlying)).decimals();
+        DECIMAL_DIFF = usbd.decimals() - IERC20Metadata(_underlying).decimals();
     }
 
     // ========== MINT/REDEEM FUNCTIONS ========== //
@@ -69,7 +69,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
 
     /// @inheritdoc IBimaPSM
     function usbdToUnderlying(uint256 _usbdAmount) external view returns (uint256 underlyingAmount) {
-        underlyingAmount = _usbdAmount / (10 ** (18 - DECIMAL_FACTOR));
+        underlyingAmount = _usbdAmount / (10 ** DECIMAL_DIFF);
     }
 
     /// @inheritdoc IBimaPSM
@@ -85,7 +85,7 @@ contract BimaPSM is IBimaPSM, BimaOwnable {
     // ========== INTERNAL FUNCTIONS ========== //
 
     function _underlyingToUsbd(uint256 _underlyingAmount) internal view returns (uint256 usbdAmount) {
-        usbdAmount = _underlyingAmount * (10 ** (18 - DECIMAL_FACTOR));
+        usbdAmount = _underlyingAmount * (10 ** DECIMAL_DIFF);
     }
 
     // ========== OWNER FUNCTIONS ========== //
