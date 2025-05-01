@@ -57,11 +57,12 @@ async function main(hre) {
                 SHARE_PRICE_DECIMALS,
                 IS_BASE_CURRENCY_ETH_INDEXED,
             ],
+            gas: BigInt(1000000),
         });
         console.log("setOracle call queued");
 
         // Execute the queued transaction
-        await hre.midl.execute();
+        await hre.midl.execute({ skipEstimateGasMulti: true });
         console.log("Oracle is set on PriceFeed contract!");
 
         console.log("\n________________________________\n");
@@ -90,11 +91,12 @@ async function main(hre) {
                     MCR: MCR,
                 },
             ],
+            gas: BigInt(1000000),
         });
         console.log("deployNewInstance call queued");
 
         // Execute the queued transaction
-        await hre.midl.execute();
+        await hre.midl.execute({ skipEstimateGasMulti: true });
         console.log("New TroveManager is deployed from Factory contract!");
 
         // Step 4: Log updated troveManagerCount and fetch TroveManager address
@@ -110,11 +112,12 @@ async function main(hre) {
         await hre.midl.callContract("BimaVault", "registerReceiver", {
             address: bimaVaultAddress,
             args: [troveManagerAddress, REGISTERED_RECEIVER_COUNT],
+            gas: BigInt(1000000),
         });
         console.log("registerReceiver call queued");
 
         // Execute the queued transaction
-        await hre.midl.execute();
+        await hre.midl.execute({ skipEstimateGasMulti: true });
         console.log("Receiver has been registered!");
 
         console.log("\n________________________________\n");
