@@ -19,6 +19,7 @@ const config: HardhatUserConfig = {
             arbitrumOne: process.env.ARBITRUM_MAINNET_API_KEY as string,
             polygon: process.env.POLYGON_MAINNET_API_KEY as string,
             hemi: "not_required",
+            plume: "not_required",
         },
         customChains: [
             {
@@ -37,8 +38,17 @@ const config: HardhatUserConfig = {
                     browserURL: "https://explorer.hemi.xyz",
                 },
             },
+            {
+                network: "plume",
+                chainId: 98866,
+                urls: {
+                    apiURL: "https://explorer.plume.org/api\?",
+                    browserURL: "https://explorer.plume.org",
+                },
+            },
         ],
     },
+
     networks: {
         // localhost: { url: "http://127.0.0.1:8545", accounts },
         mainnet: { url: process.env.ETH_MAINNET_RPC_URL, accounts },
@@ -46,6 +56,7 @@ const config: HardhatUserConfig = {
         arbitrum: { url: process.env.ARBITRUM_MAINNET_RPC_URL, accounts },
         polygon: { url: process.env.POLYGON_MAINNET_RPC_URL, accounts },
         hemi: { url: "https://rpc.hemi.network/rpc", accounts },
+        plume: { url: "https://rpc.plume.org", accounts },
     },
 
     solidity: { compilers: [{ version: "0.8.20", settings: { optimizer: { enabled: true, runs: 200 } } }] },
