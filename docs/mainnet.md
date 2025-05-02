@@ -4,6 +4,7 @@
 - [Core Mainnet](#Core-mainnet)
 - [Hemi Mainnet](#Hemi-mainnet)
 - [Plume Mainnet](#Plume-mainnet)
+- [Sonic Mainnet](#Sonic-mainnet)
 
 ## Ethereum Mainnet
 
@@ -100,25 +101,50 @@ Now, the addresses are clickable and will open their corresponding pages on the 
 
 ## Plume Mainnet
 
-| Contracts                     | Address                                                                                                               |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| BimaCore                      | [0x227E9323D692578Ca3dF92b87d06625Df22380Ab](https://etherscan.io/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
-| USBD (DebtToken)              | [0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c](https://etherscan.io/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
-| PriceFeed                     | [0x4B248F3646755F5b71A66BAe8C55C568809CbFf2](https://etherscan.io/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
-| BorrowerOperations            | [0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc](https://etherscan.io/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
-| LiquidationManager            | [0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA](https://etherscan.io/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
-| StabilityPool                 | [0x5F2283c7C8967c5Fb3a959E63ea89865B882d627](https://etherscan.io/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
-| Factory                       | [0xc5790164d3CCB6533b241EeE3Fd7f56862759376](https://etherscan.io/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
-| TroveManager (Implementation) | [0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938](https://etherscan.io/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
-| SortedTroves (Implementation) | [0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A](https://etherscan.io/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
-| Gas Pool                      | [0xcbf15324c5838AEfe6731077C55adC85bDaE8b89](https://etherscan.io/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
-| BimaWrappedCollateralFactory  | [0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf](https://etherscan.io/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
-| MultiCollateralHintHelpers    | [0x6a62989d451C4F359a30bFcEcE51Da8A313dD490](https://etherscan.io/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
-| MultiTroveGetter              | [0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b](https://etherscan.io/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
-| TroveManagerGetters           | [0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1](https://etherscan.io/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+| Contracts                     | Address                                                                                                                     |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| BimaCore                      | [0x227E9323D692578Ca3dF92b87d06625Df22380Ab](https://explorer.plume.org/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| USBD (DebtToken)              | [0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c](https://explorer.plume.org/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| PriceFeed                     | [0x4B248F3646755F5b71A66BAe8C55C568809CbFf2](https://explorer.plume.org/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| BorrowerOperations            | [0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc](https://explorer.plume.org/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| LiquidationManager            | [0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA](https://explorer.plume.org/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| StabilityPool                 | [0x5F2283c7C8967c5Fb3a959E63ea89865B882d627](https://explorer.plume.org/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| Factory                       | [0xc5790164d3CCB6533b241EeE3Fd7f56862759376](https://explorer.plume.org/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| TroveManager (Implementation) | [0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938](https://explorer.plume.org/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| SortedTroves (Implementation) | [0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A](https://explorer.plume.org/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Gas Pool                      | [0xcbf15324c5838AEfe6731077C55adC85bDaE8b89](https://explorer.plume.org/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| BimaWrappedCollateralFactory  | [0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf](https://explorer.plume.org/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| MultiCollateralHintHelpers    | [0x6a62989d451C4F359a30bFcEcE51Da8A313dD490](https://explorer.plume.org/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter              | [0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b](https://explorer.plume.org/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters           | [0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1](https://explorer.plume.org/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
 
 #### Collaterals
 
 | Name    | Address (wrapper address if applicable)                                                                                     | TroveManager                                                                                                                | Oracle                                                                                                                      |
 | ------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | enzoBTC | [0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1](https://explorer.plume.org/address/0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1) | [0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2](https://explorer.plume.org/address/0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2) | [0xDA44aa5C42C020147625cCe1f1878075D106f92a](https://explorer.plume.org/address/0xDA44aa5C42C020147625cCe1f1878075D106f92a) |
+
+## Sonic Mainnet
+
+| Contracts                     | Address                                                                                                                |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| BimaCore                      | [0x227E9323D692578Ca3dF92b87d06625Df22380Ab](https://sonicscan.org/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| USBD (DebtToken)              | [0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c](https://sonicscan.org/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| PriceFeed                     | [0x4B248F3646755F5b71A66BAe8C55C568809CbFf2](https://sonicscan.org/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| BorrowerOperations            | [0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc](https://sonicscan.org/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| LiquidationManager            | [0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA](https://sonicscan.org/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| StabilityPool                 | [0x5F2283c7C8967c5Fb3a959E63ea89865B882d627](https://sonicscan.org/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| Factory                       | [0xc5790164d3CCB6533b241EeE3Fd7f56862759376](https://sonicscan.org/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| TroveManager (Implementation) | [0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938](https://sonicscan.org/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| SortedTroves (Implementation) | [0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A](https://sonicscan.org/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Gas Pool                      | [0xcbf15324c5838AEfe6731077C55adC85bDaE8b89](https://sonicscan.org/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| BimaWrappedCollateralFactory  | [0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf](https://sonicscan.org/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| MultiCollateralHintHelpers    | [0x6a62989d451C4F359a30bFcEcE51Da8A313dD490](https://sonicscan.org/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter              | [0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b](https://sonicscan.org/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters           | [0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1](https://sonicscan.org/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+
+#### Collaterals
+
+| Name | Address (wrapper address if applicable)                                                                                | TroveManager                                                                                                           | Oracle                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| LBTC | [0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1](https://sonicscan.org/address/0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1) | [0xa20c3dc27c8c1a1adc92e3b443607914ed800ff2](https://sonicscan.org/address/0xa20c3dc27c8c1a1adc92e3b443607914ed800ff2) | [0x8Bcd59Cb7eEEea8e2Da3080C891609483dae53EF](https://sonicscan.org/address/0x8Bcd59Cb7eEEea8e2Da3080C891609483dae53EF) |

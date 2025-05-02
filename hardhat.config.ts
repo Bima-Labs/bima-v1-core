@@ -20,6 +20,7 @@ const config: HardhatUserConfig = {
             polygon: process.env.POLYGON_MAINNET_API_KEY as string,
             hemi: "not_required",
             plume: "not_required",
+            sonic: process.env.SONIC_MAINNET_API_KEY as string,
         },
         customChains: [
             {
@@ -46,6 +47,14 @@ const config: HardhatUserConfig = {
                     browserURL: "https://explorer.plume.org",
                 },
             },
+            {
+                network: "sonic",
+                chainId: 146,
+                urls: {
+                    apiURL: "https://api.sonicscan.org/api",
+                    browserURL: "https://sonicscan.org",
+                },
+            },
         ],
     },
 
@@ -57,6 +66,7 @@ const config: HardhatUserConfig = {
         polygon: { url: process.env.POLYGON_MAINNET_RPC_URL, accounts },
         hemi: { url: "https://rpc.hemi.network/rpc", accounts },
         plume: { url: "https://rpc.plume.org", accounts },
+        sonic: { url: "https://rpc.soniclabs.com", accounts },
     },
 
     solidity: { compilers: [{ version: "0.8.20", settings: { optimizer: { enabled: true, runs: 200 } } }] },
