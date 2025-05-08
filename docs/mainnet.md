@@ -80,8 +80,6 @@
 
 #### Collaterals
 
-Here's your updated table with clickable contract addresses linking to the Hemi mainnet Explorer at `https://explorer.hemi.xyz/`:
-
 | Name    | Address (wrapper address if applicable)                                                                                    | TroveManager                                                                                                               | Oracle                                                                                                                     |
 | ------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | iBTC    | [0x8154Aaf094c2f03Ad550B6890E1d4264B5DdaD9A](https://explorer.hemi.xyz/address/0x8154Aaf094c2f03Ad550B6890E1d4264B5DdaD9A) | [0x35052fFc80c2c681eAb675488394A40DCEb61823](https://explorer.hemi.xyz/address/0x35052fFc80c2c681eAb675488394A40DCEb61823) | [0xDA44aa5C42C020147625cCe1f1878075D106f92a](https://explorer.hemi.xyz/address/0xDA44aa5C42C020147625cCe1f1878075D106f92a) |
