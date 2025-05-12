@@ -22,6 +22,8 @@ async function deployCore() {
 
     const factories = await getFactories();
 
+    await deployContract(factories.BimaBurner, "BimaBurner");
+
     let deployerNonce = await ethers.provider.getTransactionCount(owner.address);
 
     // Disgusting hack to get the addresses of the contracts before deployment
@@ -267,6 +269,7 @@ const getFactories = async () => ({
     MultiCollateralHintHelpers: await ethers.getContractFactory("MultiCollateralHintHelpers"),
     MultiTroveGetter: await ethers.getContractFactory("MultiTroveGetter"),
     TroveManagerGetters: await ethers.getContractFactory("TroveManagerGetters"),
+    BimaBurner: await ethers.getContractFactory("BimaBurner"),
 });
 
 const deployContract = async (
