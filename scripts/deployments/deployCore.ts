@@ -235,6 +235,10 @@ async function deployCore() {
     await deployContract(factories.MultiTroveGetter, "MultiTroveGetter");
 
     await deployContract(factories.TroveManagerGetters, "TroveManagerGetters", factoryAddress);
+
+    // ========== DEPLOYING A BURNER CONTRACT ========== //
+
+    await deployContract(factories.BimaBurner, "BimaBurner");
 }
 
 deployCore()
@@ -267,6 +271,7 @@ const getFactories = async () => ({
     MultiCollateralHintHelpers: await ethers.getContractFactory("MultiCollateralHintHelpers"),
     MultiTroveGetter: await ethers.getContractFactory("MultiTroveGetter"),
     TroveManagerGetters: await ethers.getContractFactory("TroveManagerGetters"),
+    BimaBurner: await ethers.getContractFactory("BimaBurner"),
 });
 
 const deployContract = async (
