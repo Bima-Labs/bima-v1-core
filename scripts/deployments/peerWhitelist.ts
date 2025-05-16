@@ -1,25 +1,27 @@
 import { ethers } from "hardhat";
-import { Options } from "@layerzerolabs/lz-v2-utilities";
 
-const ARBITRUM_OFT_ADDRESS = "0x099DfC1131CaB9e04A88dB03F36ae057E3b1e878";
-const POLYGON_OFT_ADDRESS = "0x099DfC1131CaB9e04A88dB03F36ae057E3b1e878";
+const SOURCE_OFT_ADDRESS = "0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c";
 
 async function main() {
-    const [owner] = await ethers.getSigners();
+    const sourceOft = await ethers.getContractAt("DebtToken", SOURCE_OFT_ADDRESS);
 
-    const arbitrumOft = await ethers.getContractAt("OFT", ARBITRUM_OFT_ADDRESS);
-    const polygonOft = await ethers.getContractAt("OFT", POLYGON_OFT_ADDRESS);
+    console.log("Whitelisting..");
 
-    const arbitrumEid = 30110;
-    const polygonEid = 30109;
+    {
+        const tx = await sourceOft.setPeer(
+            30332,
+            ethers.zeroPadValue("0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c", 32)
+        );
+        await tx.wait();
+    }
 
-    // console.log("whitelisting..");
-
-    // const tx = await arbitrumOft.setPeer(polygonEid, ethers.zeroPadValue(POLYGON_OFT_ADDRESS, 32));
-    // await tx.wait();
-
-    // const tx = await polygonOft.setPeer(arbitrumEid, ethers.zeroPadValue(ARBITRUM_OFT_ADDRESS, 32));
-    // await tx.wait();
+    // {
+    //     const tx = await sourceOft.setPeer(
+    //         30329,
+    //         ethers.zeroPadValue("0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c", 32)
+    //     );
+    //     await tx.wait();
+    // }
 
     console.log("done");
 }
