@@ -9,7 +9,7 @@ async function main() {
 
     {
         const tx = await sourceOft.setPeer(
-            30332,
+            30370,
             ethers.zeroPadValue("0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c", 32)
         );
         await tx.wait();
@@ -17,7 +17,23 @@ async function main() {
 
     // {
     //     const tx = await sourceOft.setPeer(
+    //         30332,
+    //         ethers.zeroPadValue("0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c", 32)
+    //     );
+    //     await tx.wait();
+    // }
+
+    // {
+    //     const tx = await sourceOft.setPeer(
     //         30329,
+    //         ethers.zeroPadValue("0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c", 32)
+    //     );
+    //     await tx.wait();
+    // }
+
+    // {
+    //     const tx = await sourceOft.setPeer(
+    //         30153,
     //         ethers.zeroPadValue("0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c", 32)
     //     );
     //     await tx.wait();

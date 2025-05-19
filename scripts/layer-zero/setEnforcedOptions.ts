@@ -17,7 +17,7 @@ async function main() {
     {
         const tx = await sourceOft.setEnforcedOptions([
             {
-                eid: 30332,
+                eid: 30101,
                 msgType: 1,
                 options: Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex().toString(),
             },
@@ -29,6 +29,28 @@ async function main() {
     //     const tx = await sourceOft.setEnforcedOptions([
     //         {
     //             eid: 30329,
+    //             msgType: 1,
+    //             options: Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex().toString(),
+    //         },
+    //     ]);
+    //     await tx.wait();
+    // }
+
+    // {
+    //     const tx = await sourceOft.setEnforcedOptions([
+    //         {
+    //             eid: 30153,
+    //             msgType: 1,
+    //             options: Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex().toString(),
+    //         },
+    //     ]);
+    //     await tx.wait();
+    // }
+
+    // {
+    //     const tx = await sourceOft.setEnforcedOptions([
+    //         {
+    //             eid: 30332,
     //             msgType: 1,
     //             options: Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex().toString(),
     //         },

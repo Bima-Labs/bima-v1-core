@@ -2,17 +2,17 @@ import { ethers } from "hardhat";
 
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
-//! HEMI
+//! PLUME
 
-const LZ_ENDPOINT_ADDRESS = "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B";
+const LZ_ENDPOINT_ADDRESS = "0xC1b15d3B262bEeC0e3565C11C9e0F6134BdaCB36";
 const OFT_ADDRESS = "0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c";
-const SEND_LIB_ADDRESS = "0xC39161c743D0307EB9BCc9FEF03eeb9Dc4802de7";
-const SOURCE_ID = 30153; // Core
+const SEND_LIB_ADDRESS = "0xFe7C30860D01e28371D40434806F4A8fcDD3A098";
+const SOURCE_ID = 30101; // ETHEREUM
 const DVN_ADDRESSES = [
-    "0x282b3386571f7f794450d5789911a9804fa346b4", // LZ Labs
+    "0x4208d6e27538189bb48e603d6123a94b8abe0a0b", // LZ Labs
     "0xdd7b5e1db4aafd5c8ec3b764efb8ed265aa5445b", // Stargate
 ]; // Replace with actual addresses, must be in alphabetical order
-const EXECUTOR_ADDRESS = "0x4208D6E27538189bB48E603D6123A94b8Abe0A0b";
+const EXECUTOR_ADDRESS = "0x41Bdb4aa4A63a5b2Efc531858d3118392B1A1C3d";
 
 async function main() {
     const [owner] = await ethers.getSigners();
