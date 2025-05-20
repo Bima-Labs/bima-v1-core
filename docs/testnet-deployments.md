@@ -1,42 +1,43 @@
 # Testnet Smart Contract Addresses
 
 - [Testnet Smart Contract Addresses](#testnet-smart-contract-addresses)
-  - [Arbitrum Sepolia Testnet](#arbitrum-sepolia-testnet)
-  - [Bob Testnet](#bob-testnet)
-  - [Linea Testnet](#linea-testnet)
-  - [Base Sepolia Testnet](#base-sepolia-testnet)
-  - [Polygon Amoy Testnet](#polygon-amoy-testnet)
-  - [Holesky Testnet](#holesky-testnet)
-  - [Citrea Testnet](#citrea-testnet)
-  - [Lorenzo Testnet](#lorenzo-testnet)
-  - [Bitlayer Testnet](#bitlayer-testnet)
-  - [BEVM Testnet](#bevm-testnet)
-  - [Avalanche Fuji Testnet](#avalanche-fuji-testnet)
-  - [Movement Lab Testnet](#movement-lab-testnet)
-  - [Berachain Testnet](#berachain-testnet)
-  - [Blast Testnet](#blast-testnet)
-  - [Scroll Testnet](#scroll-testnet)
-  - [Core chain Testnet](#core-chain-testnet)
-  - [Fluent Testnet](#fluent-testnet)
-  - [Zetachain Testnet](#zetachain-testnet)
-  - [Filecoin Testnet](#filecoin-testnet)
-  - [Optimism Sepolia Testnet](#optimism-sepolia-testnet)
-  - [X Layer Testnet](#x-layer-testnet)
-  - [Okx Testnet](#okx-testnet)
-  - [Moonbase Alpha Testnet](#moonbase-alpha-testnet)
-  - [Bnb Testnet](#bnb-testnet)
-  - [Fantom Testnet](#fantom-testnet)
-  - [StratoVM Sepolia Testnet](#stratovm-sepolia-testnet)
-  - [Godwoken testnet](#godwoken-testnet)
-  - [Morph Holesky Testnet](#morph-holesky-testnet)
-  - [Aurora Testnet](#aurora-testnet)
-  - [Soneium Minato Testnet](#soneium-minato-testnet)
-  - [Rootstock Testnet](#rootstock-testnet)
-  - [Ethereum Sepolia Testnet](#ethereum-sepolia-testnet)
-  - [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
-  - [Merlin Testnet](#merlin-testnet)
-  - [Manta Pacific Sepolia Testnet](#manta-pacific-sepolia-testnet)
-  - [Plume Devnet](#plume-devnet)
+    - [Arbitrum Sepolia Testnet](#arbitrum-sepolia-testnet)
+    - [Bob Testnet](#bob-testnet)
+    - [Linea Testnet](#linea-testnet)
+    - [Base Sepolia Testnet](#base-sepolia-testnet)
+    - [Polygon Amoy Testnet](#polygon-amoy-testnet)
+    - [Holesky Testnet](#holesky-testnet)
+    - [Citrea Testnet](#citrea-testnet)
+    - [Lorenzo Testnet](#lorenzo-testnet)
+    - [Bitlayer Testnet](#bitlayer-testnet)
+    - [BEVM Testnet](#bevm-testnet)
+    - [Avalanche Fuji Testnet](#avalanche-fuji-testnet)
+    - [Movement Lab Testnet](#movement-lab-testnet)
+    - [Berachain Testnet](#berachain-testnet)
+    - [Blast Testnet](#blast-testnet)
+    - [Scroll Testnet](#scroll-testnet)
+    - [Core chain Testnet](#core-chain-testnet)
+    - [Fluent Testnet](#fluent-testnet)
+    - [Zetachain Testnet](#zetachain-testnet)
+    - [Filecoin Testnet](#filecoin-testnet)
+    - [Optimism Sepolia Testnet](#optimism-sepolia-testnet)
+    - [X Layer Testnet](#x-layer-testnet)
+    - [Okx Testnet](#okx-testnet)
+    - [Moonbase Alpha Testnet](#moonbase-alpha-testnet)
+    - [Bnb Testnet](#bnb-testnet)
+    - [Fantom Testnet](#fantom-testnet)
+    - [StratoVM Sepolia Testnet](#stratovm-sepolia-testnet)
+    - [Godwoken testnet](#godwoken-testnet)
+    - [Morph Holesky Testnet](#morph-holesky-testnet)
+    - [Aurora Testnet](#aurora-testnet)
+    - [Soneium Minato Testnet](#soneium-minato-testnet)
+    - [Rootstock Testnet](#rootstock-testnet)
+    - [Ethereum Sepolia Testnet](#ethereum-sepolia-testnet)
+    - [Polygon zkEVM Cardona Testnet](#polygon-zkevm-cardona-testnet)
+    - [Merlin Testnet](#merlin-testnet)
+    - [Manta Pacific Sepolia Testnet](#manta-pacific-sepolia-testnet)
+    - [Plume Devnet](#plume-devnet)
+    - [GOAT testnet](#goat-testnet)
 
 ## Arbitrum Sepolia Testnet
 
@@ -63,7 +64,6 @@
 | Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address (Chainlink)                 |
 | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
 | Bima Mock BTC   | 0xE20B0B5E240910Ca1461893542C6F226793aAD25 | 0xb28FEFe4680E3ee6b6A5eb4Bb3AfDf58C71aed76 | 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69 |
-
 
 ## Bob Testnet
 
@@ -966,3 +966,28 @@
 | Collateral Name | Collateral Address | TroveManager Address | Oracle Address |
 | --------------- | ------------------ | -------------------- | -------------- |
 | -               | -                  | -                    | -              |
+
+## Goat testnet
+
+| Core Contracts     | Address                                    |
+| ------------------ | ------------------------------------------ |
+| BimaCore           | 0xb50b156c2f9418DE5c38Ca9070Ef2c3FA5e1AFA2 |
+| PriceFeed          | 0xA385C1494F7540CF3e6e35C0FBcCab2Fa6696C9C |
+| FeeReceiver        | 0x39d2770AbcC456f6C6be820705eD966592E0ad96 |
+| InterimAdmin       | 0x39d2770AbcC456f6C6be820705eD966592E0ad96 |
+| Gas Pool           | 0xb3A2c6ca9093Aaf13f752735E0759e3cA17002E3 |
+| Factory            | 0x01A4B3221E078106F9eb60C5303E3BA162F6a92e |
+| LiquidationManager | 0x2B9eB679Aeb4Ede15D7ad14E78AD6eA0500a4d6b |
+| DebtToken          | 0xc0b21504aBf9a523a6E795d38Cac70e7fdcDAbB4 |
+| BorrowerOperations | 0xABE0A00EA09Ab76Bcd43f2105bFB7da6db1c8431 |
+| StabilityPool      | 0x3F3De2CFd9Dd9282c4a3e8c79dBFF40e7f0ff8A5 |
+| TroveManager       | 0xcc5ad941bcf9c839926dC89bF05107B115C37D9c |
+| SortedTroves       | 0x1503e25A71923A6d349a1a267ABC82587B11be6d |
+| TokenLocker        | 0xc38B60716E634080d95eB8a921D4CFd07CeD881E |
+| IncentiveVoting    | 0x931910D714e0Bee05e54d6449cfB81D08b047556 |
+| BimaToken          | 0x3FF194Ad53605dD6838F4b91760915340ab75441 |
+| BimaVault          | 0x691F17519E79866b5f1f6963D7Ed860900f8508a |
+
+| Collateral Name | Collateral Address                         | TroveManager Address                       | Oracle Address(Mock)                       |
+| --------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
+| bmBTC           | 0x4c75a60377c5b9684362D8ED56C7a6439a4966A0 | 0xBB2566080bB7c0e36d06DB4E7d007A79dc01693f | 0x07C4B0dB9c020296275dcEb6381397aC58bBf5C7 |
