@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import hre from "hardhat";
 
 const STORK_CONTRACT_ADDRESS = "0xacC0a0cF13571d30B4b8637996F5D6D774d4fd62"; // address for Stork contract
 const ENCODED_ASSET_ID = "0x7404e3d104ea7841c3d9e6fd20adfe99b4ad586bc08d8f3bd3afef894cf184de"; // id for BTCUSD
@@ -19,6 +20,15 @@ async function main() {
     console.log("roundId: ", String(latestRoundData.roundId));
     console.log("answer: ", String(latestRoundData.answer));
     console.log("updatedAt: ", String(latestRoundData.updatedAt));
+
+    // verify the contract
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
+    await hre.run("verify:verify", {
+    address: storkOracleWrapperAddress,
+    contract: "contracts/wrappers/StorkOracleWrapper.sol:StorkOracleWrapper",
+    constructorArguments: [STORK_CONTRACT_ADDRESS, ENCODED_ASSET_ID],
+  });
 }
 
 main()

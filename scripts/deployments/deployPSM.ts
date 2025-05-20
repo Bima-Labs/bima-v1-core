@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import hre from "hardhat";
 
 const BIMA_CORE = "0x227E9323D692578Ca3dF92b87d06625Df22380Ab";
 const USBD = "0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c";
@@ -13,7 +14,16 @@ async function main() {
 
     const address = await c.getAddress();
 
-    console.log("BimaBurner deployed!: ", address);
+    console.log("BimaPSM deployed!: ", address);
+
+    // verify the contract
+    await new Promise(resolve => setTimeout(resolve, 20000));
+    
+    await hre.run("verify:verify", {
+    address: address,
+    contract: "contracts/BimaPSM.sol:BimaPSM",
+    constructorArguments: [BIMA_CORE, USBD, UNDERLYING],
+  });
 }
 
 main()
