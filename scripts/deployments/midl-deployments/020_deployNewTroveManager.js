@@ -15,6 +15,7 @@ async function main(hre) {
         console.log("Signer:", signer.address);
 
         const collateralAddress = (await hre.midl.getDeployment("StakedBTC")).address;
+        console.log("Collateral Address:", collateralAddress);
         const factoryAddress = (await hre.midl.getDeployment("Factory")).address;
         const priceFeedAddress = (await hre.midl.getDeployment("PriceFeed")).address;
         const bimaVaultAddress = (await hre.midl.getDeployment("BimaVault")).address;
