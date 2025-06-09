@@ -6,13 +6,13 @@ async function main(hre) {
         await hre.midl.initialize();
 
         const borrowerOperationsAddress = "0x20bdde9470B52729E910EFa9f2f7c2B6a5682a53";
-        const bmBTCAddress = "0x99c2231DdaF2e65Ef49fCef333DbD05782eCd8Aa";
-        const troveManagerAddress = "0x8916c27c451420E352CcaDF12DB0CA06aC08a31c";
+        const bmBTCAddress = "0x4CDCa957FEc660d888478171045137619Eb1AF7F";
+        const troveManagerAddress = "0x431F44a506ACbaf28864f849CeeC22214BA84E43";
         const borrowerAddress = "0xF5EEeCDd8b7790A6CA1021e019f96DBD9470F2f9";
 
         const amountInWei = BigInt(Math.floor(2 * 1e18));
         const percentage = 200; // Collateral ratio (200%)
-        const lstPrice = 60000; // Price ($60,000, matches 1 bmBTC = 60,000 USBD)
+        const lstPrice = 95000; // Price ($60,000, matches 1 bmBTC = 60,000 USBD)
         const normalizedPrice = Number(lstPrice);
         const percentageAmount =
             BigInt(Number(amountInWei) * normalizedPrice * 100) / BigInt(percentage) - BigInt(Math.floor(200 * 1e18)); // Adjust for gas compensation (200 USBD)
