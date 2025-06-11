@@ -8,7 +8,7 @@ async function main(hre) {
         const borrowerOperationsAddress = "0x20bdde9470B52729E910EFa9f2f7c2B6a5682a53";
         const bmBTCAddress = "0x4CDCa957FEc660d888478171045137619Eb1AF7F";
         const troveManagerAddress = "0x431F44a506ACbaf28864f849CeeC22214BA84E43";
-        const borrowerAddress = "0xF5EEeCDd8b7790A6CA1021e019f96DBD9470F2f9";
+        const borrowerAddress = "0x5c747e3505aCD3fD66325e7214516401e066EFEB";
 
         const amountInWei = BigInt(Math.floor(2 * 1e18));
         const percentage = 200; // Collateral ratio (200%)

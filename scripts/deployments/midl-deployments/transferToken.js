@@ -5,7 +5,7 @@ async function main(hre) {
     try {
         await hre.midl.initialize();
 
-        const receiver = "0x5E5b88DEfa1A412C69644CB47E68107d97807E35";
+        const receiver = "0x5c747e3505aCD3fD66325e7214516401e066EFEB";
         const amount = hre.ethers.parseEther("200");
 
         console.log("Queuing transfer deposit...");

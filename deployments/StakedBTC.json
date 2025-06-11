@@ -1,6 +1,6 @@
 {
     "txId": "0xa7a99ef1ebe5aa9ab998367ed3810522e172a907142f194ab077d720496e16f8",
-    "address": "0x99c2231DdaF2e65Ef49fCef333DbD05782eCd8Aa",
+    "address": "0x4CDCa957FEc660d888478171045137619Eb1AF7F",
     "abi": [
         { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
         { "inputs": [], "name": "InvalidShortString", "type": "error" },
