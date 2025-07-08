@@ -1,8 +1,14 @@
 # Mainnet Addresses
 
-- [Ethereum Mainnet](#Ethereum-mainnet)
-- [Core Mainnet](#Core-mainnet)
-- [Hemi Mainnet](#Hemi-mainnet)
+-   [Ethereum Mainnet](#Ethereum-mainnet)
+-   [Core Mainnet](#Core-mainnet)
+-   [Hemi Mainnet](#Hemi-mainnet)
+-   [Plume Mainnet](#Plume-mainnet)
+-   [Sonic Mainnet](#Sonic-mainnet)
+-   [GOAT Mainnet](#GOAT-mainnet)
+-   [Botanix Mainnet](#Botanix-mainnet)
+-   [BSC Mainnet](#BSC-mainnet)
+-   [Nibiru Mainnet](#Nibiru-mainnet)
 
 ## Ethereum Mainnet
 
@@ -85,7 +91,159 @@ Here's your updated table with clickable contract addresses linking to the Hemi 
 | ---- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | iBTC | [0x8154Aaf094c2f03Ad550B6890E1d4264B5DdaD9A](https://explorer.hemi.xyz/address/0x8154Aaf094c2f03Ad550B6890E1d4264B5DdaD9A) | [0x35052fFc80c2c681eAb675488394A40DCEb61823](https://explorer.hemi.xyz/address/0x35052fFc80c2c681eAb675488394A40DCEb61823) | [0xDA44aa5C42C020147625cCe1f1878075D106f92a](https://explorer.hemi.xyz/address/0xDA44aa5C42C020147625cCe1f1878075D106f92a) |
 
-Now, the addresses are clickable and will open their corresponding pages on the Hemi mainnet Explorer.
+### Plume Mainnet
+
+| Contracts                    | Address                                                                                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| BimaWrappedCollateralFactory | [0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| BimaCore                     | [0x227E9323D692578Ca3dF92b87d06625Df22380Ab](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| PriceFeed                    | [0x4B248F3646755F5b71A66BAe8C55C568809CbFf2](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| Gas Pool                     | [0xcbf15324c5838AEfe6731077C55adC85bDaE8b89](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| SortedTroves                 | [0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Factory                      | [0xc5790164d3CCB6533b241EeE3Fd7f56862759376](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| LiquidationManager           | [0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| DebtToken                    | [0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| BorrowerOperations           | [0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| StabilityPool                | [0x5F2283c7C8967c5Fb3a959E63ea89865B882d627](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| TroveManager                 | [0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| TokenLocker                  | [0x09A028587705B49Fa162671d2507567cFEf75bf7](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x09A028587705B49Fa162671d2507567cFEf75bf7) |
+| IncentiveVoting              | [0x5587416EF31Da806948e6975c377844F5EDdb7A8](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x5587416EF31Da806948e6975c377844F5EDdb7A8) |
+| BimaToken                    | [0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15) |
+| BimaVault                    | [0xc4bBfB26A2285B3d5e7406F383a676E78B126799](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0xc4bBfB26A2285B3d5e7406F383a676E78B126799) |
+| MultiCollateralHintHelpers   | [0x6a62989d451C4F359a30bFcEcE51Da8A313dD490](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter             | [0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters          | [0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1](https://explorer-plume-mainnet-1.t.conduit.xyz/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+
+---
+
+### Sonic Mainnet
+
+| Contracts                    | Address                                                                                                                  |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| BimaWrappedCollateralFactory | [`0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf`](https://sonicscan.org/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| BimaCore                     | [`0x227E9323D692578Ca3dF92b87d06625Df22380Ab`](https://sonicscan.org/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| PriceFeed                    | [`0x4B248F3646755F5b71A66BAe8C55C568809CbFf2`](https://sonicscan.org/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| GasPool                      | [`0xcbf15324c5838AEfe6731077C55adC85bDaE8b89`](https://sonicscan.org/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| SortedTroves                 | [`0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A`](https://sonicscan.org/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Factory                      | [`0xc5790164d3CCB6533b241EeE3Fd7f56862759376`](https://sonicscan.org/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| LiquidationManager           | [`0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA`](https://sonicscan.org/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| DebtToken                    | [`0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c`](https://sonicscan.org/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| BorrowerOperations           | [`0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc`](https://sonicscan.org/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| StabilityPool                | [`0x5F2283c7C8967c5Fb3a959E63ea89865B882d627`](https://sonicscan.org/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| TroveManager                 | [`0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938`](https://sonicscan.org/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| TokenLocker                  | [`0x09A028587705B49Fa162671d2507567cFEf75bf7`](https://sonicscan.org/address/0x09A028587705B49Fa162671d2507567cFEf75bf7) |
+| IncentiveVoting              | [`0x5587416EF31Da806948e6975c377844F5EDdb7A8`](https://sonicscan.org/address/0x5587416EF31Da806948e6975c377844F5EDdb7A8) |
+| BimaToken                    | [`0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15`](https://sonicscan.org/address/0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15) |
+| BimaVault                    | [`0xc4bBfB26A2285B3d5e7406F383a676E78B126799`](https://sonicscan.org/address/0xc4bBfB26A2285B3d5e7406F383a676E78B126799) |
+| MultiCollateralHintHelpers   | [`0x6a62989d451C4F359a30bFcEcE51Da8A313dD490`](https://sonicscan.org/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter             | [`0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b`](https://sonicscan.org/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters          | [`0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1`](https://sonicscan.org/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+
+---
+
+### GOAT Mainnet
+
+| Contracts                    | Address                                                                                                                          |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| BimaWrappedCollateralFactory | [`0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf`](https://explorer.goat.network/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| BimaCore                     | [`0x227E9323D692578Ca3dF92b87d06625Df22380Ab`](https://explorer.goat.network/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| PriceFeed                    | [`0x4B248F3646755F5b71A66BAe8C55C568809CbFf2`](https://explorer.goat.network/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| GasPool                      | [`0xcbf15324c5838AEfe6731077C55adC85bDaE8b89`](https://explorer.goat.network/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| SortedTroves                 | [`0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A`](https://explorer.goat.network/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Factory                      | [`0xc5790164d3CCB6533b241EeE3Fd7f56862759376`](https://explorer.goat.network/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| LiquidationManager           | [`0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA`](https://explorer.goat.network/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| DebtToken                    | [`0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c`](https://explorer.goat.network/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| BorrowerOperations           | [`0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc`](https://explorer.goat.network/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| StabilityPool                | [`0x5F2283c7C8967c5Fb3a959E63ea89865B882d627`](https://explorer.goat.network/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| TroveManager                 | [`0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938`](https://explorer.goat.network/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| TokenLocker                  | [`0x09A028587705B49Fa162671d2507567cFEf75bf7`](https://explorer.goat.network/address/0x09A028587705B49Fa162671d2507567cFEf75bf7) |
+| IncentiveVoting              | [`0x5587416EF31Da806948e6975c377844F5EDdb7A8`](https://explorer.goat.network/address/0x5587416EF31Da806948e6975c377844F5EDdb7A8) |
+| BimaToken                    | [`0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15`](https://explorer.goat.network/address/0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15) |
+| BimaVault                    | [`0xc4bBfB26A2285B3d5e7406F383a676E78B126799`](https://explorer.goat.network/address/0xc4bBfB26A2285B3d5e7406F383a676E78B126799) |
+| MultiCollateralHintHelpers   | [`0x6a62989d451C4F359a30bFcEcE51Da8A313dD490`](https://explorer.goat.network/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter             | [`0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b`](https://explorer.goat.network/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters          | [`0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1`](https://explorer.goat.network/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+| BimaBurner                   | [`0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09`](https://explorer.goat.network/address/0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09) |
+
+---
+
+### Botanix Mainnet
+
+| Contracts                    | Address                                                                                                                   |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| BimaWrappedCollateralFactory | [`0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf`](https://botanixscan.io/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| BimaCore                     | [`0x227E9323D692578Ca3dF92b87d06625Df22380Ab`](https://botanixscan.io/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| PriceFeed                    | [`0x4B248F3646755F5b71A66BAe8C55C568809CbFf2`](https://botanixscan.io/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| GasPool                      | [`0xcbf15324c5838AEfe6731077C55adC85bDaE8b89`](https://botanixscan.io/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| SortedTroves                 | [`0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A`](https://botanixscan.io/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Factory                      | [`0xc5790164d3CCB6533b241EeE3Fd7f56862759376`](https://botanixscan.io/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| LiquidationManager           | [`0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA`](https://botanixscan.io/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| DebtToken                    | [`0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c`](https://botanixscan.io/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| BorrowerOperations           | [`0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc`](https://botanixscan.io/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| StabilityPool                | [`0x5F2283c7C8967c5Fb3a959E63ea89865B882d627`](https://botanixscan.io/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| TroveManager                 | [`0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938`](https://botanixscan.io/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| TokenLocker                  | [`0x09A028587705B49Fa162671d2507567cFEf75bf7`](https://botanixscan.io/address/0x09A028587705B49Fa162671d2507567cFEf75bf7) |
+| IncentiveVoting              | [`0x5587416EF31Da806948e6975c377844F5EDdb7A8`](https://botanixscan.io/address/0x5587416EF31Da806948e6975c377844F5EDdb7A8) |
+| BimaToken                    | [`0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15`](https://botanixscan.io/address/0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15) |
+| BimaVault                    | [`0xc4bBfB26A2285B3d5e7406F383a676E78B126799`](https://botanixscan.io/address/0xc4bBfB26A2285B3d5e7406F383a676E78B126799) |
+| MultiCollateralHintHelpers   | [`0x6a62989d451C4F359a30bFcEcE51Da8A313dD490`](https://botanixscan.io/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter             | [`0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b`](https://botanixscan.io/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters          | [`0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1`](https://botanixscan.io/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+| BimaBurner                   | [`0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09`](https://botanixscan.io/address/0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09) |
+
+---
+
+### BSC Mainnet
+
+| Contracts                    | Address                                                                                                                |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| BimaWrappedCollateralFactory | [`0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf`](https://bscscan.com/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| BimaCore                     | [`0x227E9323D692578Ca3dF92b87d06625Df22380Ab`](https://bscscan.com/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| PriceFeed                    | [`0x4B248F3646755F5b71A66BAe8C55C568809CbFf2`](https://bscscan.com/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| GasPool                      | [`0xcbf15324c5838AEfe6731077C55adC85bDaE8b89`](https://bscscan.com/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| SortedTroves                 | [`0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A`](https://bscscan.com/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Factory                      | [`0xc5790164d3CCB6533b241EeE3Fd7f56862759376`](https://bscscan.com/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| LiquidationManager           | [`0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA`](https://bscscan.com/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| DebtToken                    | [`0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c`](https://bscscan.com/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| BorrowerOperations           | [`0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc`](https://bscscan.com/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| StabilityPool                | [`0x5F2283c7C8967c5Fb3a959E63ea89865B882d627`](https://bscscan.com/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| TroveManager                 | [`0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938`](https://bscscan.com/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| TokenLocker                  | [`0x09A028587705B49Fa162671d2507567cFEf75bf7`](https://bscscan.com/address/0x09A028587705B49Fa162671d2507567cFEf75bf7) |
+| IncentiveVoting              | [`0x5587416EF31Da806948e6975c377844F5EDdb7A8`](https://bscscan.com/address/0x5587416EF31Da806948e6975c377844F5EDdb7A8) |
+| BimaToken                    | [`0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15`](https://bscscan.com/address/0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15) |
+| BimaVault                    | [`0xc4bBfB26A2285B3d5e7406F383a676E78B126799`](https://bscscan.com/address/0xc4bBfB26A2285B3d5e7406F383a676E78B126799) |
+| MultiCollateralHintHelpers   | [`0x6a62989d451C4F359a30bFcEcE51Da8A313dD490`](https://bscscan.com/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter             | [`0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b`](https://bscscan.com/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters          | [`0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1`](https://bscscan.com/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+| BimaBurner                   | [`0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09`](https://bscscan.com/address/0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09) |
+
+---
+
+### Nibiru Mainnet
+
+| Contracts                    | Address                                                                                                                      |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| BimaWrappedCollateralFactory | [`0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf`](https://www.nibiruscan.io/address/0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf) |
+| BimaCore                     | [`0x227E9323D692578Ca3dF92b87d06625Df22380Ab`](https://www.nibiruscan.io/address/0x227E9323D692578Ca3dF92b87d06625Df22380Ab) |
+| PriceFeed                    | [`0x4B248F3646755F5b71A66BAe8C55C568809CbFf2`](https://www.nibiruscan.io/address/0x4B248F3646755F5b71A66BAe8C55C568809CbFf2) |
+| GasPool                      | [`0xcbf15324c5838AEfe6731077C55adC85bDaE8b89`](https://www.nibiruscan.io/address/0xcbf15324c5838AEfe6731077C55adC85bDaE8b89) |
+| SortedTroves                 | [`0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A`](https://www.nibiruscan.io/address/0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A) |
+| Factory                      | [`0xc5790164d3CCB6533b241EeE3Fd7f56862759376`](https://www.nibiruscan.io/address/0xc5790164d3CCB6533b241EeE3Fd7f56862759376) |
+| LiquidationManager           | [`0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA`](https://www.nibiruscan.io/address/0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA) |
+| DebtToken                    | [`0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c`](https://www.nibiruscan.io/address/0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c) |
+| BorrowerOperations           | [`0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc`](https://www.nibiruscan.io/address/0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc) |
+| StabilityPool                | [`0x5F2283c7C8967c5Fb3a959E63ea89865B882d627`](https://www.nibiruscan.io/address/0x5F2283c7C8967c5Fb3a959E63ea89865B882d627) |
+| TroveManager                 | [`0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938`](https://www.nibiruscan.io/address/0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938) |
+| TokenLocker                  | [`0x09A028587705B49Fa162671d2507567cFEf75bf7`](https://www.nibiruscan.io/address/0x09A028587705B49Fa162671d2507567cFEf75bf7) |
+| IncentiveVoting              | [`0x5587416EF31Da806948e6975c377844F5EDdb7A8`](https://www.nibiruscan.io/address/0x5587416EF31Da806948e6975c377844F5EDdb7A8) |
+| BimaToken                    | [`0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15`](https://www.nibiruscan.io/address/0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15) |
+| BimaVault                    | [`0xc4bBfB26A2285B3d5e7406F383a676E78B126799`](https://www.nibiruscan.io/address/0xc4bBfB26A2285B3d5e7406F383a676E78B126799) |
+| MultiCollateralHintHelpers   | [`0x6a62989d451C4F359a30bFcEcE51Da8A313dD490`](https://www.nibiruscan.io/address/0x6a62989d451C4F359a30bFcEcE51Da8A313dD490) |
+| MultiTroveGetter             | [`0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b`](https://www.nibiruscan.io/address/0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b) |
+| TroveManagerGetters          | [`0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1`](https://www.nibiruscan.io/address/0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1) |
+| BimaBurner                   | [`0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09`](https://www.nibiruscan.io/address/0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09) |
+
+---
 
 ## Raw Address Logs
 
@@ -153,3 +311,133 @@ BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
 MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
 MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
 TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+
+PLUME:
+
+BimaWrappedCollateralFactory deployed!: 0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf
+BimaCore deployed!: 0x227E9323D692578Ca3dF92b87d06625Df22380Ab
+PriceFeed deployed!: 0x4B248F3646755F5b71A66BAe8C55C568809CbFf2
+GasPool deployed!: 0xcbf15324c5838AEfe6731077C55adC85bDaE8b89
+SortedTroves deployed!: 0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A
+Factory deployed!: 0xc5790164d3CCB6533b241EeE3Fd7f56862759376
+LiquidationManager deployed!: 0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA
+DebtToken deployed!: 0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c
+BorrowerOperations deployed!: 0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc
+StabilityPool deployed!: 0x5F2283c7C8967c5Fb3a959E63ea89865B882d627
+TroveManager deployed!: 0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938
+TokenLocker deployed!: 0x09A028587705B49Fa162671d2507567cFEf75bf7
+IncentiveVoting deployed!: 0x5587416EF31Da806948e6975c377844F5EDdb7A8
+BimaToken deployed!: 0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15
+BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
+MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
+MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
+TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+
+SONIC:
+
+BimaWrappedCollateralFactory deployed!: 0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf
+BimaCore deployed!: 0x227E9323D692578Ca3dF92b87d06625Df22380Ab
+PriceFeed deployed!: 0x4B248F3646755F5b71A66BAe8C55C568809CbFf2
+GasPool deployed!: 0xcbf15324c5838AEfe6731077C55adC85bDaE8b89
+SortedTroves deployed!: 0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A
+Factory deployed!: 0xc5790164d3CCB6533b241EeE3Fd7f56862759376
+LiquidationManager deployed!: 0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA
+DebtToken deployed!: 0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c
+BorrowerOperations deployed!: 0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc
+StabilityPool deployed!: 0x5F2283c7C8967c5Fb3a959E63ea89865B882d627
+TroveManager deployed!: 0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938
+TokenLocker deployed!: 0x09A028587705B49Fa162671d2507567cFEf75bf7
+IncentiveVoting deployed!: 0x5587416EF31Da806948e6975c377844F5EDdb7A8
+BimaToken deployed!: 0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15
+BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
+MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
+MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
+TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+
+GOAT:
+
+BimaWrappedCollateralFactory deployed!: 0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf
+BimaCore deployed!: 0x227E9323D692578Ca3dF92b87d06625Df22380Ab
+PriceFeed deployed!: 0x4B248F3646755F5b71A66BAe8C55C568809CbFf2
+GasPool deployed!: 0xcbf15324c5838AEfe6731077C55adC85bDaE8b89
+SortedTroves deployed!: 0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A
+Factory deployed!: 0xc5790164d3CCB6533b241EeE3Fd7f56862759376
+LiquidationManager deployed!: 0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA
+DebtToken deployed!: 0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c
+BorrowerOperations deployed!: 0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc
+StabilityPool deployed!: 0x5F2283c7C8967c5Fb3a959E63ea89865B882d627
+TroveManager deployed!: 0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938
+TokenLocker deployed!: 0x09A028587705B49Fa162671d2507567cFEf75bf7
+IncentiveVoting deployed!: 0x5587416EF31Da806948e6975c377844F5EDdb7A8
+BimaToken deployed!: 0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15
+BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
+MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
+MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
+TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+BimaBurner deployed!: 0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09
+
+Botanix:
+
+BimaWrappedCollateralFactory deployed!: 0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf
+BimaCore deployed!: 0x227E9323D692578Ca3dF92b87d06625Df22380Ab
+PriceFeed deployed!: 0x4B248F3646755F5b71A66BAe8C55C568809CbFf2
+GasPool deployed!: 0xcbf15324c5838AEfe6731077C55adC85bDaE8b89
+SortedTroves deployed!: 0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A
+Factory deployed!: 0xc5790164d3CCB6533b241EeE3Fd7f56862759376
+LiquidationManager deployed!: 0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA
+DebtToken deployed!: 0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c
+BorrowerOperations deployed!: 0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc
+StabilityPool deployed!: 0x5F2283c7C8967c5Fb3a959E63ea89865B882d627
+TroveManager deployed!: 0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938
+TokenLocker deployed!: 0x09A028587705B49Fa162671d2507567cFEf75bf7
+IncentiveVoting deployed!: 0x5587416EF31Da806948e6975c377844F5EDdb7A8
+BimaToken deployed!: 0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15
+BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
+MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
+MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
+TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+BimaBurner deployed!: 0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09
+
+Bsc:
+
+BimaWrappedCollateralFactory deployed!: 0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf
+BimaCore deployed!: 0x227E9323D692578Ca3dF92b87d06625Df22380Ab
+PriceFeed deployed!: 0x4B248F3646755F5b71A66BAe8C55C568809CbFf2
+GasPool deployed!: 0xcbf15324c5838AEfe6731077C55adC85bDaE8b89
+SortedTroves deployed!: 0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A
+Factory deployed!: 0xc5790164d3CCB6533b241EeE3Fd7f56862759376
+LiquidationManager deployed!: 0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA
+DebtToken deployed!: 0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c
+BorrowerOperations deployed!: 0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc
+StabilityPool deployed!: 0x5F2283c7C8967c5Fb3a959E63ea89865B882d627
+TroveManager deployed!: 0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938
+TokenLocker deployed!: 0x09A028587705B49Fa162671d2507567cFEf75bf7
+IncentiveVoting deployed!: 0x5587416EF31Da806948e6975c377844F5EDdb7A8
+BimaToken deployed!: 0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15
+BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
+MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
+MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
+TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+BimaBurner deployed!: 0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09
+
+Nibiru:
+
+BimaWrappedCollateralFactory deployed!: 0x76De9B5Df6dCAA70f88E4E0949E17367c4129Dbf
+BimaCore deployed!: 0x227E9323D692578Ca3dF92b87d06625Df22380Ab
+PriceFeed deployed!: 0x4B248F3646755F5b71A66BAe8C55C568809CbFf2
+GasPool deployed!: 0xcbf15324c5838AEfe6731077C55adC85bDaE8b89
+SortedTroves deployed!: 0x870A108234DEe42A9Fa01c36368E5e4ea3C56b4A
+Factory deployed!: 0xc5790164d3CCB6533b241EeE3Fd7f56862759376
+LiquidationManager deployed!: 0x2D3b9e988470d14a81B9965e4E5229AaE06b73BA
+DebtToken deployed!: 0x6bedE1c6009a78c222D9BDb7974bb67847fdB68c
+BorrowerOperations deployed!: 0x87FED36c032EE7289a1d2f3C48798e4C7fCDfAEc
+StabilityPool deployed!: 0x5F2283c7C8967c5Fb3a959E63ea89865B882d627
+TroveManager deployed!: 0x8Ed4f24F71fFbfBA5109be1eD13c83b7cC657938
+TokenLocker deployed!: 0x09A028587705B49Fa162671d2507567cFEf75bf7
+IncentiveVoting deployed!: 0x5587416EF31Da806948e6975c377844F5EDdb7A8
+BimaToken deployed!: 0x49CE2eaBdEAf65864a9d6542b2de9D384dfaeF15
+BimaVault deployed!: 0xc4bBfB26A2285B3d5e7406F383a676E78B126799
+MultiCollateralHintHelpers deployed!: 0x6a62989d451C4F359a30bFcEcE51Da8A313dD490
+MultiTroveGetter deployed!: 0x42186eefc0e6D7E3CFB82F3845671ef1600dCF6b
+TroveManagerGetters deployed!: 0x6E26dE999Ff1a1C39F44ba642E3B2F0e0CD7b1b1
+BimaBurner deployed!: 0x93EE18e6d372A2C9Bf8c876932E39C4126F80f09
