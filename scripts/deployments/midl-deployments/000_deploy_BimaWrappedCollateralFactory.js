@@ -4,14 +4,16 @@
 async function main(hre) {
     try {
         await hre.midl.initialize();
-
+        const config = await hre.midl.getConfig();
+        console.log("config", config);
         const owner = hre.midl.getEVMAddress(); // 0xF5EEeCDd8b7790A6CA1021e019f96DBD9470F2f9
-        console.log("Owner address:", owner);
+        console.log("owner", owner);
+        // console.log("Owner address:", owner);
 
-        // const provider = new hre.ethers.JsonRpcProvider("https://evm-rpc.regtest.midl.xyz");
-        const provider = new hre.ethers.JsonRpcProvider("https://rpc.regtest.midl.xyz");
-        const deployerNonce = await provider.getTransactionCount(owner);
-        console.log("Deployer nonce:", deployerNonce);
+        // // const provider = new hre.ethers.JsonRpcProvider("https://evm-rpc.regtest.midl.xyz");
+        // const provider = new hre.ethers.JsonRpcProvider("https://rpc.regtest.midl.xyz");
+        // const deployerNonce = await provider.getTransactionCount(owner);
+        // console.log("Deployer nonce:", deployerNonce);
 
         // Predict BimaCore address (to be deployed in the next script)
         // const bimaCoreAddress = hre.ethers.getCreateAddress({
@@ -37,20 +39,4 @@ async function main(hre) {
     }
 }
 
-// Export the function for Hardhat to use
-module.exports = main;
-
-// Execute the script if run directly
-if (require.main === module) {
-    const hre = require("hardhat");
-    main(hre)
-        .then(() => {
-            console.log("Script completed successfully.");
-        })
-        .catch((error) => {
-            console.error("Error executing deployment script:", error);
-        })
-        .finally(() => {
-            process.exit(0);
-        });
-}
+main(hre);
