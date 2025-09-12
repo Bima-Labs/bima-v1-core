@@ -1,14 +1,14 @@
 # Mainnet Addresses
 
--   [Ethereum Mainnet](#Ethereum-mainnet)
--   [Core Mainnet](#Core-mainnet)
--   [Hemi Mainnet](#Hemi-mainnet)
--   [Plume Mainnet](#Plume-mainnet)
--   [Sonic Mainnet](#Sonic-mainnet)
--   [GOAT Mainnet](#GOAT-mainnet)
--   [Botanix Mainnet](#Botanix-mainnet)
--   [BSC Mainnet](#BSC-mainnet)
--   [Nibiru Mainnet](#Nibiru-mainnet)
+- [Ethereum Mainnet](#Ethereum-mainnet)
+- [Core Mainnet](#Core-mainnet)
+- [Hemi Mainnet](#Hemi-mainnet)
+- [Plume Mainnet](#Plume-mainnet)
+- [Sonic Mainnet](#Sonic-mainnet)
+- [GOAT Mainnet](#GOAT-mainnet)
+- [Botanix Mainnet](#Botanix-mainnet)
+- [BSC Mainnet](#BSC-mainnet)
+- [Nibiru Mainnet](#Nibiru-mainnet)
 
 ## Ethereum Mainnet
 
@@ -31,9 +31,10 @@
 
 #### Collaterals
 
-| Name | Address (wrapper address if applicable)                                                                               | TroveManager                                                                                                          | Oracle                                                                                                                |
-| ---- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| WBTC | [0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1](https://etherscan.io/address/0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1) | [0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2](https://etherscan.io/address/0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2) | [0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c](https://etherscan.io/address/0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c) |
+| Name   | Address (wrapper address if applicable)                                                                               | TroveManager                                                                                                          | Oracle                                                                                                                |
+| ------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| WBTC   | [0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1](https://etherscan.io/address/0x59063FBE70d3B0F9312e5c89acDc476f5d2018e1) | [0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2](https://etherscan.io/address/0xa20c3DC27C8c1A1aDC92E3b443607914Ed800FF2) | [0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c](https://etherscan.io/address/0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c) |
+| strBTC | [0x856db20b0c326afee3bf64770f7d8d39bf232ce0](https://etherscan.io/address/0x856db20b0c326afee3bf64770f7d8d39bf232ce0) | [0x5066dc39248e6696c0f2606a744a4482a3d36b97](https://etherscan.io/address/0x5066dc39248e6696c0f2606a744a4482a3d36b97) | [0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c](https://etherscan.io/address/0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c) |
 
 ## Core Mainnet
 
